@@ -1,0 +1,17 @@
+{
+  "name": "express-openid-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "express": "^4.16.4"
+  },
+  "dependencies": {
+    "openid-client": "^2.4.5"
+  }
+}
