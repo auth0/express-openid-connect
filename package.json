@@ -4,14 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha",
+    "lint": "eslint . --ignore-path .gitignore"
   },
   "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
   "license": "MIT",
   "devDependencies": {
-    "express": "^4.16.4"
+    "chai": "^4.2.0",
+    "eslint": "^5.8.0",
+    "express": "^4.16.4",
+    "mocha": "^5.2.0"
   },
   "dependencies": {
-    "openid-client": "^2.4.5"
+    "lodash": "^4.17.11",
+    "openid-client": "^2.4.5",
+    "url-join": "^4.0.0"
   }
 }
