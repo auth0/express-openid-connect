@@ -16,6 +16,7 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
+    "deprecate": "^1.1.0",
     "lodash": "^4.17.11",
     "openid-client": "^2.4.5",
     "url-join": "^4.0.0"

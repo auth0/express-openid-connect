@@ -27,7 +27,7 @@ const auth = require('express-openid-client');
 
 app.use(auth.routes({
   issuer_url: `https://${process.env.AUTH0_DOMAIN}`,
-  client_url: `https://myapplication.com`,
+  client_url: 'https://myapplication.com',
   client_id: process.env.AUTH0_CLIENT_ID,
 }))
 

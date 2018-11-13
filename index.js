@@ -3,6 +3,7 @@ const { Issuer } = require('openid-client');
 const crypto = require('crypto');
 const urlJoin = require('url-join');
 const _ = require('lodash');
+const deprecate = require('deprecate');
 
 Issuer.defaultHttpOptions = { timeout: 4000 };
 
@@ -27,13 +28,35 @@ const defaultAuthorizeParams = {
   scope: 'openid profile email'
 };
 
+const fieldsEnvMap = {
+  'issuer_base_url': 'ISSUER_BASE_URL',
+  'base_url': 'BASE_URL',
+  'client_id': 'CLIENT_ID',
+  'client_secret': 'CLIENT_SECRET',
+};
+
+function loadFromEnv(params) {
+  Object.keys(fieldsEnvMap).forEach(k => {
+    if (params[k]) { return; }
+    params[k] = process.env[fieldsEnvMap[k]];
+  });
+
+  if (!params.base_url &&
+      !process.env.BASE_URL &&
+      process.env.PORT &&
+      process.env.NODE_ENV !== 'production') {
+    params.base_url = `http://localhost:${process.env.PORT}`;
+  }
+}
+
+const requiredParams = ['issuer_base_url', 'base_url', 'client_id'];
 /**
 * Returns a router with two routes /login and /callback
 *
-* @param {Object} params - The parameters object
-* @param {string} params.issuer_url - The url address for the token issuer.
-* @param {string} params.client_url - The url of the web application where you are installing the router.
-* @param {string} params.client_id - The client id.
+* @param {Object} [params] - The parameters object
+* @param {string} [params.issuer_base_url] - The url address for the token issuer.
+* @param {string} [params.base_url] - The url of the web application where you are installing the router.
+* @param {string} [params.client_id] - The client id.
 * @param {string} [params.client_secret] - The client secret, only required for some grants.
 * @param {Object} [params.authorizationParams] - The parameters for the authorization call.
 * @param {string} [params.authorizationParams.response_type=id_token] - The response type.
@@ -42,6 +65,28 @@ const defaultAuthorizeParams = {
 * @returns {express.Router} the router
 */
 module.exports.routes = function(params) {
+  params = typeof params == 'object' ? _.cloneDeep(params) : {};
+
+  //TODO: remove this next major version.
+  if (typeof params.client_url !== 'undefined') {
+    deprecate('client_url', 'the parameter is deprecated, please use base_url instead');
+    params.base_url = params.client_url;
+  }
+
+  //TODO: remove this next major version.
+  if (typeof params.issuer_url !== 'undefined') {
+    deprecate('issuer_url', 'the parameter is deprecated, please use issuer_base_url instead');
+    params.issuer_base_url = params.issuer_url;
+  }
+
+  loadFromEnv(params);
+
+  requiredParams.forEach(rp => {
+    if (params[rp]) { return; }
+    throw new Error(`${rp} is required.
+It needs to be provided either in the parameters object or as an environment variable ${fieldsEnvMap[rp]}`);
+  });
+
   const authorizeParams = Object.assign({ },
     defaultAuthorizeParams,
     params.authorizationParams || {});
@@ -49,7 +94,7 @@ module.exports.routes = function(params) {
   const router = express.Router();
 
   const getClient = _.memoize(async function() {
-    const issuer = await Issuer.discover(params.issuer_url);
+    const issuer = await Issuer.discover(params.issuer_base_url);
     return new issuer.Client({
       client_id: params.client_id,
       client_secret: params.client_secret
@@ -57,7 +102,7 @@ module.exports.routes = function(params) {
   });
 
   function getRedirectUri(req) {
-    return urlJoin(params.client_url, req.baseUrl || '', '/callback');
+    return urlJoin(params.base_url, req.baseUrl || '', '/callback');
   }
 
   router.get('/login', async (req, res, next) => {

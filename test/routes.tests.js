@@ -5,8 +5,8 @@ const expressOpenid = require('./..');
 describe('routes', function() {
   const router = expressOpenid.routes({
     client_id: '123',
-    client_url: 'https://myapp.com',
-    issuer_url: 'https://flosser.auth0.com'
+    base_url: 'https://myapp.com',
+    issuer_base_url: 'https://flosser.auth0.com'
   });
 
   it('should contains two routes', function() {
@@ -45,8 +45,4 @@ describe('routes', function() {
     assert.equal(route.path, '/callback');
     assert.deepEqual(route.methods, { post: true });
   });
-
-
-
-
 });
