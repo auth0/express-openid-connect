@@ -121,7 +121,28 @@ It needs to be provided either in the parameters object or as an environment var
     res.redirect(authorizationUrl);
   });
 
-  const callbackMethod = authorizeParams.response_mode === 'form_post' ? 'post' : 'get';
+  let callbackMethod;
+  let repost;
+
+  switch (authorizeParams.response_mode) {
+    case 'form_post':
+      callbackMethod = 'post';
+      break;
+    case 'query':
+      callbackMethod = 'get';
+      break;
+    case 'fragment':
+      callbackMethod = 'post';
+      repost = true;
+      break;
+    default:
+      if (/token/.test(authorizeParams.response_type)) {
+        callbackMethod = 'post';
+        repost = true;
+      } else {
+        callbackMethod = 'get';
+      }
+  }
 
   router[callbackMethod]('/callback', async (req, res) => {
     const client = await getClient();
@@ -145,7 +166,45 @@ It needs to be provided either in the parameters object or as an environment var
     res.redirect(returnTo);
   });
 
+  if (repost) {
+    router.get('/callback', async (req, res) => {
+      res.set('Content-Type', 'text/html');
+      res.send(Buffer.from(`<html>
+<head>
+  <title>Fragment Repost Form</title>
+</head>
+<body>
+  <script type="text/javascript">
+    function parseQuery(queryString) {
+      var query = {};
+      var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+      for (var i = 0; i < pairs.length; i++) {
+          var pair = pairs[i].split('=');
+          query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+      }
+      return query;
+    }
+
+    var fields = parseQuery(window.location.hash.substring(1));
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    Object.keys(fields).forEach((key) => {
+      if (key) { // empty fragment will yield {"":""};
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      }
+    });
+    document.body.appendChild(form);
+    form.submit();
+  </script>
+</body>
+</html>`));
+    });
+  }
+
   return router;
 };
-
-
