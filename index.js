@@ -5,6 +5,7 @@ const urlJoin = require('url-join');
 const _ = require('lodash');
 const deprecate = require('deprecate');
 const cb = require('cb');
+const Joi = require('joi');
 
 Issuer.defaultHttpOptions = { timeout: 4000 };
 
@@ -50,7 +51,63 @@ function loadFromEnv(params) {
   }
 }
 
-const requiredParams = ['issuer_base_url', 'base_url', 'client_id'];
+function buildAutorizeParams(params) {
+  const authorizationParams = Object.assign({}, defaultAuthorizeParams, params.authorizationParams || {});
+  const authParamsValidation = Joi.validate(authorizationParams, authorizationParamsSchema);
+  if(authParamsValidation.error) {
+    throw authParamsValidation.error;
+  }
+  return authorizationParams;
+}
+
+async function buildClient(params, authorizeParams) {
+  const issuer = await Issuer.discover(params.issuer_base_url);
+  if (Array.isArray(issuer.response_types_supported) &&
+    !issuer.response_types_supported.includes(authorizeParams.response_type)) {
+    throw new Error(`The issuer doesn't support the response_type ${authorizeParams.response_type}
+Supported types:
+- ${issuer.response_types_supported.sort().join('\n- ')}
+`);
+  }
+  if (Array.isArray(issuer.scopes_supported)) {
+    authorizeParams.scope.split(' ').forEach(s => {
+      if (!issuer.scopes_supported.includes(s)) {
+        throw new Error(`The issuer doesn't support the scope ${s}
+  Supported scopes:
+  - ${issuer.scopes_supported.sort().join('\n- ')}
+          `);
+      }
+    });
+  }
+  if (Array.isArray(issuer.response_modes_supported) &&
+    !issuer.response_modes_supported.includes(authorizeParams.response_mode)) {
+    throw new Error(`The issuer doesn't support the response_mode ${authorizeParams.response_mode}
+Supported response modes:
+- ${issuer.response_modes_supported.sort().join('\n- ')}
+`);
+  }
+  return new issuer.Client({
+    client_id: params.client_id,
+    client_secret: params.client_secret
+  });
+}
+
+
+// const requiredParams = ['issuer_base_url', 'base_url', 'client_id'];
+const paramsSchema = Joi.object().keys({
+  issuer_base_url: Joi.string().uri().required(),
+  base_url: Joi.string().uri().required(),
+  client_id: Joi.string().required(),
+  client_secret: Joi.string().optional(),
+  authorizationParams: Joi.object().optional()
+});
+
+const authorizationParamsSchema = Joi.object().keys({
+  response_type: Joi.string().required(),
+  response_mode: Joi.string().required(),
+  scope: Joi.string().required()
+});
+
 /**
 * Returns a router with two routes /login and /callback
 *
@@ -82,32 +139,18 @@ module.exports.routes = function(params) {
 
   loadFromEnv(params);
 
-  requiredParams.forEach(rp => {
-    if (params[rp]) { return; }
-    throw new Error(`${rp} is required.
-It needs to be provided either in the parameters object or as an environment variable ${fieldsEnvMap[rp]}`);
-  });
+  const paramsValidation = Joi.validate(params, paramsSchema);
 
-  const authorizeParams = Object.assign({ },
-    defaultAuthorizeParams,
-    params.authorizationParams || {});
+  if(paramsValidation.error) {
+    throw new Error(paramsValidation.error.details[0].message);
+  }
+
+  const authorizeParams = buildAutorizeParams(params);
 
   const router = express.Router();
 
   const getClient = _.memoize(async function() {
-    const issuer = await Issuer.discover(params.issuer_base_url);
-
-    if (!issuer.response_types_supported.includes(authorizeParams.response_type)) {
-      throw new Error(`The issuer doesn't support the response_type ${authorizeParams.response_type}
-Supported types:
-- ${issuer.response_types_supported.join('\n- ')}
-`);
-    }
-
-    return new issuer.Client({
-      client_id: params.client_id,
-      client_secret: params.client_secret
-    });
+    return await buildClient(params, authorizeParams);
   });
 
   function getRedirectUri(req) {
@@ -161,5 +204,3 @@ Supported types:
 
   return router;
 };
-
-

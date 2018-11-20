@@ -1,13 +1,13 @@
 const assert = require('chai').assert;
 const expressOpenid = require('./..');
 
-describe('with an invalid response type', function() {
+describe('with an invalid scope', function() {
   const router = expressOpenid.routes({
     client_id: '123',
     base_url: 'https://myapp.com',
-    issuer_base_url: 'https://flosser.auth0.com',
+    issuer_base_url: 'https://flosser.auth0.com/.well-known/openid-configuration',
     authorizationParams: {
-      response_type: 'bufanda'
+      scope: 'openid lechuga'
     }
   });
 
@@ -21,7 +21,7 @@ describe('with an invalid response type', function() {
     };
 
     handle(req, res, err => {
-      assert.include(err.message, 'The issuer doesn\'t support the response_type bufanda');
+      assert.include(err.message, 'The issuer doesn\'t support the scope lechuga');
       done();
     });
   });
