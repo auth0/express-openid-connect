@@ -69,16 +69,7 @@ Supported types:
 - ${issuer.response_types_supported.sort().join('\n- ')}
 `);
   }
-  if (Array.isArray(issuer.scopes_supported)) {
-    authorizeParams.scope.split(' ').forEach(s => {
-      if (!issuer.scopes_supported.includes(s)) {
-        throw new Error(`The issuer doesn't support the scope ${s}
-  Supported scopes:
-  - ${issuer.scopes_supported.sort().join('\n- ')}
-          `);
-      }
-    });
-  }
+
   if (Array.isArray(issuer.response_modes_supported) &&
     !issuer.response_modes_supported.includes(authorizeParams.response_mode)) {
     throw new Error(`The issuer doesn't support the response_mode ${authorizeParams.response_mode}
@@ -86,6 +77,7 @@ Supported response modes:
 - ${issuer.response_modes_supported.sort().join('\n- ')}
 `);
   }
+
   return new issuer.Client({
     client_id: params.client_id,
     client_secret: params.client_secret
