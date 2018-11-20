@@ -10,7 +10,7 @@ Both middlewares preserve the intended url for the user.
 ## Install
 
 ```
-npm i express-openid-connect
+npm i express-openid-connect --save
 ```
 
 ## Requirements
@@ -36,6 +36,23 @@ app.use('/user', auth.protect(), (req, res) => {
 });
 
 app.get('/', (req, res) => res.send("hello!"));
+```
+
+## Configuration through environment variables
+
+Settings can be provided by environment variables as follows:
+
+```
+ISSUER_BASE_URL=https://my-domain.auth0.com
+BASE_URL=https://myapplication.com
+CLIENT_ID=xyz
+```
+
+then:
+
+```javascript
+const auth = require('express-openid-client');
+app.use(auth.routes())
 ```
 
 ## License

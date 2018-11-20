@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const urlJoin = require('url-join');
 const _ = require('lodash');
 const deprecate = require('deprecate');
+const cb = require('cb');
 
 Issuer.defaultHttpOptions = { timeout: 4000 };
 
@@ -95,6 +96,14 @@ It needs to be provided either in the parameters object or as an environment var
 
   const getClient = _.memoize(async function() {
     const issuer = await Issuer.discover(params.issuer_base_url);
+
+    if (!issuer.response_types_supported.includes(authorizeParams.response_type)) {
+      throw new Error(`The issuer doesn't support the response_type ${authorizeParams.response_type}
+Supported types:
+- ${issuer.response_types_supported.join('\n- ')}
+`);
+    }
+
     return new issuer.Client({
       client_id: params.client_id,
       client_secret: params.client_secret
@@ -106,19 +115,24 @@ It needs to be provided either in the parameters object or as an environment var
   }
 
   router.get('/login', async (req, res, next) => {
-    const client = await getClient();
-    const redirect_uri = getRedirectUri(req);
-    if (typeof req.session === 'undefined') {
-      return next(new Error('This router needs the session middleware'));
+    next = cb(next).once();
+    try {
+      const client = await getClient();
+      const redirect_uri = getRedirectUri(req);
+      if (typeof req.session === 'undefined') {
+        return next(new Error('This router needs the session middleware'));
+      }
+      req.session.nonce = crypto.randomBytes(8).toString('hex');
+      req.session.state = crypto.randomBytes(10).toString('hex');
+      const authorizationUrl = client.authorizationUrl(Object.assign({
+        nonce: req.session.nonce,
+        state: req.session.state,
+        redirect_uri
+      }, authorizeParams));
+      res.redirect(authorizationUrl);
+    } catch(err) {
+      next(err);
     }
-    req.session.nonce = crypto.randomBytes(8).toString('hex');
-    req.session.state = crypto.randomBytes(10).toString('hex');
-    const authorizationUrl = client.authorizationUrl(Object.assign({
-      nonce: req.session.nonce,
-      state: req.session.state,
-      redirect_uri
-    }, authorizeParams));
-    res.redirect(authorizationUrl);
   });
 
   const callbackMethod = authorizeParams.response_mode === 'form_post' ? 'post' : 'get';
