@@ -15,8 +15,10 @@ npm i express-openid-connect --save
 
 Before installing the routes,
 
--  You need to parse url encoded bodies, eg `app.use(bodyParser.urlencoded({ extended: false }));`
--  You need a session middleware like express-session or cookie-session.
+-  a body parser middleware for urlencoded content, eg: https://www.npmjs.com/package/body-parser
+-  a session middleware like [express-session](https://www.npmjs.com/package/express-session) or [cookie-session](https://www.npmjs.com/package/cookie-session).
+-  node v8 or greater
+-  express v3 or greater
 
 ## Usage
 
