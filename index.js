@@ -70,7 +70,7 @@ Supported types:
 `);
   }
 
-  if (Array.isArray(issuer.response_modes_supported) &&
+  if (authorizeParams.response_mode && Array.isArray(issuer.response_modes_supported) &&
     !issuer.response_modes_supported.includes(authorizeParams.response_mode)) {
     throw new Error(`The issuer doesn't support the response_mode ${authorizeParams.response_mode}
 Supported response modes:
@@ -96,7 +96,7 @@ const paramsSchema = Joi.object().keys({
 
 const authorizationParamsSchema = Joi.object().keys({
   response_type: Joi.string().required(),
-  response_mode: Joi.string().required(),
+  response_mode: Joi.string(),
   scope: Joi.string().required()
 });
 
