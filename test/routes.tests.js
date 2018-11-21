@@ -1,6 +1,9 @@
 const assert = require('chai').assert;
 const url = require('url');
+const request = require('supertest');
 const expressOpenid = require('./..');
+const server = require('./fixture/server');
+const fs = require('fs');
 
 describe('routes', function() {
   describe('default', () => {
@@ -9,6 +12,8 @@ describe('routes', function() {
       base_url: 'https://myapp.com',
       issuer_base_url: 'https://flosser.auth0.com'
     });
+
+    const app = server.create(router);
 
     it('should contain two routes', function() {
       assert.equal(router.stack.length, 2);
@@ -21,15 +26,11 @@ describe('routes', function() {
     });
 
     it('should redirect to the authorize url properly on /login', async function() {
-      const route = router.stack[0].route;
-      const handle = route.stack[0].handle;
-      let redirectUrl;
-      await handle({
-        session: {},
-      }, {
-        redirect: rurl => redirectUrl = rurl
-      });
-      const parsed = url.parse(redirectUrl, true);
+      const res = await request(app)
+        .get('/login')
+        .expect(302);
+
+      const parsed = url.parse(res.header.location, true);
       assert.equal(parsed.hostname, 'flosser.auth0.com');
       assert.equal(parsed.pathname, '/authorize');
       assert.equal(parsed.query.client_id, '123');
@@ -60,6 +61,8 @@ describe('routes', function() {
         }
       });
 
+      const app = server.create(router);
+
       it('should contain two routes', function() {
         assert.equal(router.stack.length, 2);
       });
@@ -71,15 +74,11 @@ describe('routes', function() {
       });
 
       it('should redirect to the authorize url properly on /login', async function() {
-        const route = router.stack[0].route;
-        const handle = route.stack[0].handle;
-        let redirectUrl;
-        await handle({
-          session: {},
-        }, {
-          redirect: rurl => redirectUrl = rurl
-        });
-        const parsed = url.parse(redirectUrl, true);
+        const res = await request(app)
+          .get('/login')
+          .expect(302);
+
+        const parsed = url.parse(res.header.location, true);
         assert.equal(parsed.hostname, 'flosser.auth0.com');
         assert.equal(parsed.pathname, '/authorize');
         assert.equal(parsed.query.client_id, '123');
@@ -108,6 +107,7 @@ describe('routes', function() {
           response_type: 'code',
         }
       });
+      const app = server.create(router);
 
       it('should contain two routes', function() {
         assert.equal(router.stack.length, 2);
@@ -120,15 +120,11 @@ describe('routes', function() {
       });
 
       it('should redirect to the authorize url properly on /login', async function() {
-        const route = router.stack[0].route;
-        const handle = route.stack[0].handle;
-        let redirectUrl;
-        await handle({
-          session: {},
-        }, {
-          redirect: rurl => redirectUrl = rurl
-        });
-        const parsed = url.parse(redirectUrl, true);
+        const res = await request(app)
+          .get('/login')
+          .expect(302);
+
+        const parsed = url.parse(res.header.location, true);
         assert.equal(parsed.hostname, 'flosser.auth0.com');
         assert.equal(parsed.pathname, '/authorize');
         assert.equal(parsed.query.client_id, '123');
@@ -157,6 +153,7 @@ describe('routes', function() {
           response_type: 'id_token',
         }
       });
+      const app = server.create(router);
 
       it('should contain two routes', function() {
         assert.equal(router.stack.length, 3);
@@ -169,15 +166,11 @@ describe('routes', function() {
       });
 
       it('should redirect to the authorize url properly on /login', async function() {
-        const route = router.stack[0].route;
-        const handle = route.stack[0].handle;
-        let redirectUrl;
-        await handle({
-          session: {},
-        }, {
-          redirect: rurl => redirectUrl = rurl
-        });
-        const parsed = url.parse(redirectUrl, true);
+        const res = await request(app)
+          .get('/login')
+          .expect(302);
+
+        const parsed = url.parse(res.header.location, true);
         assert.equal(parsed.hostname, 'flosser.auth0.com');
         assert.equal(parsed.pathname, '/authorize');
         assert.equal(parsed.query.client_id, '123');
@@ -197,6 +190,15 @@ describe('routes', function() {
         assert.equal(route.path, '/callback');
         assert.deepEqual(route.methods, { get: true });
       });
+
+      it('should return an html on GET /callback', function() {
+        return request(app)
+          .get('/callback')
+          .expect('Content-Type', 'text/html; charset=utf-8')
+          .expect(fs.readFileSync(`${__dirname}/../views/repost.html`, 'utf-8'))
+          .expect(200);
+      });
+
     });
   });
 });
