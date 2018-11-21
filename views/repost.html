@@ -28,6 +28,14 @@
       }
     });
     document.body.appendChild(form);
+
+    try {
+      var url = window.location.href.slice(0, -Math.max(window.location.hash.length, 1));
+      window.history.replaceState({}, window.document.title, url);
+    } catch(err) {
+      window.location.hash = "";
+    }
+
     form.submit();
   </script>
 </body>
