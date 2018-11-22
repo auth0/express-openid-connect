@@ -1,4 +1,6 @@
 const selfsigned = require('selfsigned');
+const { pem2jwk } = require('pem-jwk');
+
 const attrs = [
   {
     name: 'commonName',
@@ -27,27 +29,16 @@ const ss = selfsigned.generate(attrs, {
   extensions: extensions
 });
 
-function pemToCert(pem) {
-  // if certificate doesn't have ---- begin cert --- just return the pem
-  if (!/-----BEGIN CERTIFICATE-----/.test(pem.toString())) {
-    return pem.toString();
-  }
-
-  var cert = /-----BEGIN CERTIFICATE-----([^-]*)-----END CERTIFICATE-----/g.exec(pem.toString());
-  if (cert.length > 0) {
-    return cert[1].replace(/[\n|\r\n]/g, '');
-  }
-
-  return null;
-}
 
 module.exports.jwks = [{
   alg: 'RS256',
   kty: 'RSA',
   use: 'sig',
-  x5c: [
-    pemToCert(ss.cert)
-  ]
+  kid: ss.fingerprint,
+  x5t: ss.fingerprint,
+  ...pem2jwk(ss.public)
 }];
 
+module.exports.cert = ss.cert;
 module.exports.key = ss.private;
+module.exports.kid = ss.fingerprint;

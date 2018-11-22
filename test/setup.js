@@ -10,7 +10,10 @@ before(function() {
   nock('https://flosser.auth0.com', { allowUnmocked: true })
     .persist()
     .get('/.well-known/openid-configuration')
-    .reply(200, wellKnown)
+    .reply(200, wellKnown);
+
+  nock('https://flosser.auth0.com', { allowUnmocked: true })
+    .persist()
     .get('/.well-known/jwks.json')
     .reply(200, certs.jwks);
 });

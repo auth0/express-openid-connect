@@ -5,12 +5,12 @@ const expressOpenid = require('./..');
 const server = require('./fixture/server');
 const { CookieJar } = require('tough-cookie');
 const cert = require('./fixture/cert');
-
+const clientID = 'foobar';
 
 function testCase(params) {
   return () => {
     const router = expressOpenid.routes({
-      clientID: '123',
+      clientID: clientID,
       baseURL: 'https://myapp.com',
       issuerBaseURL: 'https://flosser.auth0.com',
     });
@@ -37,6 +37,15 @@ function testCase(params) {
         throwHttpErrors: false,
         body: params.body
       });
+    });
+
+    before(async function() {
+      this.currentSession = await got.get('/session', {
+        baseUrl,
+        cookieJar,
+        json: true,
+        throwHttpErrors: false,
+      }).then(r => r.body);
     });
 
     params.assertions();
@@ -128,5 +137,42 @@ describe('callback router', function() {
     }
   }));
 
+  describe('when id_token is valid', testCase({
+    session: {
+      state: '123',
+      nonce: 'abcdefg',
+      returnTo: '/foobar'
+    },
+    body: {
+      nonce: '123',
+      state: '123',
+      id_token: jwt.sign({
+        'nickname': 'jjjj',
+        'name': 'Jeranio',
+        'email': 'jjjj@example.com',
+        'email_verified': true,
+        'iss': 'https://flosser.auth0.com/',
+        'sub': 'xasdas',
+        'aud': clientID,
+        'iat': Math.round(Date.now() / 1000),
+        'exp': Math.round(Date.now() / 1000) + 60000,
+        'nonce': 'abcdefg'
+      }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
+    },
+    assertions() {
+      it('should return 302', function() {
+        assert.equal(this.response.statusCode, 302);
+      });
+
+      it('should redirect to the intended url', function() {
+        assert.equal(this.response.headers['location'], '/foobar');
+      });
+
+      it('should contain the claims in the current session', function() {
+        assert.equal(this.currentSession.user.name, 'Jeranio');
+        assert.equal(this.currentSession.user.sub, 'xasdas');
+      });
+    }
+  }));
 
 });
