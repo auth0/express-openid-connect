@@ -1,6 +1,5 @@
 const { assert } = require('chai');
 const expressOpenid = require('..');
-const ResponseMode = expressOpenid.ResponseMode;
 
 describe('invalid parameters', function() {
   it('should fail when the issuer_base_url is invalid', function() {
