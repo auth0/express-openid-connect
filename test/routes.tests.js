@@ -100,6 +100,7 @@ describe('routes', function() {
     describe('response_type=code', () => {
       const router = expressOpenid.routes({
         client_id: '123',
+        client_secret: '456',
         base_url: 'https://myapp.com',
         issuer_base_url: 'https://flosser.auth0.com',
         authorizationParams: {
