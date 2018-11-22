@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "cb": "^0.1.0",
+    "debug": "^4.1.0",
     "deprecate": "^1.1.0",
     "joi": "^14.1.0",
     "lodash": "^4.17.11",

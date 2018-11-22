@@ -1,3 +1,4 @@
+const package = require('./package.json');
 const getClient = require('./lib/client').get;
 const express = require('express');
 const { Issuer } = require('openid-client');
@@ -8,8 +9,10 @@ const cb = require('cb');
 const fs = require('fs');
 const paramsValidator = require('./lib/paramsValidator');
 const ResponseMode = require('./lib/ResponseMode');
-
 const getRepostView = _.memoize(() => fs.readFileSync(__dirname + '/views/repost.html'));
+
+const debugLogin = require('debug')(`${package.name}:login`);
+const debugCallback = require('debug')(`${package.name}:callback`);
 
 Issuer.defaultHttpOptions = { timeout: 4000 };
 
@@ -60,10 +63,10 @@ module.exports.routes = function(params) {
   function getRedirectUri(req) {
     return urlJoin(params.baseURL, req.baseUrl || '', '/callback');
   }
-
   router.get('/login', async (req, res, next) => {
     next = cb(next).once();
     try {
+      debugLogin('building the openid client %O', params);
       const client = await getClient(params);
       const redirect_uri = getRedirectUri(req);
       if (typeof req.session === 'undefined') {
@@ -71,11 +74,17 @@ module.exports.routes = function(params) {
       }
       req.session.nonce = crypto.randomBytes(8).toString('hex');
       req.session.state = crypto.randomBytes(10).toString('hex');
-      const authorizationUrl = client.authorizationUrl(Object.assign({
+
+      const authParams = Object.assign({
         nonce: req.session.nonce,
         state: req.session.state,
         redirect_uri
-      }, authorizeParams));
+      }, authorizeParams);
+
+      debugLogin('building the authorization url %O', authParams);
+      const authorizationUrl = client.authorizationUrl(authParams);
+
+      debugLogin('redirecting to %s', authorizationUrl);
       res.redirect(authorizationUrl);
     } catch(err) {
       next(err);
@@ -115,7 +124,11 @@ module.exports.routes = function(params) {
 
       const redirect_uri = getRedirectUri(req);
 
-      const callbackParams = client.callbackParams(req); // => parsed url query or body object
+      debugCallback('parsing response for callback parameters');
+
+      const callbackParams = client.callbackParams(req);
+      debugCallback('callback parameters: %O', callbackParams);
+
       const tokenSet = await client.authorizationCallback(
         redirect_uri,
         callbackParams, {
@@ -123,10 +136,15 @@ module.exports.routes = function(params) {
           state,
           response_type: authorizeParams.response_type,
         });
+      debugCallback('tokens: %O', tokenSet);
 
+      req.session.tokens = tokenSet;
       req.session.user = tokenSet.claims;
+      debugCallback('user: %O', req.session.user);
+
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
+      debugCallback('redirecting to %s', returnTo);
       res.redirect(returnTo);
     } catch(err) {
       next(err);

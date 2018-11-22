@@ -55,6 +55,16 @@ const auth = require('express-openid-client');
 app.use(auth.routes())
 ```
 
+## Debugging
+
+Start your application with the following environment variable to make this module output the debug logs.
+
+```
+DEBUG=express-openid-client:*
+```
+
+**WARNING:** this feature is intended only for development and must not be used in production since it will log sensitive information.
+
 ## License
 
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
