@@ -9,6 +9,8 @@ const cb = require('cb');
 const fs = require('fs');
 const paramsValidator = require('./lib/paramsValidator');
 const ResponseMode = require('./lib/ResponseMode');
+const UnauthorizedError = require('./lib/UnauthorizedError');
+
 const getRepostView = _.memoize(() => fs.readFileSync(__dirname + '/views/repost.html'));
 
 const debugLogin = require('debug')(`${package.name}:login`);
@@ -121,6 +123,7 @@ module.exports.routes = function(params) {
       const { nonce, state } = req.session;
       delete req.session.nonce;
       delete req.session.state;
+      debugCallback('session parameters', { nonce, state });
 
       const redirect_uri = getRedirectUri(req);
 
@@ -128,14 +131,21 @@ module.exports.routes = function(params) {
 
       const callbackParams = client.callbackParams(req);
       debugCallback('callback parameters: %O', callbackParams);
+      let tokenSet;
 
-      const tokenSet = await client.authorizationCallback(
-        redirect_uri,
-        callbackParams, {
-          nonce,
-          state,
-          response_type: authorizeParams.response_type,
-        });
+      try {
+        tokenSet = await client.authorizationCallback(
+          redirect_uri,
+          callbackParams, {
+            nonce,
+            state,
+            response_type: authorizeParams.response_type,
+          });
+      } catch(err) {
+        debugCallback('error in the authorization callback: %s', err.message);
+        throw new UnauthorizedError(401, err);
+      }
+
       debugCallback('tokens: %O', tokenSet);
 
       req.session.tokens = tokenSet;
@@ -145,6 +155,7 @@ module.exports.routes = function(params) {
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
       debugCallback('redirecting to %s', returnTo);
+
       res.redirect(returnTo);
     } catch(err) {
       next(err);

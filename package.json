@@ -12,14 +12,18 @@
   "devDependencies": {
     "body-parser": "^1.18.3",
     "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "cookie-session": "^2.0.0-beta.3",
     "eslint": "^5.9.0",
     "express": "^4.16.4",
     "got": "^9.3.2",
     "jsdom": "^13.0.0",
+    "jsonwebtoken": "^8.4.0",
     "mocha": "^5.2.0",
     "nock": "^10.0.2",
-    "tough-cookie": "^2.4.3"
+    "selfsigned": "^1.10.4",
+    "tough-cookie": "^2.4.3",
+    "ursa": "^0.9.4"
   },
   "dependencies": {
     "cb": "^0.1.0",

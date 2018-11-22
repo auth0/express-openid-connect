@@ -22,7 +22,13 @@ module.exports.create = function(router) {
 
   app.post('/session', (req, res) => {
     req.session = req.body;
-    res.send(200);
+    res.json(req.body);
+  });
+
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    res.status(err.status || 500)
+      .json({ err: { message: err.message }});
   });
 
   const server = http.createServer(app);
