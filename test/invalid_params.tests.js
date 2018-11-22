@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 const expressOpenid = require('..');
-
+const ResponseMode = expressOpenid.ResponseMode;
 
 describe('invalid parameters', function() {
   it('should fail when the issuer_base_url is invalid', function() {
@@ -39,5 +39,18 @@ describe('invalid parameters', function() {
         client_id: 'asdas'
       });
     }, '"base_url" is required');
+  });
+
+  it('should fail when client secret is not provided and using the response type code in mode query', function() {
+    assert.throws(() => {
+      expressOpenid.routes({
+        issuer_base_url: 'http://foobar.auth0.com',
+        base_url: 'http://foobar.com',
+        client_id: 'asdas',
+        authorizationParams: {
+          response_type: 'code id_token'
+        }
+      });
+    }, '"client_secret" is required for response_type code');
   });
 });

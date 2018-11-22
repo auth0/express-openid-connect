@@ -7,6 +7,7 @@ const _ = require('lodash');
 const cb = require('cb');
 const fs = require('fs');
 const paramsValidator = require('./lib/paramsValidator');
+const ResponseMode = require('./lib/ResponseMode');
 
 const getRepostView = _.memoize(() => fs.readFileSync(__dirname + '/views/repost.html'));
 
@@ -43,7 +44,7 @@ module.exports.protect = function() {
 */
 module.exports.routes = function(params) {
   params = paramsValidator.validate(params);
-  const authorizeParams = params.authorizeParams;
+  const authorizeParams = params.authorizationParams;
 
   if (typeof express.Router === 'undefined') {
     throw new Error(`express-openid-client needs express@^3, current installed version ${require('express/package').version}`);
@@ -135,3 +136,6 @@ module.exports.routes = function(params) {
 
   return router;
 };
+
+
+module.exports.ResponseMode = ResponseMode;
