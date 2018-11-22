@@ -2,54 +2,54 @@ const { assert } = require('chai');
 const expressOpenid = require('..');
 
 describe('invalid parameters', function() {
-  it('should fail when the issuer_base_url is invalid', function() {
+  it('should fail when the issuerBaseURL is invalid', function() {
     assert.throws(() => {
       expressOpenid.routes({
-        base_url: 'http://localhost',
-        issuer_base_url: '123 r423.json xxx',
-        client_id: '123ewasda'
+        baseURL: 'http://localhost',
+        issuerBaseURL: '123 r423.json xxx',
+        clientID: '123ewasda'
       });
-    }, '"issuer_base_url" must be a valid uri');
+    }, '"issuerBaseURL" must be a valid uri');
   });
 
-  it('should fail when the base_url is invalid', function() {
+  it('should fail when the baseURL is invalid', function() {
     assert.throws(() => {
       expressOpenid.routes({
-        base_url: 'xasxasa sads',
-        issuer_base_url: 'http://foobar.com',
-        client_id: '123ewasda'
+        baseURL: 'xasxasa sads',
+        issuerBaseURL: 'http://foobar.com',
+        clientID: '123ewasda'
       });
-    }, '"base_url" must be a valid uri');
+    }, '"baseURL" must be a valid uri');
   });
 
-  it('should fail when the client_id is not provided', function() {
+  it('should fail when the clientID is not provided', function() {
     assert.throws(() => {
       expressOpenid.routes({
-        base_url: 'http://foobar.com',
-        issuer_base_url: 'http://foobar.com',
+        baseURL: 'http://foobar.com',
+        issuerBaseURL: 'http://foobar.com',
       });
-    }, '"client_id" is required');
+    }, '"clientID" is required');
   });
 
-  it('should fail when the base_url is not provided', function() {
+  it('should fail when the baseURL is not provided', function() {
     assert.throws(() => {
       expressOpenid.routes({
-        issuer_base_url: 'http://foobar.com',
-        client_id: 'asdas'
+        issuerBaseURL: 'http://foobar.com',
+        clientID: 'asdas',
       });
-    }, '"base_url" is required');
+    }, '"baseURL" is required');
   });
 
   it('should fail when client secret is not provided and using the response type code in mode query', function() {
     assert.throws(() => {
       expressOpenid.routes({
-        issuer_base_url: 'http://foobar.auth0.com',
-        base_url: 'http://foobar.com',
-        client_id: 'asdas',
+        issuerBaseURL: 'http://foobar.auth0.com',
+        baseURL: 'http://foobar.com',
+        clientID: 'asdas',
         authorizationParams: {
           response_type: 'code id_token'
         }
       });
-    }, '"client_secret" is required for response_type code');
+    }, '"clientSecret" is required for response_type code');
   });
 });

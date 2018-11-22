@@ -26,9 +26,9 @@ Before installing the routes,
 const auth = require('express-openid-client');
 
 app.use(auth.routes({
-  issuer_url: `https://${process.env.AUTH0_DOMAIN}`,
-  client_url: 'https://myapplication.com',
-  client_id: process.env.AUTH0_CLIENT_ID,
+  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
+  baseURL: 'https://myapplication.com',
+  clientID: process.env.AUTH0_CLIENT_ID,
 }))
 
 app.use('/user', auth.protect(), (req, res) => {

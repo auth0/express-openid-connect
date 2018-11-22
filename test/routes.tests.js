@@ -8,9 +8,9 @@ const fs = require('fs');
 describe('routes', function() {
   describe('default', () => {
     const router = expressOpenid.routes({
-      client_id: '123',
-      base_url: 'https://myapp.com',
-      issuer_base_url: 'https://flosser.auth0.com'
+      clientID: '123',
+      baseURL: 'https://myapp.com',
+      issuerBaseURL: 'https://flosser.auth0.com',
     });
 
     const app = server.create(router);
@@ -52,9 +52,9 @@ describe('routes', function() {
   describe('implied response_mode', () => {
     describe('response_type=none', () => {
       const router = expressOpenid.routes({
-        client_id: '123',
-        base_url: 'https://myapp.com',
-        issuer_base_url: 'https://flosser.auth0.com',
+        clientID: '123',
+        baseURL: 'https://myapp.com',
+        issuerBaseURL: 'https://flosser.auth0.com',
         authorizationParams: {
           response_mode: undefined,
           response_type: 'none',
@@ -99,10 +99,10 @@ describe('routes', function() {
 
     describe('response_type=code', () => {
       const router = expressOpenid.routes({
-        client_id: '123',
-        client_secret: '456',
-        base_url: 'https://myapp.com',
-        issuer_base_url: 'https://flosser.auth0.com',
+        clientID: '123',
+        clientSecret: '456',
+        baseURL: 'https://myapp.com',
+        issuerBaseURL: 'https://flosser.auth0.com',
         authorizationParams: {
           response_mode: undefined,
           response_type: 'code',
@@ -146,9 +146,9 @@ describe('routes', function() {
 
     describe('response_type=id_token', () => {
       const router = expressOpenid.routes({
-        client_id: '123',
-        base_url: 'https://myapp.com',
-        issuer_base_url: 'https://flosser.auth0.com',
+        clientID: '123',
+        baseURL: 'https://myapp.com',
+        issuerBaseURL: 'https://flosser.auth0.com',
         authorizationParams: {
           response_mode: undefined,
           response_type: 'id_token',

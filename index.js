@@ -31,15 +31,20 @@ module.exports.protect = function() {
 /**
 * Returns a router with two routes /login and /callback
 *
-* @param {Object} [params] - The parameters object
-* @param {string} [params.issuer_base_url] - The url address for the token issuer.
-* @param {string} [params.base_url] - The url of the web application where you are installing the router.
-* @param {string} [params.client_id] - The client id.
-* @param {string} [params.client_secret] - The client secret, only required for some grants.
-* @param {Object} [params.authorizationParams] - The parameters for the authorization call.
-* @param {string} [params.authorizationParams.response_type=id_token] - The response type.
-* @param {string} [params.authorizationParams.response_mode=form_post] - The response mode.
-* @param {string} [params.authorizationParams.scope=openid profile email] - The scope.
+* @param {Object} [params] The parameters object
+* @param {string} [params.issuerBaseURL] The url address for the token issuer.
+* @param {string} [params.baseURL] The url of the web application where you are installing the router.
+* @param {string} [params.clientID] The client id.
+* @param {string} [params.clientSecret] The client secret, only required for some grants.
+* @param {Object} [params.authorizationParams] The parameters for the authorization call. Defaults to
+* - response_type: "id_token"
+* - reponse_mode: "form_post"
+* - scope: "openid profile email"
+*
+* @param {string} params.authorizationParams.response_type The response type.
+* @param {string} [params.authorizationParams.response_mode] The response mode.
+* @param {string} [params.authorizationParams.scope=openid profile email] The scope.
+*
 * @returns {express.Router} the router
 */
 module.exports.routes = function(params) {
@@ -53,7 +58,7 @@ module.exports.routes = function(params) {
   const router = express.Router();
 
   function getRedirectUri(req) {
-    return urlJoin(params.base_url, req.baseUrl || '', '/callback');
+    return urlJoin(params.baseURL, req.baseUrl || '', '/callback');
   }
 
   router.get('/login', async (req, res, next) => {
@@ -121,6 +126,7 @@ module.exports.routes = function(params) {
 
       req.session.user = tokenSet.claims;
       const returnTo = req.session.returnTo || '/';
+      delete req.session.returnTo;
       res.redirect(returnTo);
     } catch(err) {
       next(err);

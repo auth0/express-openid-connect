@@ -3,9 +3,9 @@ const expressOpenid = require('./..');
 
 describe('with an invalid response type', function() {
   const router = expressOpenid.routes({
-    client_id: '123',
-    base_url: 'https://myapp.com',
-    issuer_base_url: 'https://flosser.auth0.com',
+    clientID: '123',
+    baseURL: 'https://myapp.com',
+    issuerBaseURL: 'https://flosser.auth0.com',
     authorizationParams: {
       response_type: 'bufanda'
     }
