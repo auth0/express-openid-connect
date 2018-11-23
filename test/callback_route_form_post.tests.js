@@ -1,7 +1,7 @@
 const assert = require('chai').assert;
 const got = require('got');
 const jwt = require('jsonwebtoken');
-const expressOpenid = require('./..');
+const expressOpenid = require('..');
 const server = require('./fixture/server');
 const { CookieJar } = require('tough-cookie');
 const cert = require('./fixture/cert');
@@ -52,7 +52,7 @@ function testCase(params) {
   };
 }
 
-describe('callback router', function() {
+describe('callback routes response_type: id_token, response_mode: form_post', function() {
   describe("when state doesn't match", testCase({
     session: {
       nonce: '123',

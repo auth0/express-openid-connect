@@ -1,13 +1,14 @@
 {
   "name": "express-openid-client",
   "version": "1.4.0",
-  "description": "",
+  "description": "OpenID Connect middleware for express.js clients" ,
   "main": "index.js",
   "scripts": {
     "test": "mocha",
     "lint": "eslint . --ignore-path .gitignore"
   },
   "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
+  "homepage": "https://github.com/auth0/express-openid-client",
   "license": "MIT",
   "devDependencies": {
     "body-parser": "^1.18.3",

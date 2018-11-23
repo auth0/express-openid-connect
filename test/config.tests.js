@@ -1,9 +1,9 @@
 const { assert } = require('chai');
-const paramsValidator = require('../lib/paramsValidator');
+const { get: getConfig } = require('../lib/config');
 
-describe('params handling', function() {
+describe('config', function() {
   describe('when authorizationParams is not specified', function() {
-    const params = paramsValidator.validate({
+    const params = getConfig({
       clientID: '123',
       issuerBaseURL: 'https://flosser.auth0.com',
       baseURL: 'https://jjj.com',
@@ -23,7 +23,7 @@ describe('params handling', function() {
   });
 
   describe('when authorizationParams is response_type=x', function() {
-    const params = paramsValidator.validate({
+    const params = getConfig({
       clientID: '123',
       clientSecret: '123',
       issuerBaseURL: 'https://flosser.auth0.com',
