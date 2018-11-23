@@ -11,7 +11,7 @@ module.exports = function() {
       if (req.method === 'GET') {
         req.session.returnTo = req.originalUrl;
       }
-      res.redirect('/login');
+      return res.redirect('/login');
     }
 
     if (req.openid.tokens.expired() && req.openid.refreshToken) {
