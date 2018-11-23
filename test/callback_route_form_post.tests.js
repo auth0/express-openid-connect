@@ -1,9 +1,12 @@
 const assert = require('chai').assert;
-const got = require('got');
 const jwt = require('jsonwebtoken');
+const request = require('request-promise-native').defaults({
+  simple: false,
+  resolveWithFullResponse: true
+});
+
 const expressOpenid = require('..');
 const server = require('./fixture/server');
-const { CookieJar } = require('tough-cookie');
 const cert = require('./fixture/cert');
 const clientID = 'foobar';
 
@@ -17,34 +20,30 @@ function testCase(params) {
 
     let baseUrl;
 
-    const cookieJar = new CookieJar();
+    const jar = request.jar();
 
     before(async function() {
       baseUrl = await server.create(router);
-      await got.post('/session', {
-        baseUrl,
-        cookieJar,
-        json: true,
-        body: params.session
+      await request.post({
+        uri: '/session',
+        baseUrl, jar,
+        json: params.session
       });
     });
 
     before(async function() {
-      this.response = await got.post('/callback', {
+      this.response = await request.post('/callback', {
         baseUrl,
-        cookieJar,
-        json: true,
-        throwHttpErrors: false,
-        body: params.body
+        jar,
+        json: params.body
       });
     });
 
     before(async function() {
-      this.currentSession = await got.get('/session', {
+      this.currentSession = await request.get('/session', {
         baseUrl,
-        cookieJar,
+        jar,
         json: true,
-        throwHttpErrors: false,
       }).then(r => r.body);
     });
 

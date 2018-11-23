@@ -1,10 +1,13 @@
 const assert = require('chai').assert;
 const url = require('url');
-const got = require('got');
 const fs = require('fs');
+const request = require('request-promise-native').defaults({
+  simple: false,
+  resolveWithFullResponse: true
+});
+
 const expressOpenid = require('./..');
 const server = require('./fixture/server');
-const { CookieJar } = require('tough-cookie');
 
 describe('routes', function() {
   describe('default', () => {
@@ -31,8 +34,8 @@ describe('routes', function() {
     });
 
     it('should redirect to the authorize url properly on /login', async function() {
-      const cookieJar = new CookieJar();
-      const res = await got('/login', { cookieJar, baseUrl, followRedirect: false });
+      const jar = request.jar();
+      const res = await request.get('/login', { jar, baseUrl, followRedirect: false });
       assert.equal(res.statusCode, 302);
 
       const parsed = url.parse(res.headers.location, true);
@@ -47,7 +50,7 @@ describe('routes', function() {
       assert.property(parsed.query, 'nonce');
       assert.property(parsed.query, 'state');
 
-      const session = (await got('/session', { cookieJar, baseUrl, json: true })).body;
+      const session = (await request.get('/session', { jar, baseUrl, json: true })).body;
       assert.equal(session.nonce, parsed.query.nonce);
       assert.equal(session.state, parsed.query.state);
     });
@@ -88,8 +91,8 @@ describe('routes', function() {
       });
 
       it('should redirect to the authorize url properly on /login', async function() {
-        const cookieJar = new CookieJar();
-        const res = await got('/login', { cookieJar, baseUrl, followRedirect: false });
+        const cookieJar = request.jar();
+        const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
         assert.equal(res.statusCode, 302);
 
         const parsed = url.parse(res.headers.location, true);
@@ -141,8 +144,8 @@ describe('routes', function() {
       });
 
       it('should redirect to the authorize url properly on /login', async function() {
-        const cookieJar = new CookieJar();
-        const res = await got('/login', { cookieJar, baseUrl, followRedirect: false });
+        const cookieJar = request.jar();
+        const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
         assert.equal(res.statusCode, 302);
 
         const parsed = url.parse(res.headers.location, true);
@@ -193,8 +196,8 @@ describe('routes', function() {
       });
 
       it('should redirect to the authorize url properly on /login', async function() {
-        const cookieJar = new CookieJar();
-        const res = await got('/login', { cookieJar, baseUrl, followRedirect: false });
+        const cookieJar = request.jar();
+        const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
         assert.equal(res.statusCode, 302);
 
         const parsed = url.parse(res.headers.location, true);
@@ -220,8 +223,8 @@ describe('routes', function() {
       });
 
       it('should return an html on GET /callback', async function() {
-        const cookieJar = new CookieJar();
-        const res = await got('/callback', { cookieJar, baseUrl, followRedirect: false });
+        const cookieJar = request.jar();
+        const res = await request.get('/callback', { cookieJar, baseUrl, followRedirect: false });
         assert.equal(res.statusCode, 200);
         assert.equal(res.headers['content-type'], 'text/html; charset=utf-8');
         const expectedBody = fs.readFileSync(`${__dirname}/../views/repost.html`, 'utf-8');

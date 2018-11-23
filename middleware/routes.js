@@ -15,8 +15,6 @@ const getRepostView = _.memoize(() => fs.readFileSync(__dirname + '/../views/rep
 const debugLogin = debug(`${package.name}:login`);
 const debugCallback = debug(`${package.name}:callback`);
 
-
-
 /**
 * Returns a router with two routes /login and /callback
 *
@@ -40,13 +38,17 @@ const debugCallback = debug(`${package.name}:callback`);
 module.exports = function (params) {
   const config = getConfig(params);
   const authorizeParams = config.authorizationParams;
+
   if (typeof express.Router === 'undefined') {
     throw new Error(`express-openid-client needs express@^3, current installed version ${require('express/package').version}`);
   }
+
   const router = express.Router();
+
   function getRedirectUri(req) {
     return urlJoin(config.baseURL, req.baseUrl || '', '/callback');
   }
+
   router.get('/login', async (req, res, next) => {
     next = cb(next).once();
     try {
@@ -72,8 +74,10 @@ module.exports = function (params) {
       next(err);
     }
   });
+
   let callbackMethod;
   let repost;
+
   switch (authorizeParams.response_mode) {
     case 'form_post':
       callbackMethod = 'post';
@@ -94,6 +98,7 @@ module.exports = function (params) {
         callbackMethod = 'get';
       }
   }
+
   router[callbackMethod]('/callback', async (req, res, next) => {
     next = cb(next).once();
     try {
@@ -131,11 +136,13 @@ module.exports = function (params) {
       next(err);
     }
   });
+
   if (repost) {
     router.get('/callback', async (req, res) => {
       res.set('Content-Type', 'text/html');
       res.send(getRepostView());
     });
   }
+
   return router;
 };
