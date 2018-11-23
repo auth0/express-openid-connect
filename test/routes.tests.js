@@ -24,7 +24,7 @@ describe('routes', function() {
     });
 
     it('should contain two routes', function() {
-      assert.equal(router.stack.length, 2);
+      assert.equal(router.stack.length, 3);
     });
 
     it('should contain a login route', function() {
@@ -81,7 +81,7 @@ describe('routes', function() {
       });
 
       it('should contain two routes', function() {
-        assert.equal(router.stack.length, 2);
+        assert.equal(router.stack.length, 3);
       });
 
       it('should contain a login route', function() {
@@ -134,7 +134,7 @@ describe('routes', function() {
       });
 
       it('should contain two routes', function() {
-        assert.equal(router.stack.length, 2);
+        assert.equal(router.stack.length, 3);
       });
 
       it('should contain a login route', function() {
@@ -186,7 +186,7 @@ describe('routes', function() {
       });
 
       it('should contain two routes', function() {
-        assert.equal(router.stack.length, 3);
+        assert.equal(router.stack.length, 4);
       });
 
       it('should contain a login route', function() {
