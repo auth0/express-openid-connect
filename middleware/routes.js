@@ -156,8 +156,10 @@ module.exports = function (params) {
         req.openid = { client, user, tokens };
       } else {
         const refreshToken = async () => {
-          const tokens = await client.refresh(tokens);
+          const currentTokens = new TokenSet(req.session.openidTokens);
+          const tokens = await client.refresh(currentTokens);
           const user = await config.profileMapper(tokens);
+          req.session.openidTokens = tokens;
           req.openid = { client, user, tokens, refreshToken };
         };
         req.openid = { client, user, tokens, refreshToken };
