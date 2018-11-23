@@ -21,8 +21,8 @@ module.exports.create = function(router) {
   });
 
   app.get('/user', (req, res) => {
-    console.dir(req.user);
-    res.json(req.user);
+    console.dir(req.openid);
+    res.json(req.openid.user);
   });
 
   app.post('/session', (req, res) => {

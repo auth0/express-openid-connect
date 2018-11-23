@@ -169,7 +169,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should contain the claims in the current session', function() {
-        assert.ok(this.currentSession.tokens);
+        assert.ok(this.currentSession.openidTokens);
       });
 
       it('should expose the user in the request', async function() {

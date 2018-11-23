@@ -5,7 +5,7 @@ Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client).
 This module exposes two middlewares:
 
 -  `.routes()`: install two routes one called `/login` and the other one `/callback`.
--  `.protect()`: is a middleware that redirects to `/login` if req.user is not set. This middleware preserves the url that the user tried to access in the session, so the callback can redirect back to it after a succesful login.
+-  `.protect()`: is a middleware that redirects to `/login` if `req.openid` is not set. This middleware preserves the url that the user tried to access in the session, so the callback can redirect back to it after a succesful login.
 
 ## Install
 
@@ -34,7 +34,7 @@ app.use(auth.routes({
 }))
 
 app.use('/user', auth.protect(), (req, res) => {
-  res.send(`hello ${req.user.name}`);
+  res.send(`hello ${req.openid.user.name}`);
 });
 
 app.get('/', (req, res) => res.send("hello!"));

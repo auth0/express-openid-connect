@@ -2,14 +2,24 @@
   "name": "express-openid-client",
   "version": "1.4.0",
   "description": "OpenID Connect middleware for express.js clients",
-  "main": "index.js",
-  "scripts": {
-    "test": "mocha",
-    "lint": "eslint . --ignore-path .gitignore"
-  },
-  "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
   "homepage": "https://github.com/auth0/express-openid-client",
   "license": "MIT",
+  "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ignore-path .gitignore",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "cb": "^0.1.0",
+    "debug": "^4.1.0",
+    "deprecate": "^1.1.0",
+    "joi": "^14.1.0",
+    "lodash": "^4.17.11",
+    "openid-client": "^2.4.5",
+    "request": "^2.88.0",
+    "url-join": "^4.0.0"
+  },
   "devDependencies": {
     "body-parser": "^1.18.3",
     "chai": "^4.2.0",
@@ -23,15 +33,5 @@
     "pem-jwk": "^1.5.1",
     "request-promise-native": "^1.0.5",
     "selfsigned": "^1.10.4"
-  },
-  "dependencies": {
-    "cb": "^0.1.0",
-    "debug": "^4.1.0",
-    "deprecate": "^1.1.0",
-    "joi": "^14.1.0",
-    "lodash": "^4.17.11",
-    "openid-client": "^2.4.5",
-    "request": "^2.88.0",
-    "url-join": "^4.0.0"
   }
 }

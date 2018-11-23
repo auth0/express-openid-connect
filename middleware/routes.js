@@ -127,7 +127,7 @@ module.exports = function (params) {
       }
 
       debugCallback('tokens: %O', tokenSet);
-      req.session.tokens = tokenSet;
+      req.session.openidTokens = tokenSet;
 
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
@@ -147,12 +147,12 @@ module.exports = function (params) {
   }
 
   router.use(async (req, res, next) => {
-    if (!req.session.tokens) { return next(); }
+    if (!req.session.openidTokens) { return next(); }
     try {
-      const client = await getClient(config);
-      req.tokens = new TokenSet(req.session.tokens);
-      req.user = await config.profileMapper(req.tokens);
-      req.openIDClient = client;
+      const client  = await getClient(config);
+      const tokens = new TokenSet(req.session.openidTokens);
+      const user = await config.profileMapper(tokens);
+      req.openid = { client, user, tokens };
       next();
     } catch(err) {
       next(err);

@@ -8,7 +8,7 @@ const UnauthorizedError = require('../lib/UnauthorizedError');
 module.exports = function() {
   return async function(req, res, next) {
 
-    if (req.user) {
+    if (req.openid) {
       if (req.tokens.expired()) {
         try {
           req.tokens = await req.openIDClient.refresh(req.tokens);
