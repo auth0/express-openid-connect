@@ -7,23 +7,21 @@ const UnauthorizedError = require('../lib/UnauthorizedError');
 */
 module.exports = function() {
   return async function(req, res, next) {
-
-    if (req.openid) {
-      if (req.tokens.expired()) {
-        try {
-          req.tokens = await req.openIDClient.refresh(req.tokens);
-          req.session.tokens = req.tokens;
-        } catch(err) {
-          return next(new UnauthorizedError(401, err.message));
-        }
+    if (!req.openid) {
+      if (req.method === 'GET') {
+        req.session.returnTo = req.originalUrl;
       }
-      return next();
+      res.redirect('/login');
     }
 
-    if (req.method === 'GET') {
-      req.session.returnTo = req.originalUrl;
+    if (req.openid.tokens.expired() && req.openid.refreshToken) {
+      try {
+        await req.openid.refreshToken();
+      } catch(err) {
+        return next(new UnauthorizedError(401, err.message));
+      }
     }
 
-    res.redirect('/login');
+    next();
   };
 };

@@ -152,7 +152,16 @@ module.exports = function (params) {
       const client  = await getClient(config);
       const tokens = new TokenSet(req.session.openidTokens);
       const user = await config.profileMapper(tokens);
-      req.openid = { client, user, tokens };
+      if (!tokens.refresh_token) {
+        req.openid = { client, user, tokens };
+      } else {
+        const refreshToken = async () => {
+          const tokens = await client.refresh(tokens);
+          const user = await config.profileMapper(tokens);
+          req.openid = { client, user, tokens, refreshToken };
+        };
+        req.openid = { client, user, tokens, refreshToken };
+      }
       next();
     } catch(err) {
       next(err);
