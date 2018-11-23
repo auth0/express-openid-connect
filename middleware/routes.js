@@ -151,7 +151,7 @@ module.exports = function (params) {
     try {
       const client = await getClient(config);
       req.tokens = new TokenSet(req.session.tokens);
-      req.user = config.profileMapper(req.tokens);
+      req.user = await config.profileMapper(req.tokens);
       req.openIDClient = client;
       next();
     } catch(err) {
