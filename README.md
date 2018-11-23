@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/auth0/express-openid-client.svg?branch=master)](https://travis-ci.org/auth0/express-openid-client)
+
 Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client).
 
 This module exposes two middlewares:
