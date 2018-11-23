@@ -3,7 +3,7 @@ Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client).
 This module exposes two middlewares:
 
 -  `.routes()`: install two routes one called `/login` and the other one `/callback`.
--  `.protect()`: is a middleware that redirects to `/login` if req.session.user is empty. This middleware preserves the url that the user tried to access in the session, so the callback can redirect back to it after a succesful login.
+-  `.protect()`: is a middleware that redirects to `/login` if req.user is not set. This middleware preserves the url that the user tried to access in the session, so the callback can redirect back to it after a succesful login.
 
 ## Install
 
@@ -32,7 +32,7 @@ app.use(auth.routes({
 }))
 
 app.use('/user', auth.protect(), (req, res) => {
-  res.send(`hello ${req.session.user.name}`);
+  res.send(`hello ${req.user.name}`);
 });
 
 app.get('/', (req, res) => res.send("hello!"));
@@ -54,6 +54,40 @@ then:
 const auth = require('express-openid-client');
 app.use(auth.routes())
 ```
+
+## auth.routes parameters
+
+In general, you won't need to configure this middleware besides the required parameters that can be specified through environment variables.
+
+| Name                | Default                         | Description                                                                    |
+|---------------------|---------------------------------|--------------------------------------------------------------------------------|
+| issuerBaseURL       | `env.ISSUER_BASE_URL`           | The url address for the token issuer.                                          |
+| baseURL             | `env.BASE_URL`                  | The url of the web application where you are installing the router.            |
+| clientID            | `env.CLIENT_ID`                 | The client id.                                                                 |
+| clientSecret        | `env.CLIENT_SECRET`             | The client secret, only required for some grants.                              |
+| clockTolerance      | `5`                             | The clock's tolerance in seconds for token verification.                       |
+| profileMapper       | `(tokenSet) => tokenSet.claims` | An async function receiving a tokenset and returning the profile for req.user. |
+| authorizationParams | See bellow                      | The parameters for the authorization call. Defaults to                         |
+
+Default value for `authorizationParams` is:
+
+```javascript
+{
+  response_type: 'id_token',
+  response_mode: 'form_post',
+  scope: 'openid profile email'
+}
+```
+
+Commonly used `authorizationParams`:
+
+| Name                | Default                | Description                                                                                                  |
+|---------------------|------------------------|--------------------------------------------------------------------------------------------------------------|
+| response_type       | **Required**           | The desired authorization processing flow, including what parameters are returned from the endpoints used.   |
+| response_mode       | `undefined` / optional | The mechanism to be used for returning Authorization Response parameters from the Authorization Endpoint.    |
+| scope               | `openid profile email` | The scope of the access token.                                                                               |
+| audience            | `undefined` / optional | The audience for the access token.                                                                           |
+
 
 ## Debugging
 

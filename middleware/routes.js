@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const urlJoin = require('url-join');
 const cb = require('cb');
 const debug = require('debug');
+const { TokenSet } = require('openid-client');
 const { get: getConfig } = require('../lib/config');
 const UnauthorizedError = require('../lib/UnauthorizedError');
 const _ = require('lodash');
@@ -24,11 +25,11 @@ const debugCallback = debug(`${package.name}:callback`);
 * @param {string} [params.clientID] The client id.
 * @param {string} [params.clientSecret] The client secret, only required for some grants.
 * @param {string} [params.clockTolerance=5] The clock's tolerance in seconds for token verification.
+* @param {function} [params.profileMapper] An async function receiving a tokenset and returning the profile for req.user.
 * @param {Object} [params.authorizationParams] The parameters for the authorization call. Defaults to
 * - response_type: "id_token"
 * - reponse_mode: "form_post"
 * - scope: "openid profile email"
-*
 * @param {string} params.authorizationParams.response_type The response type.
 * @param {string} [params.authorizationParams.response_mode] The response mode.
 * @param {string} [params.authorizationParams.scope=openid profile email] The scope.
@@ -107,10 +108,12 @@ module.exports = function (params) {
       delete req.session.nonce;
       delete req.session.state;
       debugCallback('session parameters', { nonce, state });
+
       const redirect_uri = getRedirectUri(req);
-      debugCallback('parsing response for callback parameters');
+
       const callbackParams = client.callbackParams(req);
       debugCallback('callback parameters: %O', callbackParams);
+
       let tokenSet;
       try {
         tokenSet = await client.authorizationCallback(redirect_uri, callbackParams, {
@@ -118,15 +121,14 @@ module.exports = function (params) {
           state,
           response_type: authorizeParams.response_type,
         });
-      }
-      catch (err) {
+      } catch (err) {
         debugCallback('error in the authorization callback: %s', err.message);
         throw new UnauthorizedError(401, err);
       }
+
       debugCallback('tokens: %O', tokenSet);
       req.session.tokens = tokenSet;
-      req.session.user = tokenSet.claims;
-      debugCallback('user: %O', req.session.user);
+
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
       debugCallback('redirecting to %s', returnTo);
@@ -143,6 +145,19 @@ module.exports = function (params) {
       res.send(getRepostView());
     });
   }
+
+  router.use(async (req, res, next) => {
+    if (!req.session.tokens) { return next(); }
+    try {
+      const client = await getClient(config);
+      req.tokens = new TokenSet(req.session.tokens);
+      req.user = config.profileMapper(req.tokens);
+      req.openIDClient = client;
+      next();
+    } catch(err) {
+      next(err);
+    }
+  });
 
   return router;
 };

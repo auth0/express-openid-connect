@@ -1,10 +1,6 @@
 const nock = require('nock');
-const chaiAsPromised = require('chai-as-promised');
-const chai = require('chai');
 const wellKnown = require('./fixture/well-known.json');
 const certs = require('./fixture/cert');
-
-chai.use(chaiAsPromised);
 
 before(function() {
   nock('https://flosser.auth0.com', { allowUnmocked: true })
