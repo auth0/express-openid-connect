@@ -23,7 +23,8 @@ function testCase(params) {
     const jar = request.jar();
 
     before(async function() {
-      baseUrl = await server.create(router);
+      this.jar = jar;
+      this.baseUrl = baseUrl = await server.create(router);
       await request.post({
         uri: '/session',
         baseUrl, jar,
@@ -169,6 +170,16 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
       it('should contain the claims in the current session', function() {
         assert.ok(this.currentSession.tokens);
+      });
+
+      it('should expose the user in the request', async function() {
+        const res = await request.get('/user', {
+          baseUrl: this.baseUrl,
+          json: true,
+          jar: this.jar
+        });
+        console.dir(res.body);
+        assert.equal(res.body.nickname, 'jjjj');
       });
     }
   }));
