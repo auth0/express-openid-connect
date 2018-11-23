@@ -90,6 +90,14 @@ Commonly used `authorizationParams`:
 | scope               | `openid profile email` | The scope of the access token.                                                                               |
 | audience            | `undefined` / optional | The audience for the access token.                                                                           |
 
+## Session and Context
+
+Your application will likely use two artifacts from this middleware:
+
+-  `req.openid.user`: contains the user information, use this if you need display an attribute of the user.
+-  `req.openid.tokens.access_token`: contains the access token, use this for calling an API.
+
+This is populated by the rotur on every request using the TokenSet (ie. the result of the token endpoint) stored in the session as `req.session.openidTokens`.
 
 ## Debugging
 
