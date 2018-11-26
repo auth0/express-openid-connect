@@ -123,7 +123,7 @@ module.exports = function (params) {
         });
       } catch (err) {
         debugCallback('error in the authorization callback: %s', err.message);
-        throw new UnauthorizedError(401, err);
+        throw new UnauthorizedError('authorization_callback', err);
       }
 
       debugCallback('tokens: %O', tokenSet);

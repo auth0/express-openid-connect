@@ -18,7 +18,7 @@ module.exports = function() {
       try {
         await req.openid.refreshToken();
       } catch(err) {
-        return next(new UnauthorizedError(401, err.message));
+        return next(new UnauthorizedError('refreshing_token', err));
       }
     }
 
