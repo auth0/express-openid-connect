@@ -12,11 +12,12 @@
   },
   "dependencies": {
     "cb": "^0.1.0",
+    "clone": "^2.1.2",
     "debug": "^4.1.0",
     "deprecate": "^1.1.0",
     "joi": "^14.1.0",
-    "lodash": "^4.17.11",
     "openid-client": "^2.4.5",
+    "p-memoize": "^2.1.0",
     "request": "^2.88.0",
     "url-join": "^4.0.0"
   },

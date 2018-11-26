@@ -6,12 +6,12 @@ const debug = require('debug');
 const { TokenSet } = require('openid-client');
 const { get: getConfig } = require('../lib/config');
 const UnauthorizedError = require('../lib/UnauthorizedError');
-const _ = require('lodash');
+const memoize = require('p-memoize');
 const fs = require('fs');
 const package = require('../package.json');
 const { get: getClient } = require('../lib/client');
 
-const getRepostView = _.memoize(() => fs.readFileSync(__dirname + '/../views/repost.html'));
+const getRepostView = memoize(() => fs.readFileSync(__dirname + '/../views/repost.html'));
 
 const debugLogin = debug(`${package.name}:login`);
 const debugCallback = debug(`${package.name}:callback`);
