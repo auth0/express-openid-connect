@@ -108,10 +108,12 @@ module.exports = function (params) {
       }
       try {
         const client = await getClient(config);
-        client.endSessionUrl({
+        const url = client.endSessionUrl({
           post_logout_redirect_uri: returnURL,
-          id_token_hint: req.openid.tokens
+          id_token_hint: req.openid.tokens,
+          client_id: config.clientID
         });
+        res.redirect(url);
       } catch(err) {
         next(err);
       }
@@ -121,7 +123,7 @@ module.exports = function (params) {
   router.use(async (req, res, next) => {
     res.openid = {
       login: login(req, res, next),
-      logout: logout(req, res, next)
+      logout: () => res.redirect(config.baseURL)
     };
     if (!req.session.openidTokens) { return next(); }
     try {
@@ -139,6 +141,7 @@ module.exports = function (params) {
         Object.assign(req.openid, { user, tokens });
       };
       req.openid = { client, user, tokens, refreshToken };
+      res.openid.logout = logout(req, res, next);
       next();
     } catch(err) {
       next(err);
@@ -146,7 +149,9 @@ module.exports = function (params) {
   });
 
   if (config.routes) {
-    router.get('/login', (req, res) => res.openid.login());
+    router.get('/login', (req, res) => {
+      res.openid.login({ returnTo: config.baseURL });
+    });
     router.get('/logout', (req, res) => res.openid.logout());
   }
 
