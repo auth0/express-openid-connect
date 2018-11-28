@@ -1,0 +1,40 @@
+{
+  "name": "express-openid-connect",
+  "version": "0.0.1",
+  "description": "An Express.js middleware to protect OpenID Connect web applications.",
+  "homepage": "https://github.com/auth0/express-openid-connect",
+  "license": "MIT",
+  "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ignore-path .gitignore",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "cb": "^0.1.0",
+    "clone": "^2.1.2",
+    "debug": "^4.1.0",
+    "http-errors": "^1.7.1",
+    "joi": "^14.1.0",
+    "openid-client": "^2.4.5",
+    "p-memoize": "^2.1.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.5",
+    "url-join": "^4.0.0"
+  },
+  "devDependencies": {
+    "body-parser": "^1.18.3",
+    "chai": "^4.2.0",
+    "cookie-session": "^2.0.0-beta.3",
+    "eslint": "^5.9.0",
+    "express": "^4.16.4",
+    "jsdom": "^13.0.0",
+    "jsonwebtoken": "^8.4.0",
+    "mocha": "^5.2.0",
+    "nock": "^10.0.2",
+    "pem-jwk": "^1.5.1",
+    "proxyquire": "^2.1.0",
+    "selfsigned": "^1.10.4",
+    "sinon": "^7.1.1"
+  }
+}
