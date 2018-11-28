@@ -43,11 +43,13 @@ app.use('/', (req, res) => {
 });
 ```
 
-- Every route after the `auth()` middleware (ie: the home page) requires authentication.
+- Every route after the `auth()` requires authentication.
 - If a user try to access a resource without being authenticated, the application will trigger the authentication process. After completion the user is redirected back to the resource.
 - The application also gets a `GET /login` and `GET /logout` route for easy linking.
 
-This application needs the following environment variables:
+
+
+This application needs the following environment variables to work:
 
 -  `ISSUER_BASE_URL`: The url of the issuer.
 -  `CLIENT_ID`: The client id of the application.
@@ -55,7 +57,7 @@ This application needs the following environment variables:
 
 For more examples check the [EXAMPLES](EXAMPLES.md) document.
 
-For a complete description of API check the [API](API.md) document.
+The `auth()` middleware can be customized, please check the [API](API.md) document.
 
 ## License
 
