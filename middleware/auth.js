@@ -111,7 +111,6 @@ module.exports = function (params) {
         const url = client.endSessionUrl({
           post_logout_redirect_uri: returnURL,
           id_token_hint: req.openid.tokens,
-          client_id: config.clientID
         });
         res.redirect(url);
       } catch(err) {
