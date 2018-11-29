@@ -29,7 +29,7 @@ const debugCallback = debug(`${package.name}:callback`);
 * @param {Function} [params.getUser] An async function receiving a tokenset and returning the profile for req.user.
 * @param {boolean|Function} [params.required=true] a boolean to indicate that every route after this middleware requires authentication or
 * a function receiving a request and return a boolean to determine which routes needs authentication.
-* @param {boolean} [handleUnauthorizedErrors=true] automatically handle unauthorized errors by triggering the authentication process
+* @param {boolean} [errorOnRequiredAuth=false] automatically handle unauthorized errors by triggering the authentication process
 * @param {boolean|Function} [params.routes=true] a boolean indicating if the routes /login and /logout should be added to the application
 * @param {Object} [params.authorizationParams] The parameters for the authorization call. Defaults to
 * - response_type: "id_token"
@@ -127,7 +127,8 @@ module.exports = function (params) {
   router.use(async (req, res, next) => {
     res.openid = {
       login: login(req, res, next),
-      logout: () => res.redirect(config.baseURL)
+      logout: () => res.redirect(config.baseURL),
+      errorOnRequiredAuth: config.errorOnRequiredAuth,
     };
     if (!req.session.openidTokens) { return next(); }
     try {
@@ -194,13 +195,11 @@ module.exports = function (params) {
 
       const redirect_uri = getRedirectUri(req);
 
-
       let tokenSet;
 
       try {
         const callbackParams = client.callbackParams(req);
         debugCallback('callback parameters: %O', callbackParams);
-
         tokenSet = await client.authorizationCallback(redirect_uri, callbackParams, {
           nonce,
           state,
@@ -240,16 +239,6 @@ module.exports = function (params) {
     } else {
       router.use(requiresAuthMiddleware);
     }
-  }
-
-  if(config.handleUnauthorizedErrors) {
-    router.use((err, req, res, next) => {
-      if (err.statusCode === 401) {
-        if(req.xhr) { return res.sendStatus(401); }
-        return res.openid.login();
-      }
-      next(err);
-    });
   }
 
   return router;

@@ -70,12 +70,14 @@ app.use(auth());
 
 The middleware store the [openid-client TokenSet](https://www.npmjs.com/package/openid-client#tokenset) in the user's session.
 
-Every `req` object is augmented with the following properties:
+Every `req` object is augmented with the following properties when the request is authenticated
 
 -  `req.openid.user`: contains the user information, use this if you need display an attribute of the user. You can change what's end up here by using the `getUser` parameter of the `auth` middleware.
 -  `req.openid.tokens`: is the instance of [TokenSet](https://www.npmjs.com/package/openid-client#tokenset).
 -  `req.openid.client`: is an instance of te [OpenID Client](https://www.npmjs.com/package/openid-client).
 -  `req.openid.refreshToken()`: in case you request for an offline access you can use this promise-returning function to get a fresh `req.openid.tokens`. Note that this is done for you on every route requiring authentication.
+
+If the request is not authenticated `req.openid` is `undefined`.
 
 Every `res` object gets the following methods:
 
@@ -84,6 +86,73 @@ Every `res` object gets the following methods:
   -  `params.authorizationParams`: additional parameters for the authorization call.
 -  `res.openid.logout(params)`: trigger the openid connect logout if supporter by the issuer.
   -  `params.returnTo`: The url to return to after sign out. Defaults to the `baseURL` for other methods.
+
+## Authorization handling
+
+By default the library triggers the login process when authentication is required.
+
+An anonymous request to the home page in this case will trigger the login process:
+```js
+app.use(auth()); //Remember that required is true by default
+app.get('/', (req, res) => res.render('home'));
+```
+
+The same happens in this case:
+
+```js
+app.use(auth()); //Remember that required is true by default
+app.get('/', requiresAuth(), (req, res) => res.render('home'));
+```
+
+If you remove the `auth()` middleware above like this:
+
+```js
+// app.use(auth()); //Remember that required is true by default
+app.get('/', requiresAuth(), (req, res) => res.render('home'));
+```
+
+Instead of triggering the login process we get a 401 Unauthorized error.
+
+It is a best practice to decouple your application logic from this library. If you need to raise a 401 error on your own logic and `requiresAuth` is not enough, you can add the `unauthorizedHandler` from this library:
+
+```js
+const {
+  auth,
+  requiresAuth,
+  unauthorizedHandler
+} = require('express-openid-connect');
+
+app.use(auth());
+
+// your routes go here
+app.get('/a-route', (req, res, next) => {
+  if (condition) {
+    return next(new UnauthorizedError('unauthorized because of xyz'));
+  }
+});
+
+//trigger login transactions on 401 errors.
+app.use(unauthorizedHandler());
+```
+
+If you need an special logic for handling 401s, including the errors raised by this library, you can set `errorOnRequiredAuth` to `true` like this:
+
+```js
+const { auth, requiresAuth } = require('express-openid-connect');
+
+app.use(auth({ errorOnRequiredAuth: true }));
+
+// your routes go here
+
+//handle unauthorized errors with the unauthorizedHandler or
+//with your own middleware like this:
+app.use((err, req, res, next) => {
+ if (err.statusCode === 401) {
+    return res.openid.login(); //trigger the login process like the `unauthorizedHandler`.
+  }
+  next(err);
+});
+```
 
 ## Debugging
 

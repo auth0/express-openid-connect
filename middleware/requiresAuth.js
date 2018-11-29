@@ -11,6 +11,9 @@ module.exports = function() {
                           !req.openid.user;
 
     if (requiresLogin) {
+      if (res.openid && res.openid.login && !res.openid.errorOnRequiredAuth) {
+        return res.openid.login();
+      }
       return next(createError.Unauthorized('Authentication is required for this route.'));
     }
 
