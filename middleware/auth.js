@@ -97,25 +97,30 @@ module.exports = function (params) {
     return async function(params = {}) {
       next = cb(next).once();
       const returnURL = params.returnTo || config.baseURL;
-      if (req.session || !req.openid) {
-        if (typeof req.session.destroy === 'function') {
-          req.session.destroy();
-        } else {
-          req.session = null;
-        }
-      } else {
+
+      if (!req.session || !req.openid) {
         return res.redirect(returnURL);
       }
-      try {
-        const client = await getClient(config);
-        const url = client.endSessionUrl({
-          post_logout_redirect_uri: returnURL,
-          id_token_hint: req.openid.tokens,
-        });
-        res.redirect(url);
-      } catch(err) {
-        next(err);
+
+      if (typeof req.session.destroy === 'function') {
+        req.session.destroy();
+      } else {
+        req.session = null;
       }
+
+      res.redirect(returnURL);
+
+      //This could be used in the future to logout from the OP.
+      // try {
+      //   const client = await getClient(config);
+      //   const url = client.endSessionUrl({
+      //     post_logout_redirect_uri: returnURL,
+      //     id_token_hint: req.openid.tokens,
+      //   });
+      //   res.redirect(url);
+      // } catch(err) {
+      //   next(err);
+      // }
     };
   }
 

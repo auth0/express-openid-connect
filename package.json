@@ -19,7 +19,6 @@
     "openid-client": "^2.4.5",
     "p-memoize": "^2.1.0",
     "request": "^2.88.0",
-    "request-promise-native": "^1.0.5",
     "url-join": "^4.0.0"
   },
   "devDependencies": {
@@ -34,6 +33,7 @@
     "nock": "^10.0.2",
     "pem-jwk": "^1.5.1",
     "proxyquire": "^2.1.0",
+    "request-promise-native": "^1.0.5",
     "selfsigned": "^1.10.4",
     "sinon": "^7.1.1"
   }
