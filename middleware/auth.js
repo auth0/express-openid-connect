@@ -29,7 +29,9 @@ const debugCallback = debug(`${package.name}:callback`);
 * @param {Function} [params.getUser] An async function receiving a tokenset and returning the profile for req.user.
 * @param {boolean|Function} [params.required=true] a boolean to indicate that every route after this middleware requires authentication or
 * a function receiving a request and return a boolean to determine which routes needs authentication.
-* @param {boolean} [errorOnRequiredAuth=false] automatically handle unauthorized errors by triggering the authentication process
+* @param {boolean} [params.errorOnRequiredAuth=false] automatically handle unauthorized errors by triggering the authentication process
+* @param {boolean} [params.idpLogout=false] logout the user from the identity provider on logout
+* @param {boolean} [params.auth0Logout=false] use the auth0's logout mechanism if OpenID Connect session management is not supported
 * @param {boolean|Function} [params.routes=true] a boolean indicating if the routes /login and /logout should be added to the application
 * @param {Object} [params.authorizationParams] The parameters for the authorization call. Defaults to
 * - response_type: "id_token"
@@ -108,19 +110,20 @@ module.exports = function (params) {
         req.session = null;
       }
 
-      res.redirect(returnURL);
+      if (!config.idpLogout) {
+        return res.redirect(returnURL);
+      }
 
-      //This could be used in the future to logout from the OP.
-      // try {
-      //   const client = await getClient(config);
-      //   const url = client.endSessionUrl({
-      //     post_logout_redirect_uri: returnURL,
-      //     id_token_hint: req.openid.tokens,
-      //   });
-      //   res.redirect(url);
-      // } catch(err) {
-      //   next(err);
-      // }
+      try {
+        const client = await getClient(config);
+        const url = client.endSessionUrl({
+          post_logout_redirect_uri: returnURL,
+          id_token_hint: req.openid.tokens,
+        });
+        res.redirect(url);
+      } catch(err) {
+        next(err);
+      }
     };
   }
 
@@ -240,6 +243,10 @@ module.exports = function (params) {
       router.use(requiresAuthMiddleware);
     }
   }
+
+  //We do this to either speed up the first request
+  // or fail fast, the first request
+  getClient(config);
 
   return router;
 };

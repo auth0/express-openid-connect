@@ -6,9 +6,11 @@ Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client).
 
 The purpose of this middleware is to give a tool to our customers to easily add authentication to their applications, the goals for this project are:
 
-1.  Secure by default.
-2.  A single line of code should be enough for most of the cases.
-3.  The best defaults we know after many years in the space.
+1.  **Secure by default**:
+  -  The middleware implements the best practices to work with OpenID Connect providers.
+  -  All routes after the middleware require authentication by default.
+2.  **Simple setup**: Pain-free configuration by using OpenID Connect metadata and the best defaults.
+3.  **Standard**: The library is standard enough to work with many OpenID Connect providers.
 
 ## Install
 

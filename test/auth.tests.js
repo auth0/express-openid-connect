@@ -16,16 +16,16 @@ const filterRoute = (method, path) => {
 
 describe('auth', function() {
   describe('default', () => {
-    const router = expressOpenid.auth({
-      clientID: '123',
-      baseURL: 'https://myapp.com',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      required: false
-    });
 
-    let baseUrl;
+    let baseUrl, router;
 
     before(async function() {
+      router = expressOpenid.auth({
+        clientID: '123',
+        baseURL: 'https://myapp.com',
+        issuerBaseURL: 'https://flosser.auth0.com',
+        required: false
+      });
       baseUrl = await server.create(router);
     });
 
@@ -67,20 +67,19 @@ describe('auth', function() {
 
   describe('implied response_mode', () => {
     describe('response_type=none', () => {
-      const router = expressOpenid.auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
-        authorizationParams: {
-          response_mode: undefined,
-          response_type: 'none',
-        },
-        required: false
-      });
-
-      let baseUrl;
+      let baseUrl, router;
 
       before(async function() {
+        router = expressOpenid.auth({
+          clientID: '123',
+          baseURL: 'https://myapp.com',
+          issuerBaseURL: 'https://flosser.auth0.com',
+          authorizationParams: {
+            response_mode: undefined,
+            response_type: 'none',
+          },
+          required: false
+        });
         baseUrl = await server.create(router);
       });
 
@@ -108,20 +107,20 @@ describe('auth', function() {
     });
 
     describe('response_type=code', () => {
-      const router = expressOpenid.auth({
-        clientID: '123',
-        clientSecret: '456',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
-        authorizationParams: {
-          response_mode: undefined,
-          response_type: 'code',
-        }
-      });
-
       let baseUrl;
+      let router;
 
       before(async function() {
+        router = router = expressOpenid.auth({
+          clientID: '123',
+          clientSecret: '456',
+          baseURL: 'https://myapp.com',
+          issuerBaseURL: 'https://flosser.auth0.com',
+          authorizationParams: {
+            response_mode: undefined,
+            response_type: 'code',
+          }
+        });
         baseUrl = await server.create(router);
       });
 
@@ -150,19 +149,19 @@ describe('auth', function() {
     });
 
     describe('response_type=id_token', () => {
-      const router = expressOpenid.auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
-        authorizationParams: {
-          response_mode: undefined,
-          response_type: 'id_token',
-        }
-      });
-
+      let router;
       let baseUrl;
 
       before(async function() {
+        router = router = expressOpenid.auth({
+          clientID: '123',
+          baseURL: 'https://myapp.com',
+          issuerBaseURL: 'https://flosser.auth0.com',
+          authorizationParams: {
+            response_mode: undefined,
+            response_type: 'id_token',
+          }
+        });
         baseUrl = await server.create(router);
       });
 

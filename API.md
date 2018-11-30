@@ -30,6 +30,8 @@ In general, you won't need to configure this middleware besides the required par
 | required            | `true`                            | If true requires authentication for all the routes in the stack. You can also provide a function to determine if is required based on the request.               |
 | handleUnauthorizedErrors | `true`                     | Install a middleware that handles Unauthorized/401 errors by triggering the login process. |
 | routes              | `true`                          | Installs the `GET /login` and `GET /logout` route.                              |
+| idpLogout           | `false`                         | Logout the user from the identity provider on logout                            |
+| auth0Logout         | `false`                         | Enable Auth0's non-compliant logout feature, only if Auth0 can be detected and the Auth0 instance does not support OpenID Connect session management. |
 | authorizationParams | See bellow                      | The parameters for the authorization call.                                      |
 
 Default value for `authorizationParams` is:

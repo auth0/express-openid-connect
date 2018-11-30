@@ -50,6 +50,45 @@ describe('config', function() {
     });
   });
 
+  describe('with auth0Logout', function() {
+    const config = getConfig({
+      clientID: '123',
+      issuerBaseURL: 'https://flosser.auth0.com',
+      baseURL: 'https://jjj.com',
+      auth0Logout: true
+    });
 
+    it('should set idpLogout to true', function() {
+      assert.equal(config.auth0Logout, true);
+      assert.equal(config.idpLogout, true);
+    });
+  });
+
+  describe('without auth0Logout nor idpLogout', function() {
+    const config = getConfig({
+      clientID: '123',
+      issuerBaseURL: 'https://flosser.auth0.com',
+      baseURL: 'https://jjj.com',
+    });
+
+    it('should set both to false', function() {
+      assert.equal(config.auth0Logout, false);
+      assert.equal(config.idpLogout, false);
+    });
+  });
+
+  describe('with idpLogout', function() {
+    const config = getConfig({
+      clientID: '123',
+      issuerBaseURL: 'https://flosser.auth0.com',
+      baseURL: 'https://jjj.com',
+      idpLogout: true
+    });
+
+    it('should set both to false', function() {
+      assert.equal(config.auth0Logout, false);
+      assert.equal(config.idpLogout, true);
+    });
+  });
 
 });
