@@ -133,7 +133,12 @@ module.exports = function (params) {
       logout: () => res.redirect(config.baseURL),
       errorOnRequiredAuth: config.errorOnRequiredAuth,
     };
+
+    req.isAuthenticated = () => req.openid &&
+                                req.openid.user ? true : false;
+
     if (!req.session.openidTokens) { return next(); }
+
     try {
       const client  = await getClient(config);
       const tokens = new TokenSet(req.session.openidTokens);

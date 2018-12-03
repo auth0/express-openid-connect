@@ -79,6 +79,8 @@ Every `req` object is augmented with the following properties when the request i
 -  `req.openid.client`: is an instance of te [OpenID Client](https://www.npmjs.com/package/openid-client).
 -  `req.openid.refreshToken()`: in case you request for an offline access you can use this promise-returning function to get a fresh `req.openid.tokens`. Note that this is done for you on every route requiring authentication.
 
+-  `req.isAuthenticated()`: returns true if the request is authenticated.
+
 If the request is not authenticated `req.openid` is `undefined`.
 
 Every `res` object gets the following methods:
