@@ -1,9 +1,6 @@
 const express = require('express');
-const crypto = require('crypto');
-const urlJoin = require('url-join');
 const cb = require('cb');
 const debug = require('debug');
-const { TokenSet } = require('openid-client');
 const createError = require('http-errors');
 const { get: getConfig } = require('../lib/config');
 const memoize = require('p-memoize');
@@ -11,10 +8,10 @@ const fs = require('fs');
 const package = require('../package.json');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
+const { RequestContext, ResponseContext } = require('../lib/context');
 
 const getRepostView = memoize(() => fs.readFileSync(__dirname + '/../views/repost.html'));
 
-const debugLogin = debug(`${package.name}:login`);
 const debugCallback = debug(`${package.name}:callback`);
 
 /**
@@ -53,108 +50,16 @@ module.exports = function (params) {
 
   const router = express.Router();
 
-  function getRedirectUri(req) {
-    return urlJoin(config.baseURL, req.baseUrl || '', '/callback');
-  }
-
-  function login(req, res, next) {
-    return async function(params = {}) {
-      next = cb(next).once();
-      try {
-        debugLogin('building the openid client %O', config);
-        const client = await getClient(config);
-        const redirect_uri = getRedirectUri(req);
-        if (typeof req.session === 'undefined') {
-          return next(new Error('This router needs the session middleware'));
-        }
-        req.session.nonce = crypto.randomBytes(8).toString('hex');
-        req.session.state = crypto.randomBytes(10).toString('hex');
-
-        if(params.returnTo) {
-          req.session.returnTo = params.returnTo;
-        } else if (req.method === 'GET') {
-          req.session.returnTo = req.originalUrl;
-        } else {
-          req.session.returnTo = config.baseURL;
-        }
-
-        const authParams = Object.assign({
-          nonce: req.session.nonce,
-          state: req.session.state,
-          redirect_uri
-        }, authorizeParams, params.authorizationParams || {});
-
-        debugLogin('building the authorization url %O', authParams);
-        const authorizationUrl = client.authorizationUrl(authParams);
-
-        debugLogin('redirecting to %s', authorizationUrl);
-        res.redirect(authorizationUrl);
-      } catch (err) {
-        next(err);
-      }
-    };
-  }
-
-  function logout(req, res, next) {
-    return async function(params = {}) {
-      next = cb(next).once();
-      const returnURL = params.returnTo || config.baseURL;
-
-      if (!req.session || !req.openid) {
-        return res.redirect(returnURL);
-      }
-
-      if (typeof req.session.destroy === 'function') {
-        req.session.destroy();
-      } else {
-        req.session = null;
-      }
-
-      if (!config.idpLogout) {
-        return res.redirect(returnURL);
-      }
-
-      try {
-        const client = await getClient(config);
-        const url = client.endSessionUrl({
-          post_logout_redirect_uri: returnURL,
-          id_token_hint: req.openid.tokens,
-        });
-        res.redirect(url);
-      } catch(err) {
-        next(err);
-      }
-    };
-  }
-
   router.use(async (req, res, next) => {
-    res.openid = {
-      login: login(req, res, next),
-      logout: () => res.redirect(config.baseURL),
-      errorOnRequiredAuth: config.errorOnRequiredAuth,
-    };
-
-    req.isAuthenticated = () => req.openid &&
-                                req.openid.user ? true : false;
-
-    if (!req.session.openidTokens) { return next(); }
 
     try {
-      const client  = await getClient(config);
-      const tokens = new TokenSet(req.session.openidTokens);
-      const user = await config.getUser(tokens);
-      const refreshToken = async () => {
-        if (!tokens.refresh_token) {
-          throw new Error("The tokenset can't be refreshed because there isn't a refresh token. Try adding the offline_access scope.");
-        }
-        if (!tokens.expired()) { return; }
-        const newTokens = await client.refresh(tokens);
-        req.session.openidTokens = Object.assign(tokens, newTokens);
-        const user = await config.getUser(tokens);
-        Object.assign(req.openid, { user, tokens });
-      };
-      req.openid = { client, user, tokens, refreshToken };
-      res.openid.logout = logout(req, res, next);
+      req.openid = new RequestContext(config, req, res, next);
+      await req.openid.load();
+
+      res.openid = new ResponseContext(config, req, res, next);
+
+      req.isAuthenticated = () => req.openid.isAuthenticated;
+
       next();
     } catch(err) {
       next(err);
@@ -195,13 +100,13 @@ module.exports = function (params) {
   router[callbackMethod]('/callback', async (req, res, next) => {
     next = cb(next).once();
     try {
-      const client = await getClient(config);
       const { nonce, state } = req.session;
       delete req.session.nonce;
       delete req.session.state;
       debugCallback('session parameters', { nonce, state });
 
-      const redirect_uri = getRedirectUri(req);
+      const redirect_uri = res.openid.getRedirectUri();
+      const client = req.openid.client;
 
       let tokenSet;
 

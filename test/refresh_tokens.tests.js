@@ -30,14 +30,18 @@ describe('refresh token', function() {
     const jar = request.jar();
 
     before(async function() {
+      const getClientStub =  {
+        get: () => {
+          return {
+            refresh: refreshStub
+          };
+        },
+      };
       const routes = proxyquire('../middleware/auth', {
-        '../lib/client': {
-          get: () => {
-            return {
-              refresh: refreshStub
-            };
-          }
-        }
+        '../lib/client': getClientStub,
+        '../lib/context': proxyquire('../lib/context', {
+          './client': getClientStub
+        })
       })({
         clientID: '123',
         baseURL: 'https://myapp.com',

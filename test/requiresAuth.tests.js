@@ -46,7 +46,7 @@ describe('requiresAuth middleware', function() {
     });
   });
 
-  describe('when disabling a', function() {
+  describe('when requiring auth in a route', function() {
     let baseUrl;
     let response;
 
