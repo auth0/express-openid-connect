@@ -17,14 +17,6 @@ module.exports = function() {
       return next(createError.Unauthorized('Authentication is required for this route.'));
     }
 
-    if (req.openid.tokens.refresh_token) {
-      try {
-        await req.openid.refreshToken();
-      } catch(err) {
-        return next(err);
-      }
-    }
-
     next();
   };
 };

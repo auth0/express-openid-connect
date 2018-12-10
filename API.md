@@ -77,8 +77,6 @@ Every `req` object is augmented with the following properties when the request i
 -  `req.openid.user`: contains the user information, use this if you need display an attribute of the user. You can change what's end up here by using the `getUser` parameter of the `auth` middleware.
 -  `req.openid.tokens`: is the instance of [TokenSet](https://www.npmjs.com/package/openid-client#tokenset).
 -  `req.openid.client`: is an instance of te [OpenID Client](https://www.npmjs.com/package/openid-client).
--  `req.openid.refreshToken()`: in case you request for an offline access you can use this promise-returning function to get a fresh `req.openid.tokens`. Note that this is done for you on every route requiring authentication.
-
 -  `req.isAuthenticated()`: returns true if the request is authenticated.
 
 If the request is not authenticated `req.openid` is `undefined`.
