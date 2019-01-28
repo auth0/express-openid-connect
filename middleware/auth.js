@@ -30,6 +30,7 @@ const debugCallback = debug(`${package.name}:callback`);
 * @param {boolean} [params.idpLogout=false] logout the user from the identity provider on logout
 * @param {boolean} [params.auth0Logout=false] use the auth0's logout mechanism if OpenID Connect session management is not supported
 * @param {boolean|Function} [params.routes=true] a boolean indicating if the routes /login and /logout should be added to the application
+* @param {string} [params.redirectUriPath=/callback] The path for the redirect uri, defaults to /callback.
 * @param {Object} [params.authorizationParams] The parameters for the authorization call. Defaults to
 * - response_type: "id_token"
 * - reponse_mode: "form_post"
@@ -97,7 +98,7 @@ module.exports = function (params) {
       }
   }
 
-  router[callbackMethod]('/callback', async (req, res, next) => {
+  router[callbackMethod](config.redirectUriPath, async (req, res, next) => {
     next = cb(next).once();
     try {
       const { nonce, state } = req.session;
