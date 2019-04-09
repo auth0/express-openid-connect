@@ -1,7 +1,5 @@
 [![Build Status](https://travis-ci.org/auth0/express-openid-connect.svg?branch=master)](https://travis-ci.org/auth0/express-openid-connect)
 
-**Note: use at your own risk, this project is on early stages. The api is changing a lot.**
-
 Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client).
 
 The purpose of this middleware is to give a tool to our customers to easily add authentication to their applications, the goals for this project are:
