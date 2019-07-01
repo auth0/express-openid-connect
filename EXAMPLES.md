@@ -42,13 +42,13 @@ Please note that both of these routes are completely optional and not required. 
 If your application has some resources accessible for anonymous users, you can enable authorization per routes:
 
 ```js
-const { auth, requiredAuth } = require('express-openid-connect');
+const { auth, requiresAuth } = require('express-openid-connect');
 
 //initialization
 app.use(auth({ required: false }));
 
 //every route under the /admin prefix requires authentication.
-app.use('/admin', requiredAuth());;
+app.use('/admin', requiresAuth());;
 ```
 
 Another way to configure this scenario:
