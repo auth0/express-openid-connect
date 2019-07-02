@@ -29,6 +29,7 @@
     "express": "^4.16.4",
     "jsdom": "^13.0.0",
     "jsonwebtoken": "^8.4.0",
+    "keygrip": "^1.1.0",
     "mocha": "^5.2.0",
     "nock": "^10.0.2",
     "pem-jwk": "^1.5.1",

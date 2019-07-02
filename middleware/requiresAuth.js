@@ -8,7 +8,9 @@ const createError = require('http-errors');
 module.exports = function() {
   return async function(req, res, next) {
     const requiresLogin = !req.openid ||
-                          !req.openid.user;
+                          !req.openid.user ||
+                          !req.openid.tokens ||
+                          req.openid.tokens.expired();
 
     if (requiresLogin) {
       if (res.openid && res.openid.login && !res.openid.errorOnRequiredAuth) {
