@@ -114,7 +114,7 @@ module.exports = function (params) {
       try {
         const callbackParams = client.callbackParams(req);
         debugCallback('callback parameters: %O', callbackParams);
-        tokenSet = await client.authorizationCallback(redirect_uri, callbackParams, {
+        tokenSet = await client.callback(redirect_uri, callbackParams, {
           nonce,
           state,
           response_type: authorizeParams.response_type,

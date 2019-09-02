@@ -92,7 +92,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should return the reason to the error handler', function() {
-        assert.equal(this.response.body.err.message, 'state mismatch');
+        assert.match(this.response.body.err.message, /state mismatch/i);
       });
     }
   }));
@@ -134,7 +134,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should return the reason to the error handler', function() {
-        assert.match(this.response.body.err.message, /unexpected algo/i);
+        assert.match(this.response.body.err.message, /unexpected JWT alg received/i);
       });
     }
   }));

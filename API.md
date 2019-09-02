@@ -26,7 +26,7 @@ In general, you won't need to configure this middleware besides the required par
 | clientID            | `env.CLIENT_ID`                 | The client id.                                                                 |
 | clientSecret        | `env.CLIENT_SECRET`             | The client secret, only required for some grants.                              |
 | clockTolerance      | `5`                             | The clock's tolerance in seconds for token verification.                       |
-| getUser             | `tokenSet => tokenSet.claims`   | An async function receiving a tokenset and returning the profile for `req.openid.user`. |
+| getUser             | `tokenSet => tokenSet.claims()` | An async function receiving a tokenset and returning the profile for `req.openid.user`. |
 | required            | `true`                            | If true requires authentication for all the routes in the stack. You can also provide a function to determine if is required based on the request.               |
 | handleUnauthorizedErrors | `true`                     | Install a middleware that handles Unauthorized/401 errors by triggering the login process. |
 | routes              | `true`                          | Installs the `GET /login` and `GET /logout` route.                              |
@@ -70,13 +70,13 @@ app.use(auth());
 
 ## Session and Context
 
-The middleware store the [openid-client TokenSet](https://www.npmjs.com/package/openid-client#tokenset) in the user's session.
+The middleware store the [openid-client TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset) in the user's session.
 
 Every `req` object is augmented with the following properties when the request is authenticated
 
 -  `req.openid.user`: contains the user information, use this if you need display an attribute of the user. You can change what's end up here by using the `getUser` parameter of the `auth` middleware.
--  `req.openid.tokens`: is the instance of [TokenSet](https://www.npmjs.com/package/openid-client#tokenset).
--  `req.openid.client`: is an instance of te [OpenID Client](https://www.npmjs.com/package/openid-client).
+-  `req.openid.tokens`: is the instance of [TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset).
+-  `req.openid.client`: is an instance of te [OpenID Client](https://github.com/panva/node-openid-client/blob/master/docs/README.md#client).
 -  `req.isAuthenticated()`: returns true if the request is authenticated.
 
 If the request is not authenticated `req.openid` is `undefined`.
