@@ -30,14 +30,16 @@ const ss = selfsigned.generate(attrs, {
 });
 
 
-module.exports.jwks = [{
-  alg: 'RS256',
-  kty: 'RSA',
-  use: 'sig',
-  kid: ss.fingerprint,
-  x5t: ss.fingerprint,
-  ...pem2jwk(ss.public)
-}];
+module.exports.jwks = {
+  keys: [{
+    alg: 'RS256',
+    kty: 'RSA',
+    use: 'sig',
+    kid: ss.fingerprint,
+    x5t: ss.fingerprint,
+    ...pem2jwk(ss.public)
+  }]
+};
 
 module.exports.cert = ss.cert;
 module.exports.key = ss.private;
