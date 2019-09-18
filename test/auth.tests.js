@@ -1,6 +1,5 @@
 const assert = require('chai').assert;
 const url = require('url');
-const fs = require('fs');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true
@@ -184,17 +183,7 @@ describe('auth', function() {
       });
 
       it('should contain the two callbacks route', function() {
-        assert.ok(router.stack.some(filterRoute('POST', '/callback')));
         assert.ok(router.stack.some(filterRoute('GET', '/callback')));
-      });
-
-      it('should return an html on GET /callback', async function() {
-        const cookieJar = request.jar();
-        const res = await request.get('/callback', { cookieJar, baseUrl, followRedirect: false });
-        assert.equal(res.statusCode, 200);
-        assert.equal(res.headers['content-type'], 'text/html; charset=utf-8');
-        const expectedBody = fs.readFileSync(`${__dirname}/../views/repost.html`, 'utf-8');
-        assert.equal(res.body, expectedBody);
       });
 
     });

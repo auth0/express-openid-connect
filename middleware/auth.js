@@ -2,13 +2,9 @@ const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
 const { get: getConfig } = require('../lib/config');
-const memoize = require('p-memoize');
-const fs = require('fs');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
 const { RequestContext, ResponseContext } = require('../lib/context');
-
-const getRepostView = memoize(() => fs.readFileSync(__dirname + '/../views/repost.html'));
 
 /**
 * Returns a router with two routes /login and /callback
@@ -71,7 +67,6 @@ module.exports = function (params) {
   }
 
   let callbackMethod;
-  let repost;
 
   switch (authorizeParams.response_mode) {
     case 'form_post':
@@ -80,18 +75,8 @@ module.exports = function (params) {
     case 'query':
       callbackMethod = 'get';
       break;
-    case 'fragment':
-      callbackMethod = 'post';
-      repost = true;
-      break;
     default:
-      if (/token/.test(authorizeParams.response_type)) {
-        callbackMethod = 'post';
-        repost = true;
-      }
-      else {
-        callbackMethod = 'get';
-      }
+      callbackMethod = 'get';
   }
 
   router[callbackMethod](config.redirectUriPath, async (req, res, next) => {
@@ -127,13 +112,6 @@ module.exports = function (params) {
       next(err);
     }
   });
-
-  if (repost) {
-    router.get('/callback', async (req, res) => {
-      res.set('Content-Type', 'text/html');
-      res.send(getRepostView());
-    });
-  }
 
   if (config.required) {
     const requiresAuthMiddleware = requiresAuth();
