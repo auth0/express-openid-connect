@@ -64,10 +64,10 @@ module.exports = function (params) {
   });
 
   if (config.routes) {
-    router.get('/login', (req, res) => {
+    router.get(config.loginPath, (req, res) => {
       res.openid.login({ returnTo: config.baseURL });
     });
-    router.get('/logout', (req, res) => res.openid.logout());
+    router.get(config.logoutPath, (req, res) => res.openid.logout());
   }
 
   let callbackMethod;

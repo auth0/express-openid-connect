@@ -91,4 +91,47 @@ describe('config', function() {
     });
   });
 
+  describe('default auth paths', function() {
+    const config = getConfig({
+      clientID: '123',
+      issuerBaseURL: 'https://flosser.auth0.com',
+      baseURL: 'https://jjj.com',
+    });
+
+    it('should set the default callback path', function() {
+      assert.equal(config.redirectUriPath, '/callback');
+    });
+
+    it('should set the default login path', function() {
+      assert.equal(config.loginPath, '/login');
+    });
+
+    it('should set the default logout path', function() {
+      assert.equal(config.logoutPath, '/logout');
+    });
+  });
+
+  describe('custom auth paths', function() {
+    const config = getConfig({
+      clientID: '123',
+      issuerBaseURL: 'https://flosser.auth0.com',
+      baseURL: 'https://jjj.com',
+      redirectUriPath: '/custom-callback',
+      loginPath: '/custom-login',
+      logoutPath: '/custom-logout',
+    });
+
+    it('should accept the custom callback path', function() {
+      assert.equal(config.redirectUriPath, '/custom-callback');
+    });
+
+    it('should accept the login path', function() {
+      assert.equal(config.loginPath, '/custom-login');
+    });
+
+    it('should accept the logout path', function() {
+      assert.equal(config.logoutPath, '/custom-logout');
+    });
+  });
+
 });
