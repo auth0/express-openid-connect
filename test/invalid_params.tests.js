@@ -52,4 +52,15 @@ describe('invalid parameters', function() {
       });
     }, '"clientSecret" is required for response_type code');
   });
+
+  it('should fail when client secret is not provided and using an HS256 ID token algorithm', function() {
+    assert.throws(() => {
+      expressOpenid.auth({
+        issuerBaseURL: 'http://foobar.auth0.com',
+        baseURL: 'http://foobar.com',
+        clientID: 'asdas',
+        idTokenAlg: 'HS256'
+      });
+    }, '"clientSecret" is required for ID tokens with HS algorithms');
+  });
 });
