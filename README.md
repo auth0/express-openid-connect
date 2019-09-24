@@ -1,63 +1,123 @@
+# Express OpenID Connect
+
+Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client). Easily add secure and standards-based authentication to Express applications.
+
+This library requires:
+
+- Node v10.13 or higher
+- Express v4.16 or higher
+- A session middleware like [express-session](https://www.npmjs.com/package/express-session) or [cookie-session](https://www.npmjs.com/package/cookie-session)
+
+**Please Note:** This library is currently in pre-release status and has not had a complete security review. We **do not** recommend using this library in production yet. As we move towards early access, please be aware that releases may contain breaking changes. We will be monitoring the Issues queue here for feedback and questions. PRs and comments on existing PRs are welcome!
+
 [![Build Status](https://travis-ci.org/auth0/express-openid-connect.svg?branch=master)](https://travis-ci.org/auth0/express-openid-connect)
 
-Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client).
+[![NPM version](https://img.shields.io/npm/v/express-openid-connect.svg?style=flat-square)](https://npmjs.org/package/express-openid-connect)
 
-The purpose of this middleware is to give a tool to our customers to easily add authentication to their applications, the goals for this project are:
+[![Downloads](https://img.shields.io/npm/dm/express-openid-connect.svg.svg?style=flat-square)](https://npmjs.org/package/express-openid-connect.svg)
 
-1.  **Secure by default**:
-  -  The middleware implements the best practices to work with OpenID Connect providers.
-  -  All routes after the middleware require authentication by default.
-2.  **Simple setup**: Pain-free configuration by using OpenID Connect metadata and the best defaults.
-3.  **Standard**: The library is standard enough to work with many OpenID Connect providers.
+## Table of Contents
 
-## Install
+- [Documentation](#documentation)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+- [Support + Feedback](#support--feedback)
+- [Vulnerability Reporting](#vulnerability-reporting)
+- [What is Auth0](#what-is-auth0)
+- [License](#license)
+
+## Documentation
+
+More complete documentation coming soon!
+
+- [Examples for common configurations](EXAMPLES.md)
+- [API documentation](API.md)
+- [Sample application](https://github.com/joshcanhelp/express-oidc-connect-starter)
+- [Sample implementation](https://github.com/auth0/node-sample-with-openid-client)
+
+## Installation
+
+This library is installed with [npm](https://npmjs.org/package/express-openid-connect):
 
 ```
 npm i express-openid-connect --save
 ```
 
-## Requirements
+## Getting Started
 
-Before installing the routes,
+The library needs the following values to request and accept authentication:
 
--  a body parser middleware for urlencoded content, eg: https://www.npmjs.com/package/body-parser
--  a session middleware like [express-session](https://www.npmjs.com/package/express-session) or [cookie-session](https://www.npmjs.com/package/cookie-session).
--  node v8 or higher
--  express v3 or higher
+- **Issuer Base URL**: The base URL of the authorization server. If you're using Auth0, this is your tenant **Domain** pre-pended with `https://` (like `https://tenant.auth0.com`) found on the **Settings** tab for your Application in the [Auth0 dashboard](https://manage.auth0.com).
+- **Client ID**: The identifier for your Application. If you're using Auth0, this value can also be found on the **Settings** tab for your Application.
+- **Base URL**: The  root URL for your application.
 
-## Usage
+These can be configured in a `.env` file in the root of your application:
 
-Using the auth middleware:
+```text
+# .env
 
-```javascript
-const { auth } = require('express-openid-connect');
-
-//insert your session and body parser middlewares here
-// app.use(session());
-// app.use(bodyParser());
-
-app.use(auth())
-
-app.use('/', (req, res) => {
-  res.send(`hello ${req.openid.user.name}`);
-});
+ISSUER_BASE_URL=https://YOUR_DOMAIN
+CLIENT_ID=YOUR_CLIENT_ID
+BASE_URL=https://YOUR_APPLICATION_ROOT_URL
 ```
 
-- Every route after the `auth()` requires authentication.
-- If a user try to access a resource without being authenticated, the application will trigger the authentication process. After completion the user is redirected back to the resource.
-- The application also gets a `GET /login` and `GET /logout` route for easy linking.
+... or in the library initialization:
 
+```js
+// index.js
 
+app.use(auth({
+  issuerBaseURL: 'https://YOUR_DOMAIN',
+  baseURL: 'YOUR_CLIENT_ID',
+  clientID: 'https://YOUR_APPLICATION_ROOT_URL'
+}));
+```
 
-This application needs the following environment variables to work:
+See [Examples](EXAMPLES.md) for how to get started authenticating users.
 
--  `ISSUER_BASE_URL`: The url of the issuer.
--  `CLIENT_ID`: The client id of the application.
--  `BASE_URL`: The url of your application. For development environments you can omit this.
+## Contributing
 
-For more examples check the [EXAMPLES](EXAMPLES.md) document.
+We appreciate feedback and contribution to this repo! Before you get started, please see the following:
 
-The `auth()` middleware can be customized, please check the [API](API.md) document.
+- [Auth0's general contribution guidelines](https://github.com/auth0/.github/blob/master/CONTRIBUTING.md)
+- [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
+
+Contributions can be made to this library through PRs to fix issues, improve documentation or add features. Please fork this repo, create a well-named branch, and submit a PR with a complete template filled out.
+
+Code changes in PRs should be accompanied by tests covering the changed or added functionality. Tests can be run for this library with:
+
+```bash
+npm install
+npm test
+```
+
+When you're ready to push your changes, please run the lint command first:
+
+```bash
+npm run lint
+```
+
+## Support + Feedback
+
+Please use the [Issues queue](https://github.com/auth0/express-openid-connect/issues) in this repo for questions and feedback.
+
+## Vulnerability Reporting
+
+Please do not report security vulnerabilities on the public GitHub issue tracker. The [Responsible Disclosure Program](https://auth0.com/whitehat) details the procedure for disclosing security issues.
+
+## What is Auth0?
+
+Auth0 helps you to easily:
+
+- implement authentication with multiple identity providers, including social (e.g., Google, Facebook, Microsoft, LinkedIn, GitHub, Twitter, etc), or enterprise (e.g., Windows Azure AD, Google Apps, Active Directory, ADFS, SAML, etc.)
+- log in users with username/password databases, passwordless, or multi-factor authentication
+- link multiple user accounts together
+- generate signed JSON Web Tokens to authorize your API calls and flow the user identity securely
+- access demographics and analytics detailing how, when, and where users are logging in
+- enrich user profiles from other data sources using customizable JavaScript rules
+
+[Why Auth0?](https://auth0.com/why-auth0)
 
 ## License
 
