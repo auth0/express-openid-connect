@@ -13,7 +13,6 @@
   "dependencies": {
     "cb": "^0.1.0",
     "clone": "^2.1.2",
-    "debug": "^4.1.1",
     "http-errors": "^1.7.3",
     "joi": "^14.3.1",
     "openid-client": "^3.6.1",
@@ -34,8 +33,8 @@
     "pem-jwk": "^2.0.0",
     "proxyquire": "^2.1.3",
     "request-promise-native": "^1.0.7",
-    "selfsigned": "^1.10.4",
-    "sinon": "^7.4.2"
+    "selfsigned": "^1.10.6",
+    "sinon": "^7.5.0"
   },
   "engines": {
     "node": "^10.13.0 || >=12.0.0"

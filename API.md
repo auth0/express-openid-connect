@@ -155,13 +155,3 @@ app.use((err, req, res, next) => {
   next(err);
 });
 ```
-
-## Debugging
-
-Start your application with the following environment variable to make this module output the debug logs.
-
-```
-DEBUG=express-openid-connect:*
-```
-
-**WARNING:** this feature is intended only for development and must not be used in production since it will log sensitive information.

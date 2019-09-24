@@ -1,18 +1,14 @@
 const express = require('express');
 const cb = require('cb');
-const debug = require('debug');
 const createError = require('http-errors');
 const { get: getConfig } = require('../lib/config');
 const memoize = require('p-memoize');
 const fs = require('fs');
-const package = require('../package.json');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
 const { RequestContext, ResponseContext } = require('../lib/context');
 
 const getRepostView = memoize(() => fs.readFileSync(__dirname + '/../views/repost.html'));
-
-const debugCallback = debug(`${package.name}:callback`);
 
 /**
 * Returns a router with two routes /login and /callback
@@ -104,7 +100,6 @@ module.exports = function (params) {
       const { nonce, state } = req.session;
       delete req.session.nonce;
       delete req.session.state;
-      debugCallback('session parameters', { nonce, state });
 
       const redirect_uri = res.openid.getRedirectUri();
       const client = req.openid.client;
@@ -113,23 +108,20 @@ module.exports = function (params) {
 
       try {
         const callbackParams = client.callbackParams(req);
-        debugCallback('callback parameters: %O', callbackParams);
         tokenSet = await client.callback(redirect_uri, callbackParams, {
           nonce,
           state,
           response_type: authorizeParams.response_type,
         });
       } catch (err) {
-        debugCallback('error in the authorization callback: %s', err.message);
         throw createError.BadRequest(err.message);
       }
 
-      debugCallback('tokens: %O', tokenSet);
       req.session.openidTokens = tokenSet;
 
       const returnTo = req.session.returnTo || '/';
       delete req.session.returnTo;
-      debugCallback('redirecting to %s', returnTo);
+
       res.redirect(returnTo);
     } catch (err) {
       next(err);
