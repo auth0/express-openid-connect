@@ -1,19 +1,6 @@
-## The auth middleware can be configured with environment varabiles
+# API
 
-Settings can be provided by environment variables as follows:
-
-```
-ISSUER_BASE_URL=https://my-domain.auth0.com
-BASE_URL=https://myapplication.com
-CLIENT_ID=xyz
-```
-
-then:
-
-```javascript
-const { routes: auth } = require('express-openid-connect');
-app.use(auth())
-```
+Please see the [Getting Started section of the README](https://github.com/auth0/express-openid-connect#getting-started) for how to apply configuration options.
 
 ## openidClient.auth parameters
 
@@ -53,24 +40,25 @@ Commonly used `authorizationParams`:
 | scope               | `openid profile email` | The scope of the access token.                                                                               |
 | audience            | `undefined` / optional | The audience for the access token.                                                                           |
 
-## openidClient.requiresAuth options
+## openidClient.requiresAuth
 
-The middleware doesn't have any options
+The `requiresAuth()` middleware protects specific application routes:
 
 ```javascript
 const { auth, requiresAuth } = require('express-openid-connect');
-app.use('/admin', requiresAuth());
+app.use( auth( { required: false } ) );
+app.use( '/admin', requiresAuth() );
 ```
 
-If all your endpoints require the user to be logged in, you don't need this middleware. The default `auth` middleware protects you from this:
+If all endpoints require the user to be logged in, the default `auth` middleware protects you from this:
 
 ```javascript
-app.use(auth());
+app.use( auth( { required: true } ) );
 ```
 
 ## Session and Context
 
-The middleware store the [openid-client TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset) in the user's session.
+The middleware stores the [openid-client TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset) in the user's session.
 
 Every `req` object is augmented with the following properties when the request is authenticated
 
@@ -79,7 +67,7 @@ Every `req` object is augmented with the following properties when the request i
 -  `req.openid.client`: is an instance of te [OpenID Client](https://github.com/panva/node-openid-client/blob/master/docs/README.md#client).
 -  `req.isAuthenticated()`: returns true if the request is authenticated.
 
-If the request is not authenticated `req.openid` is `undefined`.
+If the request is not authenticated, `req.openid` is `undefined`.
 
 Every `res` object gets the following methods:
 
@@ -94,22 +82,23 @@ Every `res` object gets the following methods:
 By default the library triggers the login process when authentication is required.
 
 An anonymous request to the home page in this case will trigger the login process:
+
 ```js
-app.use(auth()); //Remember that required is true by default
+app.use(auth()); // Remember that required is true by default
 app.get('/', (req, res) => res.render('home'));
 ```
 
 The same happens in this case:
 
 ```js
-app.use(auth()); //Remember that required is true by default
+app.use(auth()); // Remember that required is true by default
 app.get('/', requiresAuth(), (req, res) => res.render('home'));
 ```
 
 If you remove the `auth()` middleware above like this:
 
 ```js
-// app.use(auth()); //Remember that required is true by default
+// app.use(auth()); // Remember that required is true by default
 app.get('/', requiresAuth(), (req, res) => res.render('home'));
 ```
 
