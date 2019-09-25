@@ -6,6 +6,10 @@
   "license": "MIT",
   "author": "José F. Romaniello <jfromaniello@gmail.com> (https://joseoncode.com)",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/auth0/express-openid-connect"
+  },
   "scripts": {
     "lint": "eslint . --ignore-path .gitignore",
     "test": "mocha"
