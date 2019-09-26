@@ -19,7 +19,7 @@ In general, you won't need to configure this middleware besides the required par
 | routes              | `true`                          | Installs the `GET /login` and `GET /logout` route.                              |
 | idpLogout           | `false`                         | Logout the user from the identity provider on logout                            |
 | auth0Logout         | `false`                         | Enable Auth0's non-compliant logout feature, only if Auth0 can be detected and the Auth0 instance does not support OpenID Connect session management. |
-| redirectUriPath     | `/callback`                     | Relative path for the callback URL; sent to the authroize endpoint in the `redirectUri` parameter. |
+| redirectUriPath     | `/callback`                     | Relative path for the callback URL; sent to the authorize endpoint in the `redirectUri` parameter. |
 | loginPath           | `/login`                        | Relative path to login.                                                         |
 | logoutPath          | `/logout`                       | Relative path to logout.                                                        |
 | authorizationParams | See below                       | The parameters for the authorization call.                                      |
