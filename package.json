@@ -11,10 +11,10 @@
     "test": "mocha"
   },
   "dependencies": {
+    "@hapi/joi": "^14.5.0",
     "cb": "^0.1.0",
     "clone": "^2.1.2",
     "http-errors": "^1.7.3",
-    "joi": "^14.3.1",
     "openid-client": "^3.7.2",
     "p-memoize": "^3.1.0",
     "url-join": "^4.0.1"
