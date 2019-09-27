@@ -7,6 +7,7 @@
   "jwks_uri": "https://flosser.auth0.com/.well-known/jwks.json",
   "registration_endpoint": "https://flosser.auth0.com/oidc/register",
   "revocation_endpoint": "https://flosser.auth0.com/oauth/revoke",
+  "introspection_endpoint": "https://flosser.auth0.com/introspection",
   "scopes_supported": ["openid", "profile", "offline_access", "name", "given_name", "family_name", "nickname", "email", "email_verified", "picture", "created_at", "identities", "phone", "address"],
   "response_types_supported": ["code", "token", "id_token", "code token", "code id_token", "token id_token", "code token id_token", "none"],
   "response_modes_supported": ["query", "fragment", "form_post"],
