@@ -199,4 +199,45 @@ describe('auth', function() {
 
     });
   });
+
+  describe('custom path values', () => {
+
+    let baseUrl, router;
+
+    before(async function() {
+      router = expressOpenid.auth({
+        clientID: '123',
+        baseURL: 'https://myapp.com',
+        issuerBaseURL: 'https://flosser.auth0.com',
+        redirectUriPath: '/custom-callback',
+        loginPath: '/custom-login',
+        logoutPath: '/custom-logout',
+      });
+      baseUrl = await server.create(router);
+    });
+
+    it('should contain the custom login route', function() {
+      assert.ok(router.stack.some(filterRoute('GET', '/custom-login')));
+    });
+
+    it('should contain the custom logout route', function() {
+      assert.ok(router.stack.some(filterRoute('GET', '/custom-logout')));
+    });
+
+    it('should contain the custom callback route', function() {
+      assert.ok(router.stack.some(filterRoute('POST', '/custom-callback')));
+    });
+
+    it('should redirect to the authorize url properly on /login', async function() {
+      const jar = request.jar();
+      const res = await request.get('/custom-login', { jar, baseUrl, followRedirect: false });
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+      assert.equal(parsed.hostname, 'flosser.auth0.com');
+      assert.equal(parsed.pathname, '/authorize');
+      assert.equal(parsed.query.redirect_uri, 'https://myapp.com/custom-callback');
+    });
+
+  });
 });
