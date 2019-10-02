@@ -69,8 +69,8 @@ BASE_URL=https://YOUR_APPLICATION_ROOT_URL
 
 app.use(auth({
   issuerBaseURL: 'https://YOUR_DOMAIN',
-  baseURL: 'YOUR_CLIENT_ID',
-  clientID: 'https://YOUR_APPLICATION_ROOT_URL'
+  baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
+  clientID: 'YOUR_CLIENT_ID'
 }));
 ```
 
