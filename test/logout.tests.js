@@ -18,9 +18,9 @@ describe('logout route', function() {
     before(async function() {
       const middleware = auth({
         idpLogout: false,
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         required: false
       });
       baseUrl = await server.create(middleware);
@@ -43,7 +43,7 @@ describe('logout route', function() {
 
     it('should redirect to the base url', function() {
       assert.equal(logoutResponse.statusCode, 302);
-      assert.equal(logoutResponse.headers.location, 'https://myapp.com');
+      assert.equal(logoutResponse.headers.location, 'https://example.org');
     });
   });
 
@@ -56,9 +56,9 @@ describe('logout route', function() {
     before(async function() {
       const middleware = auth({
         idpLogout: true,
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         required: false
       });
       baseUrl = await server.create(middleware);
@@ -84,8 +84,8 @@ describe('logout route', function() {
       const parsedUrl = url.parse(logoutResponse.headers.location, true);
       assert.deepInclude(parsedUrl, {
         protocol: 'https:',
-        hostname: 'flosser.auth0.com',
-        query: { returnTo: 'https://myapp.com', client_id: '123' },
+        hostname: 'test.auth0.com',
+        query: { returnTo: 'https://example.org', client_id: '__test_client_id__' },
         pathname: '/v2/logout',
       });
     });

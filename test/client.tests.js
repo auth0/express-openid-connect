@@ -9,15 +9,15 @@ describe('client initialization', function() {
     const config = getConfig({
       clientID: '__test_client_id__',
       clientSecret: '__test_client_secret__',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://theapplication.com',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
     });
 
     let client;
     before(async function() {
       client = await getClient(config);
 
-      nock('https://flosser.auth0.com')
+      nock('https://test.auth0.com')
         .post('/introspection')
         .reply(200, function() {
           return this.req.headers;

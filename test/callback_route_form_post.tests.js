@@ -8,14 +8,14 @@ const request = require('request-promise-native').defaults({
 const expressOpenid = require('..');
 const server = require('./fixture/server');
 const cert = require('./fixture/cert');
-const clientID = 'foobar';
+const clientID = '__test_client_id__';
 
 function testCase(params) {
   return () => {
     const router = expressOpenid.auth({
       clientID: clientID,
-      baseURL: 'https://myapp.com',
-      issuerBaseURL: 'https://flosser.auth0.com',
+      baseURL: 'https://example.org',
+      issuerBaseURL: 'https://test.auth0.com',
       required: false
     });
 
@@ -61,8 +61,8 @@ function testCase(params) {
 describe('callback routes response_type: id_token, response_mode: form_post', function() {
   describe('when body is empty', testCase({
     session: {
-      nonce: '123',
-      state: '123'
+      nonce: '__test_nonce__',
+      state: '__test_state__'
     },
     body: true,
     assertions() {
@@ -78,13 +78,11 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe("when state doesn't match", testCase({
     session: {
-      nonce: '123',
-      state: '123'
+      nonce: '__test_nonce__',
+      state: '__valid_state__'
     },
     body: {
-      nonce: '123',
-      state: '456',
-      id_token: 'sioua'
+      state: '__invalid_state__'
     },
     assertions() {
       it('should return 400', function() {
@@ -99,13 +97,12 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe("when id_token can't be parsed", testCase({
     session: {
-      nonce: '123',
-      state: '123'
+      nonce: '__test_nonce__',
+      state: '__test_state__'
     },
     body: {
-      nonce: '123',
-      state: '123',
-      id_token: 'sioua'
+      state: '__test_state__',
+      id_token: '__invalid_token__'
     },
     assertions() {
       it('should return 400', function() {
@@ -120,13 +117,12 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when id_token has invalid alg', testCase({
     session: {
-      nonce: '123',
-      state: '123'
+      nonce: '__test_nonce__',
+      state: '__test_state__'
     },
     body: {
-      nonce: '123',
-      state: '123',
-      id_token: jwt.sign({ foo: '123'}, 'f00')
+      state: '__test_state__',
+      id_token: jwt.sign({sub: '__test_sub__'}, '__invalid_alg__')
     },
     assertions() {
       it('should return 400', function() {
@@ -141,13 +137,12 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when id_token is missing issuer', testCase({
     session: {
-      nonce: '123',
-      state: '123'
+      nonce: '__test_nonce__',
+      state: '__test_state__'
     },
     body: {
-      nonce: '123',
-      state: '123',
-      id_token: jwt.sign({ foo: '123'}, cert.key, { algorithm: 'RS256' })
+      state: '__test_state__',
+      id_token: jwt.sign({sub: '__test_sub__'}, cert.key, { algorithm: 'RS256' })
     },
     assertions() {
       it('should return 400', function() {
@@ -162,24 +157,23 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when id_token is valid', testCase({
     session: {
-      state: '123',
-      nonce: 'abcdefg',
-      returnTo: '/foobar'
+      state: '__test_state__',
+      nonce: '__test_nonce__',
+      returnTo: '/return-to'
     },
     body: {
-      nonce: '123',
-      state: '123',
+      state: '__test_state__',
       id_token: jwt.sign({
-        'nickname': 'jjjj',
-        'name': 'Jeranio',
-        'email': 'jjjj@example.com',
+        'nickname': '__test_nickname__',
+        'name': '__test_name__',
+        'email': '__test_email__',
         'email_verified': true,
-        'iss': 'https://flosser.auth0.com/',
-        'sub': 'xasdas',
+        'iss': 'https://test.auth0.com/',
+        'sub': '__test_sub__',
         'aud': clientID,
         'iat': Math.round(Date.now() / 1000),
         'exp': Math.round(Date.now() / 1000) + 60000,
-        'nonce': 'abcdefg'
+        'nonce': '__test_nonce__'
       }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
     },
     assertions() {
@@ -188,7 +182,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should redirect to the intended url', function() {
-        assert.equal(this.response.headers['location'], '/foobar');
+        assert.equal(this.response.headers['location'], '/return-to');
       });
 
       it('should contain the claims in the current session', function() {
@@ -201,7 +195,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
           json: true,
           jar: this.jar
         });
-        assert.equal(res.body.nickname, 'jjjj');
+        assert.equal(res.body.nickname, '__test_nickname__');
       });
     }
   }));
