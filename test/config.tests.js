@@ -4,9 +4,9 @@ const { get: getConfig } = require('../lib/config');
 describe('config', function() {
   describe('simple case', function() {
     const config = getConfig({
-      clientID: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
     });
 
     it('should default to response_type=id_token', function() {
@@ -28,10 +28,10 @@ describe('config', function() {
 
   describe('when authorizationParams is response_type=x', function() {
     const config = getConfig({
-      clientID: '123',
-      clientSecret: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
       authorizationParams: {
         response_type: 'code'
       }
@@ -52,9 +52,9 @@ describe('config', function() {
 
   describe('with auth0Logout', function() {
     const config = getConfig({
-      clientID: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
       auth0Logout: true
     });
 
@@ -66,9 +66,9 @@ describe('config', function() {
 
   describe('without auth0Logout nor idpLogout', function() {
     const config = getConfig({
-      clientID: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
     });
 
     it('should set both to false', function() {
@@ -79,9 +79,9 @@ describe('config', function() {
 
   describe('with idpLogout', function() {
     const config = getConfig({
-      clientID: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
       idpLogout: true
     });
 
@@ -93,9 +93,9 @@ describe('config', function() {
 
   describe('default auth paths', function() {
     const config = getConfig({
-      clientID: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
     });
 
     it('should set the default callback path', function() {
@@ -113,9 +113,9 @@ describe('config', function() {
 
   describe('custom auth paths', function() {
     const config = getConfig({
-      clientID: '123',
-      issuerBaseURL: 'https://flosser.auth0.com',
-      baseURL: 'https://jjj.com',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
       redirectUriPath: '/custom-callback',
       loginPath: '/custom-login',
       logoutPath: '/custom-logout',

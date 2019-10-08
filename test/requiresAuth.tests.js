@@ -14,9 +14,9 @@ describe('requiresAuth middleware', function() {
 
     before(async function() {
       const router = auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         required: false
       });
       baseUrl = await server.create(router, requiresAuth());
@@ -27,7 +27,7 @@ describe('requiresAuth middleware', function() {
       assert.equal(response.statusCode, 302);
     });
     it('should contain a location header to the issuer', function() {
-      assert.include(response.headers.location, 'https://flosser.auth0.com');
+      assert.include(response.headers.location, 'https://test.auth0.com');
     });
   });
 
@@ -52,9 +52,9 @@ describe('requiresAuth middleware', function() {
 
     before(async function() {
       const router = auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         required: false,
         errorOnRequiredAuth: true
       });

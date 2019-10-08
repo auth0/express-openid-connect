@@ -7,8 +7,8 @@ module.exports.create = function(router, protect) {
   const app = express();
 
   app.use(cookieSession({
-    name: 'tests',
-    secret: 'blabla',
+    name: '__test_name__',
+    secret: '__test_secret__',
   }));
 
   app.use(bodyParser.urlencoded({ extended: false }));

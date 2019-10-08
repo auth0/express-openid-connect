@@ -5,9 +5,9 @@ describe('invalid parameters', function() {
   it('should fail when the issuerBaseURL is invalid', function() {
     assert.throws(() => {
       expressOpenid.auth({
-        baseURL: 'http://localhost',
-        issuerBaseURL: '123 r423.json xxx',
-        clientID: '123ewasda'
+        baseURL: 'https://example.org',
+        issuerBaseURL: '__invalid_url__',
+        clientID: '__test_client_id__'
       });
     }, '"issuerBaseURL" must be a valid uri');
   });
@@ -15,9 +15,9 @@ describe('invalid parameters', function() {
   it('should fail when the baseURL is invalid', function() {
     assert.throws(() => {
       expressOpenid.auth({
-        baseURL: 'xasxasa sads',
-        issuerBaseURL: 'http://foobar.com',
-        clientID: '123ewasda'
+        baseURL: '__invalid_url__',
+        issuerBaseURL: 'https://test.auth0.com',
+        clientID: '__test_client_id__'
       });
     }, '"baseURL" must be a valid uri');
   });
@@ -25,8 +25,8 @@ describe('invalid parameters', function() {
   it('should fail when the clientID is not provided', function() {
     assert.throws(() => {
       expressOpenid.auth({
-        baseURL: 'http://foobar.com',
-        issuerBaseURL: 'http://foobar.com',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
       });
     }, '"clientID" is required');
   });
@@ -34,8 +34,8 @@ describe('invalid parameters', function() {
   it('should fail when the baseURL is not provided', function() {
     assert.throws(() => {
       expressOpenid.auth({
-        issuerBaseURL: 'http://foobar.com',
-        clientID: 'asdas',
+        issuerBaseURL: 'https://test.auth0.com',
+        clientID: '__test_client_id__',
       });
     }, '"baseURL" is required');
   });
@@ -43,9 +43,9 @@ describe('invalid parameters', function() {
   it('should fail when client secret is not provided and using the response type code in mode query', function() {
     assert.throws(() => {
       expressOpenid.auth({
-        issuerBaseURL: 'http://foobar.auth0.com',
-        baseURL: 'http://foobar.com',
-        clientID: 'asdas',
+        issuerBaseURL: 'https://test.auth0.com',
+        baseURL: 'https://example.org',
+        clientID: '__test_client_id__',
         authorizationParams: {
           response_type: 'code id_token'
         }

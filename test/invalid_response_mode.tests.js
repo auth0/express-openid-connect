@@ -9,11 +9,11 @@ const request = require('request-promise-native').defaults({
 describe('with an invalid response_mode', function() {
 
   const router = expressOpenid.auth({
-    clientID: '123',
-    baseURL: 'https://myapp.com',
-    issuerBaseURL: 'https://flosser.auth0.com',
+    clientID: '__test_client_id__',
+    baseURL: 'https://example.org',
+    issuerBaseURL: 'https://test.auth0.com',
     authorizationParams: {
-      response_mode: 'ffff',
+      response_mode: '__invalid_response_mode__',
       response_type: 'id_token'
     }
   });
@@ -26,6 +26,6 @@ describe('with an invalid response_mode', function() {
   it('should return an error', async function() {
     const res = await request.get({ json: true, baseUrl, uri: '/login'});
     assert.equal(res.statusCode, 500);
-    assert.include(res.body.err.message, 'The issuer doesn\'t support the response_mode ffff');
+    assert.include(res.body.err.message, 'The issuer doesn\'t support the response_mode __invalid_response_mode__');
   });
 });

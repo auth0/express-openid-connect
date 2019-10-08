@@ -20,9 +20,9 @@ describe('auth with redirectUriPath', function() {
 
     before(async function() {
       router = expressOpenid.auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         required: false,
         redirectUriPath: '/auth-finish'
       });
@@ -38,7 +38,7 @@ describe('auth with redirectUriPath', function() {
       const res = await request.get('/login', { jar, baseUrl, followRedirect: false });
       assert.equal(res.statusCode, 302);
       const parsed = url.parse(res.headers.location, true);
-      assert.equal(parsed.query.redirect_uri, 'https://myapp.com/auth-finish');
+      assert.equal(parsed.query.redirect_uri, 'https://example.org/auth-finish');
     });
 
   });
