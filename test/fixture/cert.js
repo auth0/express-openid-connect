@@ -4,7 +4,7 @@ const { pem2jwk } = require('pem-jwk');
 const attrs = [
   {
     name: 'commonName',
-    value: 'flosser.auth0.com'
+    value: 'test.auth0.com'
   }
 ];
 

@@ -20,9 +20,9 @@ describe('auth', function() {
 
     before(async function() {
       router = expressOpenid.auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         required: false
       });
       baseUrl = await server.create(router);
@@ -46,14 +46,14 @@ describe('auth', function() {
       assert.equal(res.statusCode, 302);
 
       const parsed = url.parse(res.headers.location, true);
-      assert.equal(parsed.hostname, 'flosser.auth0.com');
+      assert.equal(parsed.hostname, 'test.auth0.com');
       assert.equal(parsed.pathname, '/authorize');
-      assert.equal(parsed.query.client_id, '123');
+      assert.equal(parsed.query.client_id, '__test_client_id__');
 
       assert.equal(parsed.query.scope, 'openid profile email');
       assert.equal(parsed.query.response_type, 'id_token');
       assert.equal(parsed.query.response_mode, 'form_post');
-      assert.equal(parsed.query.redirect_uri, 'https://myapp.com/callback');
+      assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
       assert.property(parsed.query, 'nonce');
       assert.property(parsed.query, 'state');
 
@@ -70,9 +70,9 @@ describe('auth', function() {
 
       before(async function() {
         router = expressOpenid.auth({
-          clientID: '123',
-          baseURL: 'https://myapp.com',
-          issuerBaseURL: 'https://flosser.auth0.com',
+          clientID: '__test_client_id__',
+          baseURL: 'https://example.org',
+          issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
             response_mode: undefined,
             response_type: 'none',
@@ -89,13 +89,13 @@ describe('auth', function() {
 
         const parsed = url.parse(res.headers.location, true);
 
-        assert.equal(parsed.hostname, 'flosser.auth0.com');
+        assert.equal(parsed.hostname, 'test.auth0.com');
         assert.equal(parsed.pathname, '/authorize');
-        assert.equal(parsed.query.client_id, '123');
+        assert.equal(parsed.query.client_id, '__test_client_id__');
         assert.equal(parsed.query.scope, 'openid profile email');
         assert.equal(parsed.query.response_type, 'none');
         assert.equal(parsed.query.response_mode, undefined);
-        assert.equal(parsed.query.redirect_uri, 'https://myapp.com/callback');
+        assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
       });
@@ -111,10 +111,10 @@ describe('auth', function() {
 
       before(async function() {
         router = router = expressOpenid.auth({
-          clientID: '123',
-          clientSecret: '456',
-          baseURL: 'https://myapp.com',
-          issuerBaseURL: 'https://flosser.auth0.com',
+          clientID: '__test_client_id__',
+          clientSecret: '__test_client_secret__',
+          baseURL: 'https://example.org',
+          issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
             response_mode: undefined,
             response_type: 'code',
@@ -131,13 +131,13 @@ describe('auth', function() {
 
         const parsed = url.parse(res.headers.location, true);
 
-        assert.equal(parsed.hostname, 'flosser.auth0.com');
+        assert.equal(parsed.hostname, 'test.auth0.com');
         assert.equal(parsed.pathname, '/authorize');
-        assert.equal(parsed.query.client_id, '123');
+        assert.equal(parsed.query.client_id, '__test_client_id__');
         assert.equal(parsed.query.scope, 'openid profile email');
         assert.equal(parsed.query.response_type, 'code');
         assert.equal(parsed.query.response_mode, undefined);
-        assert.equal(parsed.query.redirect_uri, 'https://myapp.com/callback');
+        assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
       });
@@ -153,9 +153,9 @@ describe('auth', function() {
 
       before(async function() {
         router = router = expressOpenid.auth({
-          clientID: '123',
-          baseURL: 'https://myapp.com',
-          issuerBaseURL: 'https://flosser.auth0.com',
+          clientID: '__test_client_id__',
+          baseURL: 'https://example.org',
+          issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
             response_mode: undefined,
             response_type: 'id_token',
@@ -171,13 +171,13 @@ describe('auth', function() {
 
         const parsed = url.parse(res.headers.location, true);
 
-        assert.equal(parsed.hostname, 'flosser.auth0.com');
+        assert.equal(parsed.hostname, 'test.auth0.com');
         assert.equal(parsed.pathname, '/authorize');
-        assert.equal(parsed.query.client_id, '123');
+        assert.equal(parsed.query.client_id, '__test_client_id__');
         assert.equal(parsed.query.scope, 'openid profile email');
         assert.equal(parsed.query.response_type, 'id_token');
         assert.equal(parsed.query.response_mode, undefined);
-        assert.equal(parsed.query.redirect_uri, 'https://myapp.com/callback');
+        assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
       });
@@ -195,9 +195,9 @@ describe('auth', function() {
 
     before(async function() {
       router = expressOpenid.auth({
-        clientID: '123',
-        baseURL: 'https://myapp.com',
-        issuerBaseURL: 'https://flosser.auth0.com',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://test.auth0.com',
         redirectUriPath: '/custom-callback',
         loginPath: '/custom-login',
         logoutPath: '/custom-logout',
@@ -223,9 +223,9 @@ describe('auth', function() {
       assert.equal(res.statusCode, 302);
 
       const parsed = url.parse(res.headers.location, true);
-      assert.equal(parsed.hostname, 'flosser.auth0.com');
+      assert.equal(parsed.hostname, 'test.auth0.com');
       assert.equal(parsed.pathname, '/authorize');
-      assert.equal(parsed.query.redirect_uri, 'https://myapp.com/custom-callback');
+      assert.equal(parsed.query.redirect_uri, 'https://example.org/custom-callback');
     });
 
   });
