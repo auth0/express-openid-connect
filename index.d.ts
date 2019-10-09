@@ -3,22 +3,25 @@
 import { AuthorizationParameters, TokenSet } from 'openid-client';
 import { Request, RequestHandler } from 'express';
 
-interface AuthParams {
-    issuerBaseURL?: string;
+interface ConfigParams {
+    auth0Logout?: boolean;
+    authorizationParams?: AuthorizationParameters
     baseURL?: string;
     clientID?: string;
     clientSecret?: string;
     clockTolerance?: number;
-    getUser?: (tokenSet: TokenSet) => any;
-    required?: boolean | ((request: Request) => boolean);
     errorOnRequiredAuth?: boolean;
+    getUser?: (tokenSet: TokenSet) => undefined | object;
     idpLogout?: boolean;
-    auth0Logout?: boolean;
-    routes?: boolean;
+    idTokenAlg?: string;
+    issuerBaseURL?: string;
+    loginPath?: string;
+    logoutPath?: string;
     redirectUriPath?: string;
-    authorizationParams?: AuthorizationParameters
+    required?: boolean | ((request: Request) => boolean);
+    routes?: boolean;
 }
 
-export function auth(params?: AuthParams): RequestHandler;
+export function auth(params?: ConfigParams): RequestHandler;
 export function requiresAuth(): RequestHandler;
 export function unauthorizedHandler(): RequestHandler;
