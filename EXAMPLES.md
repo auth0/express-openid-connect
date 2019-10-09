@@ -39,7 +39,7 @@ What you get:
 - If a user try to access a resource without being authenticated, the application will trigger the authentication process. After completion the user is redirected back to the resource.
 - The application creates `GET /login` and `GET /logout` routes for easy linking.
 
-## 2, Route Customization
+## 2. Route Customization
 
 If you need to customize the routes, you can opt-out from the default routes and handle this manually:
 
