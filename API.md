@@ -9,6 +9,7 @@ In general, you won't need to configure this middleware besides the required par
 | Name                | Default                         | Description                                                                    |
 |---------------------|---------------------------------|--------------------------------------------------------------------------------|
 | issuerBaseURL       | `env.ISSUER_BASE_URL`           | The url address for the token issuer.                                          |
+| httpOptions         | none                            | Default options used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)) |
 | baseURL             | `env.BASE_URL`                  | The url of the web application where you are installing the router.            |
 | clientID            | `env.CLIENT_ID`                 | The client id.                                                                 |
 | clientSecret        | `env.CLIENT_SECRET`             | The client secret, only required for some grants.                              |
