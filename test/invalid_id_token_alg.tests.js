@@ -23,6 +23,6 @@ describe('with an invalid id token alg', function() {
   it('should return an error', async function() {
     const res = await request.get({ json: true, baseUrl, uri: '/login'});
     assert.equal(res.statusCode, 500);
-    assert.include(res.body.err.message, 'The issuer doesn\'t support the ID token algorithm');
+    assert.include(res.body.err.message, 'ID token algorithm "__invalid_alg__" is not supported by the issuer.');
   });
 });
