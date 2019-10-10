@@ -1,6 +1,6 @@
 // Type definitions for express-openid-connect
 
-import { AuthorizationParameters, TokenSet } from 'openid-client';
+import { AuthorizationParameters, TokenSet, UserinfoResponse } from 'openid-client';
 import { Request, RequestHandler } from 'express';
 
 interface ConfigParams {
@@ -11,7 +11,7 @@ interface ConfigParams {
     clientSecret?: string;
     clockTolerance?: number;
     errorOnRequiredAuth?: boolean;
-    getUser?: (tokenSet: TokenSet) => undefined | object;
+    getUser?: (tokenSet: TokenSet) => undefined | UserinfoResponse;
     idpLogout?: boolean;
     idTokenAlg?: string;
     issuerBaseURL?: string;
