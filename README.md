@@ -65,6 +65,7 @@ BASE_URL=https://YOUR_APPLICATION_ROOT_URL
 // index.js
 
 app.use(auth({
+  required: true,
   issuerBaseURL: 'https://YOUR_DOMAIN',
   baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
   clientID: 'YOUR_CLIENT_ID'
