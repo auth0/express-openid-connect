@@ -1,153 +1,117 @@
-# API
-
-Please see the [Getting Started section of the README](https://github.com/auth0/express-openid-connect#getting-started) for examples of how to apply configuration options.
+# Public API
 
 ## Configuration Keys
 
-The `auth()` middleware has a few configuration keys that are required for initialization:
+Please see the [Getting Started section of the README](https://github.com/auth0/express-openid-connect#getting-started) for examples of how to apply the configuration options to the `auth()` middleware.
 
-- **`baseURL`**: The root URL for the application router. This can be set automatically with `BASE_URL` in your `env`.
-- **`clientID`**: The Client ID for your application. This can be set automatically with `CLIENT_ID` in your `env`.
-- **`issuerBaseURL`**: The root URL for the token issuer. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with `ISSUER_BASE_URL` in your `env`.
+### Required Keys
+
+The `auth()` middleware has a few configuration keys that are required for initialization. 
+
+- **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
+- **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
+- **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
 
 If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
 
-- **`clientSecret`**: The Client ID for your application. This can be set automatically with `CLIENT_SECRET` in your `env`. 
+- **`clientSecret`** - The Client ID for your application. This can be set automatically with a `CLIENT_SECRET` variable in your environment.
 
-Additional configuration keys that can be passed:
+### Optional Keys
 
-- **`auth0Logout`**: Boolean value to enable Auth0's non-compliant logout feature (Auth0 customers should set this to `true`). Default is `false`.
-- **`clockTolerance`**: Integer value for the system clock's tolerance (also known as "leeway") in seconds for ID token verification. Default is `60`.
-- **`getUser`**: Asynchronous function that receives a tokenset and returns the profile for `req.openid.user`. Default is [here](lib/getUser.js).
-- **`errorOnRequiredAuth`**: Boolean value to install a middleware that automatically handles Unauthorized/401 errors by triggering the login process. Default is `false`.
-- **`httpOptions`**: Default options object used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)). Default is empty.
-- **`idpLogout`**: Boolean value to log the user out from the identity provider on application logout. Requires the issuer to provide a `end_session_endpoint` value. Default is `false`.
-- **`loginPath`**: Relative path to application login. Default is `/login`.
-- **`logoutPath`**: Relative path to application logout. Default is `/logout`.
-- **`redirectUriPath`**: Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
-- **`required`**: Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
-- **`routes`**: Boolean value to install the `GET` `/login` and `/logout` routes.  Default is `true`. See [the examples](EXAMPLES.md) for more information on how this key is used.
+Additional configuration keys that can be passed to `auth()` on initialization:
 
-Default value for `authorizationParams` is:
+- **`auth0Logout`** - Boolean value to enable Auth0's logout feature. Default is `false`.
+- **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-key) for defaults and more details.
+- **`clockTolerance`** - Integer value for the system clock's tolerance (leeway) in seconds for ID token verification. Default is `60`.
+- **`getUser`** - Asynchronous function that receives a token set and returns the profile for `req.openid.user`. This runs on each application page load for authenticated users. Default is [here](lib/getUser.js).
+- **`errorOnRequiredAuth`** - Boolean value to throw a `Unauthorized 401` error instead of triggering the login process for routes that require authentication. Default is `false`.
+- **`httpOptions`** - Default options object used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)). Default is empty.
+- **`idpLogout`** - Boolean value to log the user out from the identity provider on application logout. Requires the issuer to provide a `end_session_endpoint` value. Default is `false`.
+- **`loginPath`** - Relative path to application login. Default is `/login`.
+- **`logoutPath`** - Relative path to application logout. Default is `/logout`.
+- **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
+- **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
+- **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
 
-```javascript
+### Authorization Params Key
+
+The `authorizationParams` key defines the URL parameters used when redirecting users to the authorization server to log in. If this key is not provided by your application, its default value will be:
+
+```js
 {
-  response_type: 'id_token',
-  response_mode: 'form_post',
-  scope: 'openid profile email'
+  response_type: "id_token",
+  response_mode: "form_post",
+  scope: "openid profile email"
 }
 ```
 
-Commonly used `authorizationParams`:
+A new object can be passed in to change what is returned from the authorization server depending on your specific scenario.
 
-| Name                | Default                | Description                                                                                                  |
-|---------------------|------------------------|--------------------------------------------------------------------------------------------------------------|
-| response_type       | **Required**           | The desired authorization processing flow, including what parameters are returned from the endpoints used.   |
-| response_mode       | `undefined` / optional | The mechanism to be used for returning Authorization Response parameters from the Authorization Endpoint.    |
-| scope               | `openid profile email` | The scope of the access token.                                                                               |
-| audience            | `undefined` / optional | The audience for the access token.                                                                           |
+For example, to receieve an access token for an API, you could initialize like the sample below. Note that `response_mode` can be omitted because the OAuth2 default mode of `query` is fine:
 
-## openidClient.requiresAuth
+```js
+app.use(auth({
+  authorizationParams: {
+    response_type: "code",
+    scope: "openid profile email read:reports",
+    audience: "https://your-api-identifier"
+  }
+}));
+```
 
-The `requiresAuth()` middleware protects specific application routes:
+Additional custom parameters can be added as well:
+
+```js
+app.use(auth({
+  authorizationParams: {
+    // Note: you need to provide required parameters if this object is set.
+    response_type: "id_token",
+    response_mode: "form_post",
+    scope: "openid profile email"
+
+    // Additional parameters
+    acr_value: "tenant:test-tenant",
+    custom_param: "custom-value"
+  }
+}));
+```
+
+## `requiresAuth()`
+
+The `requiresAuth()` function is an optional middleware that protects specific application routes when the `required` configuration key is set to `false`:
 
 ```javascript
 const { auth, requiresAuth } = require('express-openid-connect');
 app.use( auth( { required: false } ) );
-app.use( '/admin', requiresAuth() );
+app.use( '/admin', requiresAuth(), (req, res) => res.render('admin') );
 ```
 
-If all endpoints require the user to be logged in, the default `auth` middleware protects you from this:
+Using `requiresAuth()` on its own without initializing `auth()` will throw a `401 Unauthorized` error instead of triggering the login process:
 
-```javascript
-app.use( auth( { required: true } ) );
+```js
+// app.use(auth({required: true}));
+app.get('/', requiresAuth(), (req, res) => res.render('home'));
 ```
 
 ## Session and Context
 
-The middleware stores the [openid-client TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset) in the user's session.
+This library adds properties and methods to the request and response objects used within route handling. 
 
-Every `req` object is augmented with the following properties when the request is authenticated
+### Request
 
--  `req.openid.user`: contains the user information, use this if you need display an attribute of the user. You can change what's end up here by using the `getUser` parameter of the `auth` middleware.
--  `req.openid.tokens`: is the instance of [TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset).
--  `req.openid.client`: is an instance of te [OpenID Client](https://github.com/panva/node-openid-client/blob/master/docs/README.md#client).
--  `req.isAuthenticated()`: returns true if the request is authenticated.
+Every request object (typically named `req` in your route handler) is augmented with the following when the request is authenticated. If the request is not authenticated, `req.openid` is `undefined`.
 
-If the request is not authenticated, `req.openid` is `undefined`.
+- **`req.openid.user`** - Contains the user information returned from the authorization server. You can change what is provided here by using the `getUser` configuration key.
+- **`req.openid.tokens`** - Is the [TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset) instance obtained during login.
+- **`req.openid.client`** - Is the [OpenID Client](https://github.com/panva/node-openid-client/blob/master/docs/README.md#client) instance that can be used for additional OAuth2 and OpenID calls. See [the examples](EXAMPLES.md) for more information on how this is used.
+- **`req.isAuthenticated()`** - Returns true if the request is authenticated.
 
-Every `res` object gets the following methods:
+### Response
 
--  `res.openid.login(params)`: trigger an authentication request from any route. It receives the following parameters:
-  -  `params.returnTo`: The url to return to after authentication. Defaults to the current url for GETs and `baseURL` for other methods.
-  -  `params.authorizationParams`: additional parameters for the authorization call.
--  `res.openid.logout(params)`: trigger the openid connect logout if supporter by the issuer.
-  -  `params.returnTo`: The url to return to after sign out. Defaults to the `baseURL` for other methods.
+Every response object (typically named `res` in your route handler) is augmented with the following:
 
-## Authorization handling
-
-By default the library triggers the login process when authentication is required.
-
-An anonymous request to the home page in this case will trigger the login process:
-
-```js
-app.use(auth()); // Remember that required is true by default
-app.get('/', (req, res) => res.render('home'));
-```
-
-The same happens in this case:
-
-```js
-app.use(auth()); // Remember that required is true by default
-app.get('/', requiresAuth(), (req, res) => res.render('home'));
-```
-
-If you remove the `auth()` middleware above like this:
-
-```js
-// app.use(auth()); // Remember that required is true by default
-app.get('/', requiresAuth(), (req, res) => res.render('home'));
-```
-
-Instead of triggering the login process we get a 401 Unauthorized error.
-
-It is a best practice to decouple your application logic from this library. If you need to raise a 401 error on your own logic and `requiresAuth` is not enough, you can add the `unauthorizedHandler` from this library:
-
-```js
-const {
-  auth,
-  requiresAuth,
-  unauthorizedHandler
-} = require('express-openid-connect');
-
-app.use(auth());
-
-// your routes go here
-app.get('/a-route', (req, res, next) => {
-  if (condition) {
-    return next(new UnauthorizedError('unauthorized because of xyz'));
-  }
-});
-
-//trigger login transactions on 401 errors.
-app.use(unauthorizedHandler());
-```
-
-If you need an special logic for handling 401s, including the errors raised by this library, you can set `errorOnRequiredAuth` to `true` like this:
-
-```js
-const { auth, requiresAuth } = require('express-openid-connect');
-
-app.use(auth({ errorOnRequiredAuth: true }));
-
-// your routes go here
-
-//handle unauthorized errors with the unauthorizedHandler or
-//with your own middleware like this:
-app.use((err, req, res, next) => {
- if (err.statusCode === 401) {
-    return res.openid.login(); //trigger the login process like the `unauthorizedHandler`.
-  }
-  next(err);
-});
-```
+- **`res.openid.login({})`** - trigger an authentication request from any route. It receives an object with the following keys:
+  - `returnTo`: The URL to return to after authentication. Defaults to the current URL for `GET` routes and `baseURL` for other methods.
+  - `authorizationParams`: Additional parameters for the authorization call.
+- **`res.openid.logout({})`** - trigger the openid connect logout if supporter by the issuer. It receives an object with the following key:
+  - `returnTo`: The URL to return to after signing out at the authorization server. Defaults to the `baseURL`.

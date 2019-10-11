@@ -26,7 +26,9 @@ app.use(session({
   secret: process.env.COOKIE_SECRET
 }));
 
-app.use(auth())
+app.use(auth({
+  required: true
+}))
 
 app.use('/', (req, res) => {
   res.send(`hello ${req.openid.user.name}`);
@@ -36,10 +38,44 @@ app.use('/', (req, res) => {
 What you get:
 
 - Every route after the `auth()` middleware requires authentication.
-- If a user try to access a resource without being authenticated, the application will trigger the authentication process. After completion the user is redirected back to the resource.
-- The application creates `GET /login` and `GET /logout` routes for easy linking.
+- If a user tries to access a resource without being authenticated, the application will redirect the user to log in. After completion the user is redirected back to the resource.
+- The application creates `/login` and `/logout` `GET` routes.
 
-## 2. Route Customization
+## 2. Require authentication for specific routes
+
+If your application has routes accessible to anonymous users, you can enable authorization per routes:
+
+```js
+const { auth, requiresAuth } = require('express-openid-connect');
+
+app.use(auth({ 
+  required: false 
+}));
+
+// Anyone can access the homepage
+app.use('/', (req, res) => res.render('home'));
+
+// Require routes under the /admin/ prefix to check authentication.
+app.use('/admin/users', requiresAuth(), (req, res) => res.render('admin-users'));
+app.use('/admin/posts', requiresAuth(), (req, res) => res.render('admin-posts'));
+```
+
+Another way to configure this scenario:
+
+```js
+const { auth } = require('express-openid-connect');
+
+//initialization
+app.use(auth({
+  required: req => req.originalUrl.startsWith('/admin/')
+}));
+
+app.use('/', (req, res) => res.render('home'));
+app.use('/admin/users', (req, res) => res.render('admin-users'));
+app.use('/admin/posts', (req, res) => res.render('admin-posts'));
+```
+
+## 3. Route Customization
 
 If you need to customize the routes, you can opt-out from the default routes and handle this manually:
 
@@ -50,7 +86,7 @@ app.get('/account/login', (req, res) => res.openid.login({ returnTo: '/' }));
 app.get('/account/logout', (req, res) => res.openid.logout());
 ```
 
-... or you can define specific routes for the default handling:
+... or you can define specific routes for the default handling in configuration keys:
 
 ```js
 app.use(auth({ 
@@ -62,33 +98,9 @@ app.use(auth({
 
 Please note that both of these routes are completely optional and not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login.
 
-## 3. Require auth for specific routes
-
-If your application has routes accessible to anonymous users, you can enable authorization per routes:
-
-```js
-const { auth, requiresAuth } = require('express-openid-connect');
-
-app.use(auth({ required: false }));
-
-// Require every route under the /admin prefix to check authentication.
-app.use('/admin', requiresAuth());
-```
-
-Another way to configure this scenario:
-
-```js
-const { auth } = require('express-openid-connect');
-
-//initialization
-app.use(auth({
-  required: req => req.originalUrl.startsWith('/admin')
-}));
-```
-
 ## 4. Using refresh tokens
 
-Refresh tokens can requested along with access tokens using the `offline_access` scope during login:
+Refresh tokens can be requested along with access tokens using the `offline_access` scope during login:
 
 ```js
 app.use(auth({
