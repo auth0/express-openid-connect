@@ -1,29 +1,32 @@
 # API
 
-Please see the [Getting Started section of the README](https://github.com/auth0/express-openid-connect#getting-started) for how to apply configuration options.
+Please see the [Getting Started section of the README](https://github.com/auth0/express-openid-connect#getting-started) for examples of how to apply configuration options.
 
-## openidClient.auth parameters
+## Configuration Keys
 
-In general, you won't need to configure this middleware besides the required parameters that can be specified through environment variables.
+The `auth()` middleware has a few configuration keys that are required for initialization:
 
-| Name                | Default                         | Description                                                                    |
-|---------------------|---------------------------------|--------------------------------------------------------------------------------|
-| issuerBaseURL       | `env.ISSUER_BASE_URL`           | The url address for the token issuer.                                          |
-| httpOptions         | none                            | Default options used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)) |
-| baseURL             | `env.BASE_URL`                  | The url of the web application where you are installing the router.            |
-| clientID            | `env.CLIENT_ID`                 | The client id.                                                                 |
-| clientSecret        | `env.CLIENT_SECRET`             | The client secret, only required for some grants.                              |
-| clockTolerance      | `5`                             | The clock's tolerance in seconds for token verification.                       |
-| getUser             | `tokenSet => tokenSet.claims()` | An async function receiving a tokenset and returning the profile for `req.openid.user`. |
-| required            | `true`                          | If `true`, requires authentication for all routes (redirects to `loginPath`). Pass a function instead of a boolean to base this on the request.  |
-| handleUnauthorizedErrors | `true`                     | Install a middleware that handles Unauthorized/401 errors by triggering the login process. |
-| routes              | `true`                          | Installs the `GET /login` and `GET /logout` routes.                              |
-| idpLogout           | `false`                         | Logout the user from the identity provider on logout                            |
-| auth0Logout         | `false`                         | Enable Auth0's non-compliant logout feature, only if Auth0 can be detected and the Auth0 instance does not support OpenID Connect session management. |
-| redirectUriPath     | `/callback`                     | Relative path for the callback URL; sent to the authorize endpoint in the `redirectUri` parameter. |
-| loginPath           | `/login`                        | Relative path to login.                                                         |
-| logoutPath          | `/logout`                       | Relative path to logout.                                                        |
-| authorizationParams | See below                       | The parameters for the authorization call.                                      |
+- **`baseURL`**: The root URL for the application router. This can be set automatically with `BASE_URL` in your `env`.
+- **`clientID`**: The Client ID for your application. This can be set automatically with `CLIENT_ID` in your `env`.
+- **`issuerBaseURL`**: The root URL for the token issuer. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with `ISSUER_BASE_URL` in your `env`.
+
+If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
+
+- **`clientSecret`**: The Client ID for your application. This can be set automatically with `CLIENT_SECRET` in your `env`. 
+
+Additional configuration keys that can be passed:
+
+- **`auth0Logout`**: Boolean value to enable Auth0's non-compliant logout feature (Auth0 customers should set this to `true`). Default is `false`.
+- **`clockTolerance`**: Integer value for the system clock's tolerance (also known as "leeway") in seconds for ID token verification. Default is `60`.
+- **`getUser`**: Asynchronous function that receives a tokenset and returns the profile for `req.openid.user`. Default is [here](lib/getUser.js).
+- **`errorOnRequiredAuth`**: Boolean value to install a middleware that automatically handles Unauthorized/401 errors by triggering the login process. Default is `false`.
+- **`httpOptions`**: Default options object used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)). Default is empty.
+- **`idpLogout`**: Boolean value to log the user out from the identity provider on application logout. Requires the issuer to provide a `end_session_endpoint` value. Default is `false`.
+- **`loginPath`**: Relative path to application login. Default is `/login`.
+- **`logoutPath`**: Relative path to application logout. Default is `/logout`.
+- **`redirectUriPath`**: Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
+- **`required`**: Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
+- **`routes`**: Boolean value to install the `GET` `/login` and `/logout` routes.  Default is `true`. See [the examples](EXAMPLES.md) for more information on how this key is used.
 
 Default value for `authorizationParams` is:
 
