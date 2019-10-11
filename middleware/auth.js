@@ -14,7 +14,7 @@ const { RequestContext, ResponseContext } = require('../lib/context');
 * @param {string} [params.baseURL] The url of the web application where you are installing the router.
 * @param {string} [params.clientID] The client id.
 * @param {string} [params.clientSecret] The client secret, only required for some grants.
-* @param {string} [params.clockTolerance=5] The clock's tolerance in seconds for token verification.
+* @param {string} [params.clockTolerance] The clock's tolerance in seconds for token verification.
 * @param {Function} [params.getUser] An async function receiving a tokenset and returning the profile for req.user.
 * @param {boolean|Function} [params.required=true] a boolean to indicate that every route after this middleware requires authentication or
 * a function receiving a request and return a boolean to determine which routes needs authentication.
