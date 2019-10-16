@@ -6,7 +6,7 @@ Please see the [Getting Started section of the README](https://github.com/auth0/
 
 ### Required Keys
 
-The `auth()` middleware has a few configuration keys that are required for initialization. 
+The `auth()` middleware has a few configuration keys that are required for initialization.
 
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
 - **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
@@ -47,7 +47,7 @@ The `authorizationParams` key defines the URL parameters used when redirecting u
 
 A new object can be passed in to change what is returned from the authorization server depending on your specific scenario.
 
-For example, to receieve an access token for an API, you could initialize like the sample below. Note that `response_mode` can be omitted because the OAuth2 default mode of `query` is fine:
+For example, to receive an access token for an API, you could initialize like the sample below. Note that `response_mode` can be omitted because the OAuth2 default mode of `query` is fine:
 
 ```js
 app.use(auth({
@@ -95,7 +95,7 @@ app.get('/', requiresAuth(), (req, res) => res.render('home'));
 
 ## Session and Context
 
-This library adds properties and methods to the request and response objects used within route handling. 
+This library adds properties and methods to the request and response objects used within route handling.
 
 ### Request
 

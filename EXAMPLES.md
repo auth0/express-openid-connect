@@ -48,8 +48,8 @@ If your application has routes accessible to anonymous users, you can enable aut
 ```js
 const { auth, requiresAuth } = require('express-openid-connect');
 
-app.use(auth({ 
-  required: false 
+app.use(auth({
+  required: false
 }));
 
 // Anyone can access the homepage
@@ -77,7 +77,7 @@ app.use('/admin/posts', (req, res) => res.render('admin-posts'));
 
 ## 3. Route Customization
 
-If you need to customize the routes, you can opt-out from the default routes and handle this manually:
+If you need to customize the routes, you can opt-out from the default routes and write your own route handler:
 
 ```js
 app.use(auth({ routes: false }));
@@ -86,13 +86,13 @@ app.get('/account/login', (req, res) => res.openid.login({ returnTo: '/' }));
 app.get('/account/logout', (req, res) => res.openid.logout());
 ```
 
-... or you can define specific routes for the default handling in configuration keys:
+... or you can define specific routes in configuration keys where the default handler will run:
 
 ```js
-app.use(auth({ 
-  redirectUriPath: '/custom-callback-path', 
-  loginPath: '/custom-login-path', 
-  logoutPath: '/custom-logout-path', 
+app.use(auth({
+  redirectUriPath: '/custom-callback-path',
+  loginPath: '/custom-login-path',
+  logoutPath: '/custom-logout-path',
 }));
 ```
 
@@ -117,7 +117,7 @@ On a route that calls an API, check for an expired token and attempt a refresh:
 
 ```js
 app.get('/route-that-calls-an-api', async (req, res, next) => {
-  
+
   let apiData = {};
   let tokenSet = req.openid.tokens;
 
@@ -134,7 +134,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 
   try {
     apiData = await request(
-      process.env.API_URL, 
+      process.env.API_URL,
       {
         headers: { authorization: `Bearer ${tokenSet.access_token}` },
         json: true
