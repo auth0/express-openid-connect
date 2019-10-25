@@ -26,12 +26,10 @@ This library requires:
 
 ## Documentation
 
-More complete documentation coming soon!
-
-- [Examples for common configurations](EXAMPLES.md)
-- [API documentation](API.md)
-- [Sample application](https://github.com/joshcanhelp/express-oidc-connect-starter)
-- [Sample implementation](https://github.com/auth0/node-sample-with-openid-client)
+- Our [Express Quickstart](https://auth0.com/docs/quickstart/webapp/express) is the quickest way to get up and running from scratch.
+- Use the [Examples for common configurations](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) for use cases beyond the basics.
+- The [API documentation](https://github.com/auth0/express-openid-connect/blob/master/API.md) details all configuration options, methods, and data that this library provides.
+- You can [run the sample application](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master) to see how this SDK functions without writing your own integration.
 
 ## Installation
 
