@@ -1,6 +1,7 @@
 const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
+const bodyParser = require('body-parser');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
@@ -60,7 +61,7 @@ module.exports = function (params) {
   });
 
   if (config.routes) {
-    router.get(config.loginPath, (req, res) => {
+    router.get(config.loginPath, bodyParser.urlencoded({ extended: false }), (req, res) => {
       res.openid.login({ returnTo: config.baseURL });
     });
     router.get(config.logoutPath, (req, res) => res.openid.logout());
