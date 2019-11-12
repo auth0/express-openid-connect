@@ -79,7 +79,7 @@ module.exports = function (params) {
       callbackMethod = 'get';
   }
 
-  router[callbackMethod](config.redirectUriPath, async (req, res, next) => {
+  router[callbackMethod](config.redirectUriPath, express.urlencoded({ extended: false }), async (req, res, next) => {
     next = cb(next).once();
     try {
       const { nonce, state } = req.session;
