@@ -61,7 +61,7 @@ module.exports = function (params) {
   });
 
   if (config.routes) {
-    router.get(config.loginPath, bodyParser.urlencoded({ extended: false }), (req, res) => {
+    router.get(config.loginPath, express.urlencoded({ extended: false }), (req, res) => {
       res.openid.login({ returnTo: config.baseURL });
     });
     router.get(config.logoutPath, (req, res) => res.openid.logout());
