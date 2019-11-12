@@ -1,7 +1,6 @@
 const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
-const bodyParser = require('body-parser');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
