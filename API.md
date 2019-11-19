@@ -113,5 +113,5 @@ Every response object (typically named `res` in your route handler) is augmented
 - **`res.openid.login({})`** - trigger an authentication request from any route. It receives an object with the following keys:
   - `returnTo`: The URL to return to after authentication. Defaults to the current URL for `GET` routes and `baseURL` for other methods.
   - `authorizationParams`: Additional parameters for the authorization call.
-- **`res.openid.logout({})`** - trigger the openid connect logout if supporter by the issuer. It receives an object with the following key:
+- **`res.openid.logout({})`** - trigger the openid connect logout if supported by the issuer. It receives an object with the following key:
   - `returnTo`: The URL to return to after signing out at the authorization server. Defaults to the `baseURL`.
