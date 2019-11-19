@@ -14,7 +14,7 @@ The `auth()` middleware has a few configuration keys that are required for initi
 
 If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
 
-- **`clientSecret`** - The Client ID for your application. This can be set automatically with a `CLIENT_SECRET` variable in your environment.
+- **`clientSecret`** - The Client Secret for your application. This can be set automatically with a `CLIENT_SECRET` variable in your environment.
 
 ### Optional Keys
 
