@@ -102,13 +102,16 @@ module.exports = function (params) {
       }
 
       req.session.openidTokens = tokenSet;
-
-      const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || '/';
-
-      res.redirect(returnTo);
+      next();
     } catch (err) {
       next(err);
     }
+  },
+  config.customCallbackProcessing,
+  function (req, res) {
+    const returnTo = req.session.returnTo || '/';
+    delete req.session.returnTo;
+    res.redirect(returnTo);
   });
 
   if (config.required) {
