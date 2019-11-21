@@ -12,12 +12,13 @@ const clientID = '__test_client_id__';
 
 function testCase(params) {
   return () => {
-    const router = expressOpenid.auth({
+    const authOpts = Object.assign({}, {
       clientID: clientID,
       baseURL: 'https://example.org',
       issuerBaseURL: 'https://test.auth0.com',
       required: false
-    });
+    }, params.authOpts || {});
+    const router = expressOpenid.auth(authOpts);
 
     let baseUrl;
 
@@ -198,17 +199,14 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when id_token is valid', testCase({
     cookies: {
-      state: '__test_state__',
-      nonce: '__test_nonce__',
+      _state: '__test_state__',
+      _nonce: '__test_nonce__',
       returnTo: '/return-to'
     },
     body: {
       state: '__test_state__',
       id_token: jwt.sign({
         'nickname': '__test_nickname__',
-        'name': '__test_name__',
-        'email': '__test_email__',
-        'email_verified': true,
         'iss': 'https://test.auth0.com/',
         'sub': '__test_sub__',
         'aud': clientID,
@@ -237,6 +235,28 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
           jar: this.jar
         });
         assert.equal(res.body.nickname, '__test_nickname__');
+      });
+    }
+  }));
+
+  describe('when legacy samesite fallback is off', testCase({
+    authOpts: {
+      legacySameSiteCookie: false
+    },
+    cookies: {
+      _state: '__test_state__'
+    },
+    body: {
+      state: '__test_state__',
+      id_token: '__invalid_token__'
+    },
+    assertions() {
+      it('should return 400', function() {
+        assert.equal(this.response.statusCode, 400);
+      });
+
+      it('should return the reason to the error handler', function() {
+        assert.equal(this.response.body.err.message, 'checks.state argument is missing');
       });
     }
   }));
