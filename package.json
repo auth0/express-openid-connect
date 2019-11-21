@@ -14,6 +14,7 @@
     "@hapi/joi": "^14.5.0",
     "cb": "^0.1.0",
     "clone": "^2.1.2",
+    "cookie-parser": "^1.4.4",
     "http-errors": "^1.7.3",
     "openid-client": "^3.7.3",
     "p-memoize": "^3.1.0",
