@@ -78,6 +78,23 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     }
   }));
 
+  describe('when state is missing', testCase({
+    cookies: {},
+    body: {
+      state: '__test_state__',
+      id_token: '__invalid_token__'
+    },
+    assertions() {
+      it('should return 400', function() {
+        assert.equal(this.response.statusCode, 400);
+      });
+
+      it('should return the reason to the error handler', function() {
+        assert.equal(this.response.body.err.message, 'checks.state argument is missing');
+      });
+    }
+  }));
+
   describe("when state doesn't match", testCase({
     cookies: {
       nonce: '__test_nonce__',
@@ -153,6 +170,28 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
       it('should return the reason to the error handler', function() {
         assert.match(this.response.body.err.message, /missing required JWT property iss/i);
+      });
+    }
+  }));
+
+  describe('when nonce is missing from cookies', testCase({
+    cookies: {
+      state: '__test_state__',
+      returnTo: '/return-to'
+    },
+    body: {
+      state: '__test_state__',
+      id_token: jwt.sign({
+        'iss': 'https://test.auth0.com/',
+        'sub': '__test_sub__',
+        'aud': clientID,
+        'exp': Math.round(Date.now() / 1000) + 60000,
+        'nonce': '__test_nonce__'
+      }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
+    },
+    assertions() {
+      it('should return the reason to the error handler', function() {
+        assert.match(this.response.body.err.message, /nonce mismatch/i);
       });
     }
   }));
