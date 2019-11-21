@@ -84,10 +84,12 @@ module.exports = function (params) {
   router[callbackMethod](config.redirectUriPath, express.urlencoded({ extended: false }), cookieParser(), async (req, res, next) => {
     next = cb(next).once();
     try {
-
       const redirect_uri = res.openid.getRedirectUri();
       const client = req.openid.client;
-      const transientOpts = {legacySameSiteCookie: config.legacySameSiteCookie};
+      const transientOpts = {
+        legacySameSiteCookie: config.legacySameSiteCookie,
+        sameSite: config.authorizationParams.response_mode === 'form_post' ? 'None' : 'Lax'
+      };
 
       let tokenSet;
 
