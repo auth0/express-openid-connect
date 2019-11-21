@@ -87,14 +87,15 @@ module.exports = function (params) {
 
       const redirect_uri = res.openid.getRedirectUri();
       const client = req.openid.client;
+      const transientOpts = {legacySameSiteCookie: config.legacySameSiteCookie};
 
       let tokenSet;
 
       try {
         const callbackParams = client.callbackParams(req);
         tokenSet = await client.callback(redirect_uri, callbackParams, {
-          nonce: transient.getOnce('nonce', req, res),
-          state: transient.getOnce('state', req, res),
+          nonce: transient.getOnce('nonce', req, res, transientOpts),
+          state: transient.getOnce('state', req, res, transientOpts),
           response_type: authorizeParams.response_type,
         });
       } catch (err) {
