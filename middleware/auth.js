@@ -1,9 +1,11 @@
 const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
+const cookieParser = require('cookie-parser');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
+const transient =  require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 
 /**
@@ -79,12 +81,9 @@ module.exports = function (params) {
       callbackMethod = 'get';
   }
 
-  router[callbackMethod](config.redirectUriPath, express.urlencoded({ extended: false }), async (req, res, next) => {
+  router[callbackMethod](config.redirectUriPath, express.urlencoded({ extended: false }), cookieParser(), async (req, res, next) => {
     next = cb(next).once();
     try {
-      const { nonce, state } = req.session;
-      delete req.session.nonce;
-      delete req.session.state;
 
       const redirect_uri = res.openid.getRedirectUri();
       const client = req.openid.client;
@@ -94,8 +93,8 @@ module.exports = function (params) {
       try {
         const callbackParams = client.callbackParams(req);
         tokenSet = await client.callback(redirect_uri, callbackParams, {
-          nonce,
-          state,
+          nonce: transient.getOnce('nonce', req, res),
+          state: transient.getOnce('state', req, res),
           response_type: authorizeParams.response_type,
         });
       } catch (err) {
@@ -104,8 +103,7 @@ module.exports = function (params) {
 
       req.session.openidTokens = tokenSet;
 
-      const returnTo = req.session.returnTo || '/';
-      delete req.session.returnTo;
+      const returnTo = transient.getOnce('returnTo', req, res) || '/';
 
       res.redirect(returnTo);
     } catch (err) {

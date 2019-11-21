@@ -26,10 +26,12 @@ function testCase(params) {
     before(async function() {
       this.jar = jar;
       this.baseUrl = baseUrl = await server.create(router);
-      await request.post({
-        uri: '/session',
-        baseUrl, jar,
-        json: params.session
+
+      Object.keys(params.cookies).forEach(function(cookieName) {
+        jar.setCookie(
+          `${cookieName}=${params.cookies[cookieName]}; Max-Age=3600; Path=/; HttpOnly;`,
+          baseUrl + '/callback',
+        );
       });
     });
 
@@ -60,7 +62,7 @@ function testCase(params) {
 
 describe('callback routes response_type: id_token, response_mode: form_post', function() {
   describe('when body is empty', testCase({
-    session: {
+    cookies: {
       nonce: '__test_nonce__',
       state: '__test_state__'
     },
@@ -77,7 +79,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
   }));
 
   describe("when state doesn't match", testCase({
-    session: {
+    cookies: {
       nonce: '__test_nonce__',
       state: '__valid_state__'
     },
@@ -96,7 +98,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
   }));
 
   describe("when id_token can't be parsed", testCase({
-    session: {
+    cookies: {
       nonce: '__test_nonce__',
       state: '__test_state__'
     },
@@ -116,7 +118,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
   }));
 
   describe('when id_token has invalid alg', testCase({
-    session: {
+    cookies: {
       nonce: '__test_nonce__',
       state: '__test_state__'
     },
@@ -136,7 +138,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
   }));
 
   describe('when id_token is missing issuer', testCase({
-    session: {
+    cookies: {
       nonce: '__test_nonce__',
       state: '__test_state__'
     },
@@ -156,7 +158,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
   }));
 
   describe('when id_token is valid', testCase({
-    session: {
+    cookies: {
       state: '__test_state__',
       nonce: '__test_nonce__',
       returnTo: '/return-to'

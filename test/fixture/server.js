@@ -20,11 +20,6 @@ module.exports.create = function(router, protect) {
     res.json(req.session);
   });
 
-  app.post('/session', (req, res) => {
-    req.session = req.body;
-    res.json(req.body);
-  });
-
   app.get('/user', (req, res) => {
     res.json(req.openid.user);
   });

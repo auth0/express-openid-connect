@@ -49,7 +49,6 @@ describe('auth', function() {
       assert.equal(parsed.hostname, 'test.auth0.com');
       assert.equal(parsed.pathname, '/authorize');
       assert.equal(parsed.query.client_id, '__test_client_id__');
-
       assert.equal(parsed.query.scope, 'openid profile email');
       assert.equal(parsed.query.response_type, 'id_token');
       assert.equal(parsed.query.response_mode, 'form_post');
@@ -57,9 +56,10 @@ describe('auth', function() {
       assert.property(parsed.query, 'nonce');
       assert.property(parsed.query, 'state');
 
-      const session = (await request.get('/session', { jar, baseUrl, json: true })).body;
-      assert.equal(session.nonce, parsed.query.nonce);
-      assert.equal(session.state, parsed.query.state);
+      const cookies = jar.getCookies(baseUrl + '/login');
+
+      assert.equal(cookies.filter(cookie => cookie.key === '_nonce')[0].value, parsed.query.nonce);
+      assert.equal(cookies.filter(cookie => cookie.key === '_state')[0].value, parsed.query.state);
     });
 
   });
