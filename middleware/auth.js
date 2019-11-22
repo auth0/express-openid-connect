@@ -86,10 +86,7 @@ module.exports = function (params) {
     try {
       const redirect_uri = res.openid.getRedirectUri();
       const client = req.openid.client;
-      const transientOpts = {
-        legacySameSiteCookie: config.legacySameSiteCookie,
-        sameSite: config.authorizationParams.response_mode === 'form_post' ? 'None' : 'Lax'
-      };
+      const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
 
       let tokenSet;
 
@@ -106,7 +103,7 @@ module.exports = function (params) {
 
       req.session.openidTokens = tokenSet;
 
-      const returnTo = transient.getOnce('returnTo', req, res) || '/';
+      const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || '/';
 
       res.redirect(returnTo);
     } catch (err) {
