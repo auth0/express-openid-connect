@@ -110,7 +110,7 @@ describe('auth', function() {
       let router;
 
       before(async function() {
-        router = router = expressOpenid.auth({
+        router = expressOpenid.auth({
           clientID: '__test_client_id__',
           clientSecret: '__test_client_secret__',
           baseURL: 'https://example.org',
@@ -140,6 +140,19 @@ describe('auth', function() {
         assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
+        assert.property(res.headers, 'set-cookie');
+
+        // ccookieJar is not respecting cookies set with SameSite
+        const cookieHeaders = res.headers['set-cookie'];
+
+        assert.equal(
+          cookieHeaders.filter(header => header.substring(0,6) === 'nonce=')[0].split('; ')[0].split('=')[1],
+          parsed.query.nonce
+        );
+        assert.equal(
+          cookieHeaders.filter(header => header.substring(0,6) === 'state=')[0].split('; ')[0].split('=')[1],
+          parsed.query.state
+        );
       });
 
       it('should contain a callback route', function() {
@@ -152,7 +165,7 @@ describe('auth', function() {
       let baseUrl;
 
       before(async function() {
-        router = router = expressOpenid.auth({
+        router = expressOpenid.auth({
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
