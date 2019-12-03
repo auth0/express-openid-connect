@@ -13,6 +13,22 @@ const filterRoute = (method, path) => {
               r.route.methods[method.toLowerCase()];
 };
 
+const getCookieFromResponse = (res, cookieName) => {
+  const cookieHeaders = res.headers['set-cookie'];
+
+  const foundHeader = cookieHeaders.filter(header => header.substring(0,6) === cookieName + '=')[0];
+  if (!foundHeader) {
+    return false;
+  }
+
+  const cookieValuePart = foundHeader.split('; ')[0];
+  if (!cookieValuePart) {
+    return false;
+  }
+
+  return cookieValuePart.split('=')[1];
+};
+
 describe('auth', function() {
   describe('default', () => {
 
@@ -142,17 +158,8 @@ describe('auth', function() {
         assert.property(parsed.query, 'state');
         assert.property(res.headers, 'set-cookie');
 
-        // ccookieJar is not respecting cookies set with SameSite
-        const cookieHeaders = res.headers['set-cookie'];
-
-        assert.equal(
-          cookieHeaders.filter(header => header.substring(0,6) === 'nonce=')[0].split('; ')[0].split('=')[1],
-          parsed.query.nonce
-        );
-        assert.equal(
-          cookieHeaders.filter(header => header.substring(0,6) === 'state=')[0].split('; ')[0].split('=')[1],
-          parsed.query.state
-        );
+        assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
+        assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
       });
 
       it('should contain a callback route', function() {
