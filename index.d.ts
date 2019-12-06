@@ -1,7 +1,7 @@
 // Type definitions for express-openid-connect
 
-import { AuthorizationParameters, TokenSet, UserinfoResponse } from 'openid-client';
 import { Request, RequestHandler } from 'express';
+import { AuthorizationParameters, TokenSet, UserinfoResponse } from 'openid-client';
 
 interface ConfigParams {
     auth0Logout?: boolean;
@@ -18,6 +18,7 @@ interface ConfigParams {
     loginPath?: string;
     logoutPath?: string;
     redirectUriPath?: string;
+    postLogoutRedirectUri?: string;
     required?: boolean | ((request: Request) => boolean);
     routes?: boolean;
 }
