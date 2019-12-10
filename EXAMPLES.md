@@ -150,3 +150,28 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
   });
 });
 ```
+
+## 5. Calling userinfo
+
+If your application needs to call the userinfo endpoint for the user's identity, add a `handleCallback` function during initialization that will make this call. To map the incoming claims to the user identity, also add a `getUser` function.
+
+```js
+app.use(auth({
+  handleCallback: async function (req, res, next) {
+    const client = req.openid.client;
+    try {
+      req.session.openidTokens.userinfo = await client.userinfo(req.session.openidTokens);
+      next();
+    } catch(e) {
+      next(e);
+    }
+  },
+  getUser: function(tokenSet) {
+    return tokenSet && ( tokenSet.userinfo || tokenSet.claims() );
+  },
+  authorizationParams: {
+    response_type: 'code',
+    scope: 'openid profile email'
+  }
+}));
+```
