@@ -56,6 +56,22 @@ function testCase(params) {
   };
 }
 
+function makeIdToken(payload) {
+  if (typeof payload !== 'object' ) {
+    payload = {
+      'nickname': '__test_nickname__',
+      'iss': 'https://test.auth0.com/',
+      'sub': '__test_sub__',
+      'aud': clientID,
+      'iat': Math.round(Date.now() / 1000),
+      'exp': Math.round(Date.now() / 1000) + 60000,
+      'nonce': '__test_nonce__'
+    };
+  }
+
+  return jwt.sign(payload, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } });
+}
+
 //For the purpose of this test the fake SERVER returns the error message in the body directly
 //production application should have an error middleware.
 //http://expressjs.com/en/guide/error-handling.html
@@ -162,7 +178,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     },
     body: {
       state: '__test_state__',
-      id_token: jwt.sign({sub: '__test_sub__'}, cert.key, { algorithm: 'RS256' })
+      id_token: makeIdToken({sub: '__test_sub__'})
     },
     assertions() {
       it('should return 400', function() {
@@ -182,13 +198,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     },
     body: {
       state: '__test_state__',
-      id_token: jwt.sign({
-        'iss': 'https://test.auth0.com/',
-        'sub': '__test_sub__',
-        'aud': clientID,
-        'exp': Math.round(Date.now() / 1000) + 60000,
-        'nonce': '__test_nonce__'
-      }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
+      id_token: makeIdToken()
     },
     assertions() {
       it('should return the reason to the error handler', function() {
@@ -205,15 +215,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     },
     body: {
       state: '__test_state__',
-      id_token: jwt.sign({
-        'nickname': '__test_nickname__',
-        'iss': 'https://test.auth0.com/',
-        'sub': '__test_sub__',
-        'aud': clientID,
-        'iat': Math.round(Date.now() / 1000),
-        'exp': Math.round(Date.now() / 1000) + 60000,
-        'nonce': '__test_nonce__'
-      }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
+      id_token: makeIdToken()
     },
     assertions() {
       it('should return 302', function() {
@@ -275,14 +277,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     },
     body: {
       state: '__test_state__',
-      id_token: jwt.sign({
-        'iss': 'https://test.auth0.com/',
-        'sub': '__test_sub__',
-        'aud': clientID,
-        'iat': Math.round(Date.now() / 1000),
-        'exp': Math.round(Date.now() / 1000) + 60000,
-        'nonce': '__test_nonce__'
-      }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
+      id_token: makeIdToken()
     },
     assertions() {
       it('throws an error from the custom handler', function() {
