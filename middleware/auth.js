@@ -107,7 +107,7 @@ module.exports = function (params) {
       next(err);
     }
   },
-  config.customCallbackProcessing,
+  config.handleCallback,
   function (req, res) {
     const returnTo = req.session.returnTo || '/';
     delete req.session.returnTo;
