@@ -160,7 +160,7 @@ app.use(auth({
   handleCallback: async function (req, res, next) {
     const client = req.openid.client;
     try {
-      req.session.openidTokens.userinfo = await client.userinfo(req.session.openidTokens);
+      req.session.userinfo = await client.userinfo(req.session.openidTokens);
       next();
     } catch(e) {
       next(e);
