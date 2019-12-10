@@ -121,7 +121,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
   let apiData = {};
   let tokenSet = req.openid.tokens;
 
-  if (tokenSet.expired() && tokenSet.refresh_token) {
+  if (tokenSet && tokenSet.expired() && tokenSet.refresh_token) {
     try {
       tokenSet = await req.openid.client.refresh(tokenSet);
     } catch(err) {
