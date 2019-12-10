@@ -109,8 +109,8 @@ module.exports = function (params) {
   },
   config.handleCallback,
   function (req, res) {
-    const returnTo = req.session.returnTo || '/';
-    delete req.session.returnTo;
+    const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
+    const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || config.baseURL;
     res.redirect(returnTo);
   });
 

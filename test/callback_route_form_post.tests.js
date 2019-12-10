@@ -201,7 +201,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     cookies: {
       _state: '__test_state__',
       _nonce: '__test_nonce__',
-      returnTo: '/return-to'
+      _returnTo: '/return-to'
     },
     body: {
       state: '__test_state__',
