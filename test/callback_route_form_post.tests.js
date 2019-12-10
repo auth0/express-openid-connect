@@ -241,9 +241,11 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when legacy samesite fallback is off', testCase({
     authOpts: {
+      // Do not check the fallback cookie value.
       legacySameSiteCookie: false
     },
     cookies: {
+      // Only set the fallback cookie value.
       _state: '__test_state__'
     },
     body: {
@@ -257,6 +259,34 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
       it('should return the reason to the error handler', function() {
         assert.equal(this.response.body.err.message, 'checks.state argument is missing');
+      });
+    }
+  }));
+
+  describe('uses custom callback handling', testCase({
+    authOpts: {
+      handleCallback: () => {
+        throw new Error('__test_callback_error__');
+      }
+    },
+    cookies: {
+      _state: '__test_state__',
+      _nonce: '__test_nonce__'
+    },
+    body: {
+      state: '__test_state__',
+      id_token: jwt.sign({
+        'iss': 'https://test.auth0.com/',
+        'sub': '__test_sub__',
+        'aud': clientID,
+        'iat': Math.round(Date.now() / 1000),
+        'exp': Math.round(Date.now() / 1000) + 60000,
+        'nonce': '__test_nonce__'
+      }, cert.key, { algorithm: 'RS256', header: { kid: cert.kid } })
+    },
+    assertions() {
+      it('throws an error from the custom handler', function() {
+        assert.equal(this.response.body.err.message, '__test_callback_error__');
       });
     }
   }));
