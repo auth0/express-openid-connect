@@ -160,14 +160,11 @@ app.use(auth({
   handleCallback: async function (req, res, next) {
     const client = req.openid.client;
     try {
-      req.session.userinfo = await client.userinfo(req.session.openidTokens);
+      req.identity.claims = await client.userinfo(req.openidTokens);
       next();
     } catch(e) {
       next(e);
     }
-  },
-  getUser: function(tokenSet) {
-    return tokenSet && ( tokenSet.userinfo || tokenSet.claims() );
   },
   authorizationParams: {
     response_type: 'code',

@@ -2,6 +2,8 @@ const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
 const cookieParser = require('cookie-parser');
+const idSession = require('client-sessions');
+
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
@@ -45,20 +47,22 @@ module.exports = function (params) {
 
   const router = express.Router();
 
+  router.use(idSession({
+    cookieName: config.sessionName,
+    secret: config.sessionSecret,
+    duration: config.sessionLength
+  }));
+
   router.use(async (req, res, next) => {
-
+    req.openid = new RequestContext(config, req, res, next);
     try {
-      req.openid = new RequestContext(config, req, res, next);
       await req.openid.load();
-
-      res.openid = new ResponseContext(config, req, res, next);
-
-      req.isAuthenticated = () => req.openid.isAuthenticated;
-
-      next();
     } catch(err) {
       next(err);
     }
+    res.openid = new ResponseContext(config, req, res, next);
+    req.isAuthenticated = () => req.openid.isAuthenticated;
+    next();
   });
 
   if (config.routes) {
@@ -101,7 +105,8 @@ module.exports = function (params) {
         throw createError.BadRequest(err.message);
       }
 
-      req.session.openidTokens = tokenSet;
+      req.openidTokens = tokenSet;
+      req[config.sessionName].claims = tokenSet.claims();
       next();
     } catch (err) {
       next(err);
