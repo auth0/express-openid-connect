@@ -55,6 +55,7 @@ These can be configured in a `.env` file in the root of your application:
 ISSUER_BASE_URL=https://YOUR_DOMAIN
 CLIENT_ID=YOUR_CLIENT_ID
 BASE_URL=https://YOUR_APPLICATION_ROOT_URL
+SESSION_SECRET=LONG_RANDOM_VALUE
 ```
 
 ... or in the library initialization:
@@ -62,15 +63,17 @@ BASE_URL=https://YOUR_APPLICATION_ROOT_URL
 ```js
 // index.js
 
+const { auth } = require('express-openid-connect');
 app.use(auth({
   required: true,
   issuerBaseURL: 'https://YOUR_DOMAIN',
   baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
-  clientID: 'YOUR_CLIENT_ID'
+  clientID: 'YOUR_CLIENT_ID',
+  sessionName: 'LONG_RANDOM_STRING'
 }));
 ```
 
-See [Examples](EXAMPLES.md) for how to get started authenticating users.
+See the [Examples](EXAMPLES.md) for how to get started authenticating users.
 
 ## Contributing
 
