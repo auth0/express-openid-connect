@@ -47,11 +47,14 @@ module.exports = function (params) {
 
   const router = express.Router();
 
-  router.use(idSession({
-    cookieName: config.sessionName,
-    secret: config.sessionSecret,
-    duration: config.sessionLength
-  }));
+  // Only use the internal cookie-based session if sessionSecret is provided.
+  if (config.sessionSecret) {
+    router.use(idSession({
+      cookieName: config.sessionName,
+      secret: config.sessionSecret,
+      duration: config.sessionLength
+    }));
+  }
 
   router.use(async (req, res, next) => {
     req.openid = new RequestContext(config, req, res, next);
@@ -106,7 +109,11 @@ module.exports = function (params) {
       }
 
       req.openIdTokens = tokenSet;
-      req[config.sessionName].claims = tokenSet.claims();
+
+      if (config.sessionSecret) {
+        req[config.sessionName].claims = tokenSet.claims();
+      }
+
       next();
     } catch (err) {
       next(err);
