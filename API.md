@@ -11,7 +11,7 @@ The `auth()` middleware has a few configuration keys that are required for initi
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
 - **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
 - **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
-- **`sessionSecret`** - The private key used to encrypt the user identity in a cookie session. This can be set automatically with an `SESSION_SECRET` variable in your environment.
+- **`sessionSecret`** - The private key used to encrypt the user identity in a cookie session. Set this to `false` to skip this internal storage and provide your own session mechanism in `getUser`. This can be set automatically with an `SESSION_SECRET` variable in your environment.
 
 If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
 
