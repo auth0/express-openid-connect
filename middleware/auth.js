@@ -111,6 +111,9 @@ module.exports = function (params) {
       req.openIdTokens = tokenSet;
 
       if (config.sessionSecret) {
+        let identityClaims = tokenSet.claims();
+        // Remove validation claims to reduce stored size.
+        ['aud', 'iss', 'exp', 'nonce', 'azp', 'auth_time'].forEach(claim => delete identityClaims[claim]);
         req[config.sessionName].claims = tokenSet.claims();
       }
 
