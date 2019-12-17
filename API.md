@@ -100,12 +100,12 @@ This library adds properties and methods to the request and response objects use
 
 ### Request
 
-Every request object (typically named `req` in your route handler) is augmented with the following when the request is authenticated. If the request is not authenticated, `req.openid` is `undefined`.
+Every request object (typically named `req` in your route handler) is augmented with the following when the request is authenticated. If the request is not authenticated, `req.openid` is `undefined` and `req.isAuthenticated()` returns `false`.
 
-- **`req.openid.user`** - Contains the user information returned from the authorization server. You can change what is provided here by using the `getUser` configuration key.
-- **`req.openid.tokens`** - Is the [TokenSet](https://github.com/panva/node-openid-client/blob/master/docs/README.md#tokenset) instance obtained during login.
+- **`req.openid.user`** - Contains the user information returned from the authorization server. You can change what is provided here by passing a function to the `getUser` configuration key.
 - **`req.openid.client`** - Is the [OpenID Client](https://github.com/panva/node-openid-client/blob/master/docs/README.md#client) instance that can be used for additional OAuth2 and OpenID calls. See [the examples](EXAMPLES.md) for more information on how this is used.
 - **`req.isAuthenticated()`** - Returns true if the request is authenticated.
+- **`req.makeTokenSet()`** - Make a TokenSet object from a JSON representation of one.
 
 ### Response
 

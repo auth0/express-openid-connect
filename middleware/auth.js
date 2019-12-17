@@ -105,7 +105,7 @@ module.exports = function (params) {
         throw createError.BadRequest(err.message);
       }
 
-      req.openidTokens = tokenSet;
+      req.openIdTokens = tokenSet;
       req[config.sessionName].claims = tokenSet.claims();
       next();
     } catch (err) {

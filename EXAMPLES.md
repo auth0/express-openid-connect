@@ -10,21 +10,12 @@ The simplest use case for this middleware:
 ISSUER_BASE_URL=https://YOUR_DOMAIN
 CLIENT_ID=YOUR_CLIENT_ID
 BASE_URL=https://YOUR_APPLICATION_ROOT_URL
-SESSION_NAME=YOUR_SESSION_NAME
-COOKIE_SECRET=LONG_RANDOM_VALUE
+SESSION_SECRET=LONG_RANDOM_STRING
 ```
 
 ```javascript
 // app.js
 const { auth } = require('express-openid-connect');
-const session = require('cookie-session');
-
-app.use(express.urlencoded({ extended: false }));
-
-app.use(session({
-  name: process.env.SESSION_NAME,
-  secret: process.env.COOKIE_SECRET
-}));
 
 app.use(auth({
   required: true
@@ -65,7 +56,6 @@ Another way to configure this scenario:
 ```js
 const { auth } = require('express-openid-connect');
 
-//initialization
 app.use(auth({
   required: req => req.originalUrl.startsWith('/admin/')
 }));
@@ -98,7 +88,47 @@ app.use(auth({
 
 Please note that both of these routes are completely optional and not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login.
 
-## 4. Using refresh tokens
+## 4. Using access tokens
+
+If your application needs to request and store access and/or refresh tokens, you must provide a method to store the incoming tokens during callback. We recommend to use a persistant store, like a database or Redis, to store these tokens directly associated with the user for which they were requested.
+
+If the tokens only need to be used during the user's session, they can be stored using a session middleware like `express-session`. We recommend persisting the session in a session store other than in-memory (default). The basics of handling the tokens is below:
+
+```js
+const { auth } = require('./express-openid-connect');
+const session = require('express-session');
+
+app.use(session({
+  secret: process.env.SESSION_SECRET
+}));
+
+app.use(auth({
+  authorizationParams: {
+    response_type: 'code id_token',
+    response_mode: 'form_post',
+    audience: process.env.API_URL,
+    scope: 'openid profile email read:reports'
+  },
+  handleCallback: async function (req, res, next) {
+    req.session.openIdTokens = req.openIdTokens;
+    next();
+  }
+}));
+```
+
+On a route that needs to use the access token, pull the token data from the storage and initialize a new `TokenSet` using `makeTokenSet()` method exposed by this library:
+
+```js
+app.get('/route-that-calls-an-api', async (req, res, next) => {
+
+  const tokenSet = req.openid.makeTokenSet(req.session.openIdTokens);
+  let apiData = {};
+
+  // Use tokenSet.access_token for the API call.
+});
+```
+
+## 5. Using refresh tokens
 
 Refresh tokens can be requested along with access tokens using the `offline_access` scope during login:
 
@@ -132,26 +162,11 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
     req.openid.tokens = tokenSet;
   }
 
-  try {
-    apiData = await request(
-      process.env.API_URL,
-      {
-        headers: { authorization: `Bearer ${tokenSet.access_token}` },
-        json: true
-      }
-    );
-  } catch(err) {
-    next(err);
-  }
-
-  res.render('api-data-template', {
-    user: req.openid && req.openid.user,
-    apiData
-  });
+  // Use tokenSet.access_token for the API call.
 });
 ```
 
-## 5. Calling userinfo
+## 6. Calling userinfo
 
 If your application needs to call the userinfo endpoint for the user's identity, add a `handleCallback` function during initialization that will make this call. To map the incoming claims to the user identity, also add a `getUser` function.
 
