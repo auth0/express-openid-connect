@@ -13,11 +13,13 @@
   "dependencies": {
     "@hapi/joi": "^14.5.0",
     "cb": "^0.1.0",
-    "client-sessions": "^0.8.0",
     "clone": "^2.1.2",
+    "cookie": "^0.4.0",
     "cookie-parser": "^1.4.4",
     "http-errors": "^1.7.3",
-    "openid-client": "^3.7.3",
+    "jose": "^1.17.2",
+    "on-headers": "^1.0.2",
+    "openid-client": "^3.9.2",
     "p-memoize": "^3.1.0",
     "url-join": "^4.0.1"
   },
