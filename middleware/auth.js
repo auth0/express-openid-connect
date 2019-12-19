@@ -2,13 +2,13 @@ const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
 const cookieParser = require('cookie-parser');
-const idSession = require('client-sessions');
 
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
 const transient =  require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
+const idSession = require('../lib/session');
 
 /**
 * Returns a router with two routes /login and /callback
@@ -51,8 +51,11 @@ module.exports = function (params) {
   if (config.sessionSecret) {
     router.use(idSession({
       cookieName: config.sessionName,
+      propertyName: config.sessionName,
       secret: config.sessionSecret,
-      duration: config.sessionLength
+      duration: config.sessionLength,
+      ephemeral: config.sessionEphemeral,
+      // TODO: cookieOptions: { domain, httpOnly, path, secure, sameSite }
     }));
   }
 
