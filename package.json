@@ -16,6 +16,7 @@
     "clone": "^2.1.2",
     "cookie": "^0.4.0",
     "cookie-parser": "^1.4.4",
+    "futoin-hkdf": "^1.2.1",
     "http-errors": "^1.7.3",
     "jose": "^1.17.2",
     "on-headers": "^1.0.2",
