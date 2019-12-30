@@ -53,7 +53,7 @@ module.exports = function (params) {
       name: config.appSessionName,
       secret: config.appSessionSecret,
       duration: config.appSessionLength,
-      // TODO: cookieOptions: { domain, httpOnly, path, secure, sameSite }
+      cookieOptions: config.appSessionCookie
     }));
   }
 
