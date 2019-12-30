@@ -36,6 +36,7 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
 - **`appSessionLength`** - Integer value, in seconds, indicating application session length. Set to `0` to indicate the cookie should be ephemeral (no expiration). Default is 7 days.
 - **`appSessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
+- **`appSessionCookie`** - Object defining application session cookie attributes. Allowed keys are `domain`, `httpOnly`, `path`, `secure`, and `sameSite`. Defaults are `true` for `httpOnly` and `Lax` for `sameSite`.
 
 ### Authorization Params Key
 
