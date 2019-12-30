@@ -55,7 +55,7 @@ These can be configured in a `.env` file in the root of your application:
 ISSUER_BASE_URL=https://YOUR_DOMAIN
 CLIENT_ID=YOUR_CLIENT_ID
 BASE_URL=https://YOUR_APPLICATION_ROOT_URL
-SESSION_SECRET=LONG_RANDOM_VALUE
+APP_SESSION_SECRET=LONG_RANDOM_VALUE
 ```
 
 ... or in the library initialization:
@@ -69,7 +69,7 @@ app.use(auth({
   issuerBaseURL: 'https://YOUR_DOMAIN',
   baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
   clientID: 'YOUR_CLIENT_ID',
-  sessionName: 'LONG_RANDOM_STRING'
+  appSessionKey: 'LONG_RANDOM_STRING'
 }));
 ```
 
