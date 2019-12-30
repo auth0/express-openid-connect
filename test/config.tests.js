@@ -4,6 +4,7 @@ const { get: getConfig } = require('../lib/config');
 describe('config', function() {
   describe('simple case', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://test.auth0.com',
       baseURL: 'https://example.org',
@@ -28,6 +29,7 @@ describe('config', function() {
 
   describe('when authorizationParams is response_type=x', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       clientSecret: '__test_client_secret__',
       issuerBaseURL: 'https://test.auth0.com',
@@ -52,6 +54,7 @@ describe('config', function() {
 
   describe('with auth0Logout', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://test.auth0.com',
       baseURL: 'https://example.org',
@@ -66,6 +69,7 @@ describe('config', function() {
 
   describe('without auth0Logout nor idpLogout', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://test.auth0.com',
       baseURL: 'https://example.org',
@@ -79,6 +83,7 @@ describe('config', function() {
 
   describe('with idpLogout', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://test.auth0.com',
       baseURL: 'https://example.org',
@@ -93,6 +98,7 @@ describe('config', function() {
 
   describe('default auth paths', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://test.auth0.com',
       baseURL: 'https://example.org',
@@ -113,6 +119,7 @@ describe('config', function() {
 
   describe('custom auth paths', function() {
     const config = getConfig({
+      appSessionSecret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://test.auth0.com',
       baseURL: 'https://example.org',
