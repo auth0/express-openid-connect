@@ -1,6 +1,17 @@
 const { assert } = require('chai');
 const expressOpenid = require('..');
 
+const validConfiguration = {
+  appSessionSecret: '__test_session_secret__',
+  issuerBaseURL: 'https://test.auth0.com',
+  baseURL: 'https://example.org',
+  clientID: '__test_client_id__',
+};
+
+function getTestConfig(modify) {
+  return Object.assign({}, validConfiguration, modify);
+}
+
 describe('invalid parameters', function() {
   it('should fail when the issuerBaseURL is invalid', function() {
     assert.throws(() => {
@@ -70,13 +81,69 @@ describe('invalid parameters', function() {
 
   it('should fail when client secret is not provided and using an HS256 ID token algorithm', function() {
     assert.throws(() => {
-      expressOpenid.auth({
-        appSessionSecret: '__test_session_secret__',
-        issuerBaseURL: 'http://foobar.auth0.com',
-        baseURL: 'http://foobar.com',
-        clientID: 'asdas',
-        idTokenAlg: 'HS256'
-      });
+      expressOpenid.auth(getTestConfig({idTokenAlg: 'HS256'}));
     }, '"clientSecret" is required for ID tokens with HS algorithms');
+  });
+
+  it('should fail when app session length is not an integer', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({appSessionLength: 3.14159}));
+    }, '"appSessionLength" must be an integer');
+  });
+
+  it('should fail when app session secret is invalid', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({appSessionSecret: {key: '__test_session_secret__'}}));
+    }, '"appSessionSecret" must be a string');
+  });
+
+  it('should fail when app session cookie httpOnly is not a boolean', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({
+        appSessionCookie: {
+          httpOnly: '__invalid_httponly__'
+        }
+      }));
+    }, '"httpOnly" must be a boolean');
+  });
+
+  it('should fail when app session cookie secure is not a boolean', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({
+        appSessionCookie: {
+          secure: '__invalid_secure__'
+        }
+      }));
+    }, '"secure" must be a boolean');
+  });
+
+  it('should fail when app session cookie sameSite is invalid', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({
+        appSessionCookie: {
+          sameSite: '__invalid_samesite__'
+        }
+      }));
+    }, '"sameSite" must be one of [Lax, Strict, None]');
+  });
+
+  it('should fail when app session cookie domain is invalid', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({
+        appSessionCookie: {
+          domain: false
+        }
+      }));
+    }, '"domain" must be a string');
+  });
+
+  it('should fail when app session cookie sameSite is an invalid value', function() {
+    assert.throws(() => {
+      expressOpenid.auth(getTestConfig({
+        appSessionCookie: {
+          path: 123
+        }
+      }));
+    }, '"path" must be a string');
   });
 });
