@@ -54,7 +54,6 @@ module.exports = function (params) {
       propertyName: config.sessionName,
       secret: config.sessionSecret,
       duration: config.sessionLength,
-      ephemeral: config.sessionEphemeral,
       // TODO: cookieOptions: { domain, httpOnly, path, secure, sameSite }
     }));
   }
