@@ -35,22 +35,9 @@ function testCase(params) {
           baseUrl + '/callback',
         );
       });
-    });
 
-    before(async function() {
-      this.response = await request.post('/callback', {
-        baseUrl,
-        jar,
-        json: params.body
-      });
-    });
-
-    before(async function() {
-      this.currentSession = await request.get('/session', {
-        baseUrl,
-        jar,
-        json: true,
-      }).then(r => r.body);
+      this.response = await request.post('/callback', {baseUrl, jar, json: params.body});
+      this.currentUser = await request.get('/user', {baseUrl, jar, json: true}).then(r => r.body);
     });
 
     params.assertions();
@@ -61,8 +48,8 @@ function makeIdToken(payload) {
   if (typeof payload !== 'object' ) {
     payload = {
       'nickname': '__test_nickname__',
-      'iss': 'https://test.auth0.com/',
       'sub': '__test_sub__',
+      'iss': 'https://test.auth0.com/',
       'aud': clientID,
       'iat': Math.round(Date.now() / 1000),
       'exp': Math.round(Date.now() / 1000) + 60000,
@@ -228,7 +215,17 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should contain the claims in the current session', function() {
-        assert.ok(this.currentSession.claims);
+        assert.ok(this.currentUser);
+        assert.equal(this.currentUser.sub, '__test_sub__');
+        assert.equal(this.currentUser.nickname, '__test_nickname__');
+      });
+
+      it('should strip validation claims from the ID tokens', function() {
+        assert.notExists(this.currentUser.iat);
+        assert.notExists(this.currentUser.iss);
+        assert.notExists(this.currentUser.aud);
+        assert.notExists(this.currentUser.exp);
+        assert.notExists(this.currentUser.nonce);
       });
 
       it('should expose the user in the request', async function() {

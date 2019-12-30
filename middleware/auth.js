@@ -8,7 +8,7 @@ const { get: getClient } = require('../lib/client');
 const requiresAuth = require('./requiresAuth');
 const transient =  require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
-const idSession = require('../lib/session');
+const appSession = require('../lib/appSession');
 
 /**
 * Returns a router with two routes /login and /callback
@@ -49,7 +49,7 @@ module.exports = function (params) {
 
   // Only use the internal cookie-based session if appSessionSecret is provided.
   if (config.appSessionSecret) {
-    router.use(idSession({
+    router.use(appSession({
       name: config.appSessionName,
       secret: config.appSessionSecret,
       duration: config.appSessionLength,
@@ -113,9 +113,13 @@ module.exports = function (params) {
 
       if (config.appSessionSecret) {
         let identityClaims = tokenSet.claims();
+
         // Remove validation claims to reduce stored size.
-        ['aud', 'iss', 'exp', 'nonce', 'azp', 'auth_time'].forEach(claim => delete identityClaims[claim]);
-        req[config.appSessionName].claims = tokenSet.claims();
+        ['aud', 'iss', 'iat', 'exp', 'nonce', 'azp', 'auth_time'].forEach(claim => {
+          delete identityClaims[claim];
+        });
+
+        req[config.appSessionName].claims = identityClaims;
       }
 
       next();
