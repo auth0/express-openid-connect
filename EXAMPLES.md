@@ -10,7 +10,7 @@ The simplest use case for this middleware:
 ISSUER_BASE_URL=https://YOUR_DOMAIN
 CLIENT_ID=YOUR_CLIENT_ID
 BASE_URL=https://YOUR_APPLICATION_ROOT_URL
-SESSION_SECRET=LONG_RANDOM_STRING
+APP_SESSION_SECRET=LONG_RANDOM_STRING
 ```
 
 ```javascript
@@ -147,7 +147,7 @@ app.use(session({
 
 app.use(auth({
   // Setting this configuration key to false will turn off internal session handling.
-  sessionSecret: false,
+  appSessionSecret: false,
   handleCallback: async function (req, res, next) {
     // This will store the user identity claims in the session
     req.session.userIdentity = req.openIdTokens.claims();

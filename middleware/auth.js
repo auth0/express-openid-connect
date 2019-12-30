@@ -47,13 +47,13 @@ module.exports = function (params) {
 
   const router = express.Router();
 
-  // Only use the internal cookie-based session if sessionSecret is provided.
-  if (config.sessionSecret) {
+  // Only use the internal cookie-based session if appSessionSecret is provided.
+  if (config.appSessionSecret) {
     router.use(idSession({
-      cookieName: config.sessionName,
-      propertyName: config.sessionName,
-      secret: config.sessionSecret,
-      duration: config.sessionLength,
+      cookieName: config.appSessionName,
+      propertyName: config.appSessionName,
+      secret: config.appSessionSecret,
+      duration: config.appSessionLength,
       // TODO: cookieOptions: { domain, httpOnly, path, secure, sameSite }
     }));
   }
@@ -112,11 +112,11 @@ module.exports = function (params) {
 
       req.openIdTokens = tokenSet;
 
-      if (config.sessionSecret) {
+      if (config.appSessionSecret) {
         let identityClaims = tokenSet.claims();
         // Remove validation claims to reduce stored size.
         ['aud', 'iss', 'exp', 'nonce', 'azp', 'auth_time'].forEach(claim => delete identityClaims[claim]);
-        req[config.sessionName].claims = tokenSet.claims();
+        req[config.appSessionName].claims = tokenSet.claims();
       }
 
       next();

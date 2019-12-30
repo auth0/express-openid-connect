@@ -11,7 +11,7 @@ The `auth()` middleware has a few configuration keys that are required for initi
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
 - **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
 - **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
-- **`sessionSecret`** - The secret used to derive an encryption key for the user identity in a session cookie. Set this to `false` to skip this internal storage and provide your own session mechanism in `getUser`. This can be set automatically with an `SESSION_SECRET` variable in your environment. It must be a string or an array of strings. When array is provided the first member is used for signing and other members can be used for decrypting old cookies, this is to enable sessionSecret rotation.
+- **`appSessionSecret`** - The secret used to derive an encryption key for the user identity in a session cookie. Set this to `false` to skip this internal storage and provide your own session mechanism in `getUser`. This can be set automatically with an `APP_SESSION_SECRET` variable in your environment. It must be a string or an array of strings. When array is provided the first member is used for signing and other members can be used for decrypting old cookies, this is to enable appSessionSecret rotation.
 
 If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
 
@@ -34,8 +34,8 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
 - **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
 - **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
-- **`sessionLength`** - Integer value, in seconds, indicating application session length. Set to `0` to indicate the cookie should be ephemeral (no expiration). Default is 7 days.
-- **`sessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
+- **`appSessionLength`** - Integer value, in seconds, indicating application session length. Set to `0` to indicate the cookie should be ephemeral (no expiration). Default is 7 days.
+- **`appSessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
 
 ### Authorization Params Key
 
