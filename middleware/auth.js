@@ -50,8 +50,7 @@ module.exports = function (params) {
   // Only use the internal cookie-based session if appSessionSecret is provided.
   if (config.appSessionSecret) {
     router.use(idSession({
-      cookieName: config.appSessionName,
-      propertyName: config.appSessionName,
+      name: config.appSessionName,
       secret: config.appSessionSecret,
       duration: config.appSessionLength,
       // TODO: cookieOptions: { domain, httpOnly, path, secure, sameSite }
