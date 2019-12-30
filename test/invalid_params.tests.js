@@ -5,6 +5,7 @@ describe('invalid parameters', function() {
   it('should fail when the issuerBaseURL is invalid', function() {
     assert.throws(() => {
       expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         baseURL: 'https://example.org',
         issuerBaseURL: '__invalid_url__',
         clientID: '__test_client_id__'
@@ -15,6 +16,7 @@ describe('invalid parameters', function() {
   it('should fail when the baseURL is invalid', function() {
     assert.throws(() => {
       expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         baseURL: '__invalid_url__',
         issuerBaseURL: 'https://test.auth0.com',
         clientID: '__test_client_id__'
@@ -25,6 +27,7 @@ describe('invalid parameters', function() {
   it('should fail when the clientID is not provided', function() {
     assert.throws(() => {
       expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
       });
@@ -34,15 +37,27 @@ describe('invalid parameters', function() {
   it('should fail when the baseURL is not provided', function() {
     assert.throws(() => {
       expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         issuerBaseURL: 'https://test.auth0.com',
         clientID: '__test_client_id__',
       });
     }, '"baseURL" is required');
   });
 
+  it('should fail when the appSessionSecret is not provided', function() {
+    assert.throws(() => {
+      expressOpenid.auth({
+        issuerBaseURL: 'https://test.auth0.com',
+        baseURL: 'https://example.org',
+        clientID: '__test_client_id__',
+      });
+    }, '"appSessionSecret" is required');
+  });
+
   it('should fail when client secret is not provided and using the response type code in mode query', function() {
     assert.throws(() => {
       expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         issuerBaseURL: 'https://test.auth0.com',
         baseURL: 'https://example.org',
         clientID: '__test_client_id__',
@@ -56,6 +71,7 @@ describe('invalid parameters', function() {
   it('should fail when client secret is not provided and using an HS256 ID token algorithm', function() {
     assert.throws(() => {
       expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         issuerBaseURL: 'http://foobar.auth0.com',
         baseURL: 'http://foobar.com',
         clientID: 'asdas',

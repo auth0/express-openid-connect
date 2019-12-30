@@ -13,6 +13,7 @@ const clientID = '__test_client_id__';
 function testCase(params) {
   return () => {
     const authOpts = Object.assign({}, {
+      appSessionSecret: '__test_session_secret__',
       clientID: clientID,
       baseURL: 'https://example.org',
       issuerBaseURL: 'https://test.auth0.com',

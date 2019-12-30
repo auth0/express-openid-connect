@@ -9,9 +9,10 @@ const request = require('request-promise-native').defaults({
 describe('with an invalid id token alg', function() {
 
   const router = expressOpenid.auth({
+    appSessionSecret: '__test_session_secret__',
     clientID: '123',
-    baseURL: 'https://myapp.com',
-    issuerBaseURL: 'https://flosser.auth0.com',
+    baseURL: 'https://example.org',
+    issuerBaseURL: 'https://test.auth0.com',
     idTokenAlg: '__invalid_alg__'
   });
 

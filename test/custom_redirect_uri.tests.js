@@ -20,6 +20,7 @@ describe('auth with redirectUriPath', function() {
 
     before(async function() {
       router = expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',

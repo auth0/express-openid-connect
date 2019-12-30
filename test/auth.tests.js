@@ -36,6 +36,7 @@ describe('auth', function() {
 
     before(async function() {
       router = expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
@@ -86,6 +87,7 @@ describe('auth', function() {
 
       before(async function() {
         router = expressOpenid.auth({
+          appSessionSecret: '__test_session_secret__',
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
@@ -127,6 +129,7 @@ describe('auth', function() {
 
       before(async function() {
         router = expressOpenid.auth({
+          appSessionSecret: '__test_session_secret__',
           clientID: '__test_client_id__',
           clientSecret: '__test_client_secret__',
           baseURL: 'https://example.org',
@@ -173,6 +176,7 @@ describe('auth', function() {
 
       before(async function() {
         router = expressOpenid.auth({
+          appSessionSecret: '__test_session_secret__',
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
@@ -215,6 +219,7 @@ describe('auth', function() {
 
     before(async function() {
       router = expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
