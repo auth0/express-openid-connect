@@ -1,7 +1,7 @@
 
 # Examples
 
-## 1. Basic Setup
+## 1. Basic setup
 
 The simplest use case for this middleware:
 
@@ -65,9 +65,9 @@ app.use('/admin/users', (req, res) => res.render('admin-users'));
 app.use('/admin/posts', (req, res) => res.render('admin-posts'));
 ```
 
-## 3. Route Customization
+## 3. Route customization
 
-If you need to customize the routes, you can opt-out from the default routes and write your own route handler:
+If you need to customize the provided routes, you can opt-out from the default routes and write your own route handler:
 
 ```js
 app.use(auth({ routes: false }));
@@ -88,9 +88,39 @@ app.use(auth({
 
 Please note that both of these routes are completely optional and not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login.
 
-## 4. Using access tokens
+## 4. Custom user session handling
 
-If your application needs to request and store access tokens, you must provide a method to store the incoming tokens during callback. We recommend to use a persistant store, like a database or Redis, to store these tokens directly associated with the user for which they were requested.
+By default, this library uses an encrypted cookie to store the user identity claims used as a session. If the size of the user identity is too large or you're concerned about sensitive data being stored, you can provide your own session handling as part of the `getUser` function.
+
+If, for example, you want the user session to be stored on the server, you can use a session middleware like `express-session`. We recommend persisting the data in a session store other than in-memory (which is the default), otherwise all sessions will be lost when the server restarts. The basics of handling the user identity server-side is below:
+
+```js
+const session = require('express-session');
+app.use(session({
+  secret: 'replace this with a long, random, static string',
+  cookie: {
+    // Sets the session cookie to expire after 7 days.
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  }
+}));
+
+app.use(auth({
+  // Setting this configuration key to false will turn off internal session handling.
+  appSessionSecret: false,
+  handleCallback: async function (req, res, next) {
+    // This will store the user identity claims in the session
+    req.session.userIdentity = req.openIdTokens.claims();
+    next();
+  },
+  getUser: async function (req) {
+    return req.session.userIdentity;
+  }
+}));
+```
+
+## 5. Obtaining and storing access tokens to call external APIs
+
+If your application needs to request and store [access tokens](https://auth0.com/docs/tokens/access-tokens) for external APIs, you must provide a method to store the incoming tokens during callback. We recommend to use a persistant store, like a database or Redis, to store these tokens directly associated with the user for which they were requested.
 
 If the tokens only need to be used during the user's session, they can be stored using a session middleware like `express-session`. We recommend persisting the data in a session store other than in-memory (which is the default), otherwise all tokens will be lost when the server restarts. The basics of handling the tokens is below:
 
@@ -129,39 +159,9 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 });
 ```
 
-## 5. Custom user session handling
+## 6. Obtaining and using refresh tokens
 
-By default, this library uses an encrypted cookie to store the user identity claims used as a session. If the size of the user identity is too large or you're concerned about sensitive data being stored, you can provide your own session handling as part of the `getUser` function.
-
-If, for example, you want the user session to be stored on the server, you can use a session middleware like `express-session`. We recommend persisting the data in a session store other than in-memory (which is the default), otherwise all sessions will be lost when the server restarts. The basics of handling the user identity server-side is below:
-
-```js
-const session = require('express-session');
-app.use(session({
-  secret: 'replace this with a long, random, static string',
-  cookie: {
-    // Sets the session cookie to expire after 7 days.
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
-}));
-
-app.use(auth({
-  // Setting this configuration key to false will turn off internal session handling.
-  appSessionSecret: false,
-  handleCallback: async function (req, res, next) {
-    // This will store the user identity claims in the session
-    req.session.userIdentity = req.openIdTokens.claims();
-    next();
-  },
-  getUser: async function (req) {
-    return req.session.userIdentity;
-  }
-}));
-```
-
-## 6. Using refresh tokens
-
-Refresh tokens can be requested along with access tokens using the `offline_access` scope during login:
+[Refresh tokens](https://auth0.com/docs/tokens/refresh-token/current) can be requested along with access tokens using the `offline_access` scope during login. Please see the section on access tokens above for information on token storage.
 
 ```js
 app.use(auth({
@@ -211,7 +211,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 
 ## 7. Calling userinfo
 
-If your application needs to call the userinfo endpoint for the user's identity, add a `handleCallback` function during initialization that will make this call. To map the incoming claims to the user identity, also add a `getUser` function.
+If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. To map the incoming claims to the user identity, also add a `getUser` function.
 
 ```js
 app.use(auth({
