@@ -211,12 +211,13 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 
 ## 7. Calling userinfo
 
-If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. To map the incoming claims to the user identity, also add a `getUser` function.
+If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. Save the claims retrieved from the userinfo endpoint to the `appSessionName` on the request object (default is `identity`):
 
 ```js
 app.use(auth({
   handleCallback: async function (req, res, next) {
     const client = req.openid.client;
+    req.identity = req.identity || {};
     try {
       req.identity.claims = await client.userinfo(req.openidTokens);
       next();
