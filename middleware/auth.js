@@ -52,7 +52,7 @@ module.exports = function (params) {
     router.use(appSession({
       name: config.appSessionName,
       secret: config.appSessionSecret,
-      duration: config.appSessionLength,
+      duration: config.appSessionDuration,
       cookieOptions: config.appSessionCookie
     }));
   }

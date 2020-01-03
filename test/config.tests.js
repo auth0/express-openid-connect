@@ -154,7 +154,7 @@ describe('config', function() {
     });
 
     it('should set the session length to 7 days by default', function() {
-      assert.equal(config.appSessionLength, 604800);
+      assert.equal(config.appSessionDuration, 604800);
     });
 
     it('should set the session name to "identity" by default', function() {
@@ -174,7 +174,7 @@ describe('config', function() {
     const config = getConfig({
       appSessionSecret: [ '__test_session_secret_1__', '__test_session_secret_2__' ],
       appSessionName: '__test_custom_session_name__',
-      appSessionLength: 1234567890,
+      appSessionDuration: 1234567890,
       appSessionCookie: {
         domain: '__test_custom_domain__',
         path: '__test_custom_path__',
@@ -194,7 +194,7 @@ describe('config', function() {
     });
 
     it('should set the custom session values', function() {
-      assert.equal(config.appSessionLength, 1234567890);
+      assert.equal(config.appSessionDuration, 1234567890);
       assert.equal(config.appSessionName, '__test_custom_session_name__');
     });
 
