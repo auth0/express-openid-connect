@@ -8,10 +8,10 @@ Please see the [Getting Started section of the README](https://github.com/auth0/
 
 The `auth()` middleware has a few configuration keys that are required for initialization.
 
+- **`appSessionSecret`** - The secret used to derive an encryption key for the user identity in a session cookie.  It must be a string, an array of strings, or `false` to skip this internal storage and provide your own session mechanism in `getUser`. When array is provided the first member is used for signing and other members can be used for decrypting old cookies, this is to enable appSessionSecret rotation. This can be set automatically with an `APP_SESSION_SECRET` variable in your environment.
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
 - **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
 - **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
-- **`appSessionSecret`** - The secret used to derive an encryption key for the user identity in a session cookie. Set this to `false` to skip this internal storage and provide your own session mechanism in `getUser`. This can be set automatically with an `APP_SESSION_SECRET` variable in your environment. It must be a string or an array of strings. When array is provided the first member is used for signing and other members can be used for decrypting old cookies, this is to enable appSessionSecret rotation.
 
 If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
 
@@ -21,13 +21,18 @@ If you are using a response type that includes `code` (typically combined with a
 
 Additional configuration keys that can be passed to `auth()` on initialization:
 
+- **`appSessionCookie`** - Object defining application session cookie attributes. Allowed keys are `domain`, `httpOnly`, `path`, `secure`, and `sameSite`. Defaults are `true` for `httpOnly` and `Lax` for `sameSite`.
+- **`appSessionDuration`** - Integer value, in seconds, indicating application session length. Set to `0` to indicate the cookie should be ephemeral (no expiration). Default is 7 days.
+- **`appSessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
 - **`auth0Logout`** - Boolean value to enable Auth0's logout feature. Default is `false`.
 - **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-key) for defaults and more details.
 - **`clockTolerance`** - Integer value for the system clock's tolerance (leeway) in seconds for ID token verification. Default is `60`.
-- **`getUser`** - Asynchronous function that receives a token set and returns the profile for `req.openid.user`. This runs on each application page load for authenticated users. Default is [here](lib/getUser.js).
 - **`errorOnRequiredAuth`** - Boolean value to throw a `Unauthorized 401` error instead of triggering the login process for routes that require authentication. Default is `false`.
+- **`getUser`** - Asynchronous function that receives a token set and returns the profile for `req.openid.user`. This runs on each application page load for authenticated users. Default is [here](lib/hooks/getUser.js).
+- **`handleCallback`** - Function that runs on the callback route, after callback processing but before redirection. Default is [here](lib/hooks/handleCallback.js).
 - **`httpOptions`** - Default options object used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)). Default is empty.
 - **`idpLogout`** - Boolean value to log the user out from the identity provider on application logout. Requires the issuer to provide a `end_session_endpoint` value. Default is `false`.
+- **`idTokenAlg`** - String value for the ID token algorithm. Default is `RS256`.
 - **`identityClaimFilter`** - Array value of claims to remove from the ID token before storing the cookie session. Default is `['aud', 'iss', 'iat', 'exp', 'nonce', 'azp', 'auth_time']`.
 - **`legacySameSiteCookie`** - Set a fallback cookie with no SameSite attribute when `authorizationParams.response_mode` is `form_post`. Default is `true`.
 - **`loginPath`** - Relative path to application login. Default is `/login`.
@@ -35,9 +40,6 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
 - **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
 - **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
-- **`appSessionDuration`** - Integer value, in seconds, indicating application session length. Set to `0` to indicate the cookie should be ephemeral (no expiration). Default is 7 days.
-- **`appSessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
-- **`appSessionCookie`** - Object defining application session cookie attributes. Allowed keys are `domain`, `httpOnly`, `path`, `secure`, and `sameSite`. Defaults are `true` for `httpOnly` and `Lax` for `sameSite`.
 
 ### Authorization Params Key
 
