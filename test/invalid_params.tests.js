@@ -87,8 +87,8 @@ describe('invalid parameters', function() {
 
   it('should fail when app session length is not an integer', function() {
     assert.throws(() => {
-      expressOpenid.auth(getTestConfig({appSessionLength: 3.14159}));
-    }, '"appSessionLength" must be an integer');
+      expressOpenid.auth(getTestConfig({appSessionDuration: 3.14159}));
+    }, '"appSessionDuration" must be an integer');
   });
 
   it('should fail when app session secret is invalid', function() {
