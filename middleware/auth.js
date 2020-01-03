@@ -113,9 +113,7 @@ module.exports = function (params) {
 
       if (config.appSessionSecret) {
         let identityClaims = tokenSet.claims();
-
-        // Remove validation claims to reduce stored size.
-        ['aud', 'iss', 'iat', 'exp', 'nonce', 'azp', 'auth_time'].forEach(claim => {
+        config.identityClaimFilter.forEach(claim => {
           delete identityClaims[claim];
         });
 

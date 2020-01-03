@@ -284,4 +284,27 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
     }
   }));
 
+  describe('uses custom claim filtering', testCase({
+    authOpts: {
+      identityClaimFilter: []
+    },
+    cookies: {
+      _state: '__test_state__',
+      _nonce: '__test_nonce__'
+    },
+    body: {
+      state: '__test_state__',
+      id_token: makeIdToken()
+    },
+    assertions() {
+      it('should have previously-stripped claims', function() {
+        assert.equal(this.currentUser.iss, 'https://test.auth0.com/');
+        assert.equal(this.currentUser.aud, clientID);
+        assert.equal(this.currentUser.nonce, '__test_nonce__');
+        assert.exists(this.currentUser.iat);
+        assert.exists(this.currentUser.exp);
+      });
+    }
+  }));
+
 });
