@@ -109,7 +109,7 @@ module.exports = function (params) {
         throw createError.BadRequest(err.message);
       }
 
-      req.openIdTokens = tokenSet;
+      req.openidTokens = tokenSet;
 
       if (config.appSessionSecret) {
         let identityClaims = tokenSet.claims();
