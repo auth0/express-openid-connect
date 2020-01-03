@@ -32,7 +32,7 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`handleCallback`** - Function that runs on the callback route, after callback processing but before redirection. Default is [here](lib/hooks/handleCallback.js).
 - **`httpOptions`** - Default options object used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)). Default is empty.
 - **`idpLogout`** - Boolean value to log the user out from the identity provider on application logout. Requires the issuer to provide a `end_session_endpoint` value. Default is `false`.
-- **`idTokenAlg`** - String value for the ID token algorithm. Default is `RS256`.
+- **`idTokenAlg`** - String value for the expected ID token algorithm. Default is `RS256`.
 - **`identityClaimFilter`** - Array value of claims to remove from the ID token before storing the cookie session. Default is `['aud', 'iss', 'iat', 'exp', 'nonce', 'azp', 'auth_time']`.
 - **`legacySameSiteCookie`** - Set a fallback cookie with no SameSite attribute when `authorizationParams.response_mode` is `form_post`. Default is `true`.
 - **`loginPath`** - Relative path to application login. Default is `/login`.
