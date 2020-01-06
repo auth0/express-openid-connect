@@ -13,27 +13,7 @@ const appSession = require('../lib/appSession');
 /**
 * Returns a router with two routes /login and /callback
 *
-* @param {Object} [params] The parameters object
-* @param {string} [params.issuerBaseURL] The url address for the token issuer.
-* @param {string} [params.baseURL] The url of the web application where you are installing the router.
-* @param {string} [params.clientID] The client id.
-* @param {string} [params.clientSecret] The client secret, only required for some grants.
-* @param {string} [params.clockTolerance] The clock's tolerance in seconds for token verification.
-* @param {Function} [params.getUser] An async function receiving a tokenset and returning the profile for req.user.
-* @param {boolean|Function} [params.required=true] a boolean to indicate that every route after this middleware requires authentication or
-* a function receiving a request and return a boolean to determine which routes needs authentication.
-* @param {boolean} [params.errorOnRequiredAuth=false] automatically handle unauthorized errors by triggering the authentication process
-* @param {boolean} [params.idpLogout=false] logout the user from the identity provider on logout
-* @param {boolean} [params.auth0Logout=false] use the auth0's logout mechanism if OpenID Connect session management is not supported
-* @param {boolean|Function} [params.routes=true] a boolean indicating if the routes /login and /logout should be added to the application
-* @param {string} [params.redirectUriPath=/callback] The path for the redirect uri, defaults to /callback.
-* @param {Object} [params.authorizationParams] The parameters for the authorization call. Defaults to
-* - response_type: "id_token"
-* - reponse_mode: "form_post"
-* - scope: "openid profile email"
-* @param {string} params.authorizationParams.response_type The response type.
-* @param {string} [params.authorizationParams.response_mode] The response mode.
-* @param {string} [params.authorizationParams.scope=openid profile email] The scope.
+* @param {Object} [params] The parameters object; see index.d.ts for types and descriptions.
 *
 * @returns {express.Router} the router
 */
