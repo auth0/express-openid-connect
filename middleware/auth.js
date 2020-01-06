@@ -10,6 +10,10 @@ const transient =  require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
 
+const enforceLeadingSlash = (path) => {
+  return '/' === path.split('')[0] ? path : '/' + path;
+};
+
 /**
 * Returns a router with two routes /login and /callback
 *
@@ -50,10 +54,10 @@ module.exports = function (params) {
   });
 
   if (config.routes) {
-    router.get(config.loginPath, express.urlencoded({ extended: false }), (req, res) => {
+    router.get(enforceLeadingSlash(config.loginPath), express.urlencoded({ extended: false }), (req, res) => {
       res.openid.login({ returnTo: config.baseURL });
     });
-    router.get(config.logoutPath, (req, res) => res.openid.logout());
+    router.get(enforceLeadingSlash(config.logoutPath), (req, res) => res.openid.logout());
   }
 
   let callbackMethod;
@@ -69,7 +73,7 @@ module.exports = function (params) {
       callbackMethod = 'get';
   }
 
-  router[callbackMethod](config.redirectUriPath, express.urlencoded({ extended: false }), cookieParser(), async (req, res, next) => {
+  router[callbackMethod](enforceLeadingSlash(config.redirectUriPath), express.urlencoded({ extended: false }), cookieParser(), async (req, res, next) => {
     next = cb(next).once();
     try {
       const redirect_uri = res.openid.getRedirectUri();

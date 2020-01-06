@@ -223,9 +223,9 @@ describe('auth', function() {
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
-        redirectUriPath: '/custom-callback',
-        loginPath: '/custom-login',
-        logoutPath: '/custom-logout',
+        redirectUriPath: 'custom-callback',
+        loginPath: 'custom-login',
+        logoutPath: 'custom-logout',
       });
       baseUrl = await server.create(router);
     });
