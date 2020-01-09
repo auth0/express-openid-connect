@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [v0.6.0](https://github.com/auth0/express-openid-connect/tree/v0.6.0) (2020-01-19)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.5.0...v0.6.0)
+
+**Closed issues**
+- "legacySameSiteCookie" for auth config params is not yet available in the typings file. [\#44](https://github.com/auth0/express-openid-connect/issues/44)
+- Validate configured routes [\#21](https://github.com/auth0/express-openid-connect/issues/21)
+
+**Added**
+- Add path validation [\#47](https://github.com/auth0/express-openid-connect/pull/47) ([joshcanhelp](https://github.com/joshcanhelp))
+- Add typescript defs new config [\#46](https://github.com/auth0/express-openid-connect/pull/46) ([joshcanhelp](https://github.com/joshcanhelp))
+- Add SameSite support [\#39](https://github.com/auth0/express-openid-connect/pull/39) ([joshcanhelp](https://github.com/joshcanhelp))
+- Add custom callback handling [\#37](https://github.com/auth0/express-openid-connect/pull/37) ([joshcanhelp](https://github.com/joshcanhelp))
+- Add body parser to login and callback route [\#33](https://github.com/auth0/express-openid-connect/pull/33) ([davidpatrick](https://github.com/davidpatrick))
+
+**Changed**
+- Change session and token handling [\#42](https://github.com/auth0/express-openid-connect/pull/42) ([joshcanhelp](https://github.com/joshcanhelp))
+
 ## [v0.5.0](https://github.com/auth0/express-openid-connect/tree/v0.5.0) (2019-10-17)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.4.0...v0.5.0)
 
