@@ -109,7 +109,7 @@ app.use(auth({
   appSessionSecret: false,
   handleCallback: async function (req, res, next) {
     // This will store the user identity claims in the session
-    req.session.userIdentity = req.openIdTokens.claims();
+    req.session.userIdentity = req.openidTokens.claims();
     next();
   },
   getUser: async function (req) {
@@ -141,7 +141,7 @@ app.use(auth({
     scope: 'openid profile email read:reports'
   },
   handleCallback: async function (req, res, next) {
-    req.session.openIdTokens = req.openIdTokens;
+    req.session.openidTokens = req.openidTokens;
     next();
   }
 }));
@@ -152,7 +152,7 @@ On a route that needs to use the access token, pull the token data from the stor
 ```js
 app.get('/route-that-calls-an-api', async (req, res, next) => {
 
-  const tokenSet = req.openid.makeTokenSet(req.session.openIdTokens);
+  const tokenSet = req.openid.makeTokenSet(req.session.openidTokens);
   let apiData = {};
 
   // Check for and use tokenSet.access_token for the API call ...
@@ -188,7 +188,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
   let apiData = {};
 
   // How the tokenSet is created will depend on how the tokens are stored.
-  let tokenSet = req.openid.makeTokenSet(req.session.openIdTokens);
+  let tokenSet = req.openid.makeTokenSet(req.session.openidTokens);
   let refreshToken = tokenSet.refresh_token;
 
   if (tokenSet && tokenSet.expired() && refreshToken) {
@@ -202,7 +202,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
     tokenSet.refresh_token = tokenSet.refresh_token ?? refreshToken;
 
     // Where you store the refreshed tokenSet will depend on how the tokens are stored.
-    req.session.openIdTokens = tokenSet;
+    req.session.openidTokens = tokenSet;
   }
 
   // Check for and use tokenSet.access_token for the API call ...
