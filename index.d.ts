@@ -1,7 +1,7 @@
 // Type definitions for express-openid-connect
 
 import { AuthorizationParameters, TokenSet, UserinfoResponse } from 'openid-client';
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
 
 interface ConfigParams {
     /**
@@ -141,4 +141,4 @@ interface SessionCookieConfigParams {
 
 export function auth(params?: ConfigParams): RequestHandler;
 export function requiresAuth(): RequestHandler;
-export function unauthorizedHandler(): RequestHandler;
+export function unauthorizedHandler(): ErrorRequestHandler;
