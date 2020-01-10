@@ -1,5 +1,6 @@
 const assert = require('chai').assert;
 const appSession = require('../lib/appSession');
+const sessionEncryption = require('./fixture/sessionEncryption');
 
 const defaultConfig = {
   name: 'identity',
@@ -8,10 +9,10 @@ const defaultConfig = {
   cookieOptions: {}
 };
 
-let req = {
+const req = {
   get: (key) => key
 };
-let res = {};
+const res = {};
 const next = () => true;
 
 describe('appSession', function() {
@@ -54,19 +55,11 @@ describe('appSession', function() {
 
   describe('existing session cookies', () => {
     const appSessionMw = appSession(defaultConfig);
-    const thisReq = {
-      // Encypted '{sub:"__test_sub__"}' with '__test_secret__'
-      get: () => 'identity=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiemlwIjoiREVGIiwidWF0IjoxNTc3ODI2NzY5' +
-      'LCJpYXQiOjE1Nzc4MjY3NjksImV4cCI6MTU3ODQzMTU2OX0..4XocWueShMw1cD_b.EhS_rNI4HeCFSlJTxKowE1SwLfsEfg' +
-      '.JKMnZOkBjwi-9Z5BSHliiw'
-    };
-    const result = appSessionMw(thisReq, res, next);
-
-    it('should call next', function() {
-      assert.ok(result);
-    });
+    const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
 
     it('should set the identity on req', function() {
+      const result = appSessionMw(thisReq, res, next);
+      assert.ok(result);
       assert.equal(thisReq.identity.sub, '__test_sub__');
     });
   });
