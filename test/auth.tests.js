@@ -13,6 +13,22 @@ const filterRoute = (method, path) => {
               r.route.methods[method.toLowerCase()];
 };
 
+const getCookieFromResponse = (res, cookieName) => {
+  const cookieHeaders = res.headers['set-cookie'];
+
+  const foundHeader = cookieHeaders.filter(header => header.substring(0,6) === cookieName + '=')[0];
+  if (!foundHeader) {
+    return false;
+  }
+
+  const cookieValuePart = foundHeader.split('; ')[0];
+  if (!cookieValuePart) {
+    return false;
+  }
+
+  return cookieValuePart.split('=')[1];
+};
+
 describe('auth', function() {
   describe('default', () => {
 
@@ -20,6 +36,7 @@ describe('auth', function() {
 
     before(async function() {
       router = expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
@@ -49,7 +66,6 @@ describe('auth', function() {
       assert.equal(parsed.hostname, 'test.auth0.com');
       assert.equal(parsed.pathname, '/authorize');
       assert.equal(parsed.query.client_id, '__test_client_id__');
-
       assert.equal(parsed.query.scope, 'openid profile email');
       assert.equal(parsed.query.response_type, 'id_token');
       assert.equal(parsed.query.response_mode, 'form_post');
@@ -57,9 +73,10 @@ describe('auth', function() {
       assert.property(parsed.query, 'nonce');
       assert.property(parsed.query, 'state');
 
-      const session = (await request.get('/session', { jar, baseUrl, json: true })).body;
-      assert.equal(session.nonce, parsed.query.nonce);
-      assert.equal(session.state, parsed.query.state);
+      const cookies = jar.getCookies(baseUrl + '/login');
+
+      assert.equal(cookies.filter(cookie => cookie.key === '_nonce')[0].value, parsed.query.nonce);
+      assert.equal(cookies.filter(cookie => cookie.key === '_state')[0].value, parsed.query.state);
     });
 
   });
@@ -70,6 +87,7 @@ describe('auth', function() {
 
       before(async function() {
         router = expressOpenid.auth({
+          appSessionSecret: '__test_session_secret__',
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
@@ -110,7 +128,8 @@ describe('auth', function() {
       let router;
 
       before(async function() {
-        router = router = expressOpenid.auth({
+        router = expressOpenid.auth({
+          appSessionSecret: '__test_session_secret__',
           clientID: '__test_client_id__',
           clientSecret: '__test_client_secret__',
           baseURL: 'https://example.org',
@@ -140,6 +159,10 @@ describe('auth', function() {
         assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
+        assert.property(res.headers, 'set-cookie');
+
+        assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
+        assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
       });
 
       it('should contain a callback route', function() {
@@ -152,7 +175,8 @@ describe('auth', function() {
       let baseUrl;
 
       before(async function() {
-        router = router = expressOpenid.auth({
+        router = expressOpenid.auth({
+          appSessionSecret: '__test_session_secret__',
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
@@ -195,12 +219,13 @@ describe('auth', function() {
 
     before(async function() {
       router = expressOpenid.auth({
+        appSessionSecret: '__test_session_secret__',
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
-        redirectUriPath: '/custom-callback',
-        loginPath: '/custom-login',
-        logoutPath: '/custom-logout',
+        redirectUriPath: 'custom-callback',
+        loginPath: 'custom-login',
+        logoutPath: 'custom-logout',
       });
       baseUrl = await server.create(router);
     });

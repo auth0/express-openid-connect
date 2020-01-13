@@ -9,6 +9,7 @@ const request = require('request-promise-native').defaults({
 describe('with an invalid response type', function() {
 
   const router = expressOpenid.auth({
+    appSessionSecret: '__test_session_secret__',
     clientID: '__test_client_id__',
     baseURL: 'https://example.org',
     issuerBaseURL: 'https://test.auth0.com',

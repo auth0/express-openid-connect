@@ -17,12 +17,7 @@ module.exports.create = function(router, protect) {
   app.use(router);
 
   app.get('/session', (req, res) => {
-    res.json(req.session);
-  });
-
-  app.post('/session', (req, res) => {
-    req.session = req.body;
-    res.json(req.body);
+    res.json(req.identity);
   });
 
   app.get('/user', (req, res) => {
