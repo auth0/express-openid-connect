@@ -41,13 +41,7 @@ npm i express-openid-connect --save
 
 ## Getting Started
 
-The library needs the following values to request and accept authentication:
-
-- **Issuer Base URL**: The base URL of the authorization server. If you're using Auth0, this is your tenant **Domain** pre-pended with `https://` (like `https://tenant.auth0.com`) found on the **Settings** tab for your Application in the [Auth0 dashboard](https://manage.auth0.com).
-- **Client ID**: The identifier for your Application. If you're using Auth0, this value can also be found on the **Settings** tab for your Application.
-- **Base URL**: The  root URL for your application.
-
-These can be configured in a `.env` file in the root of your application:
+The library needs [the following required configuration keys](https://github.com/auth0/express-openid-connect/blob/master/API.md#required-keys) to request and accept authentication. These can be configured in a `.env` file in the root of your application:
 
 ```text
 # .env
@@ -65,7 +59,6 @@ APP_SESSION_SECRET=LONG_RANDOM_VALUE
 
 const { auth } = require('express-openid-connect');
 app.use(auth({
-  required: true,
   issuerBaseURL: 'https://YOUR_DOMAIN',
   baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
   clientID: 'YOUR_CLIENT_ID',
@@ -73,7 +66,11 @@ app.use(auth({
 }));
 ```
 
-See the [Examples](EXAMPLES.md) for how to get started authenticating users.
+With this basic configuration, your application will require authentication for all routes and store the user identity in an encrypted and signed cookie. 
+
+See the [examples](EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
+
+See the [API documentation](API.md) for additional configuration possibilities and provided methods.
 
 ## Contributing
 
