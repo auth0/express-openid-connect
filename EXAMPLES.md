@@ -86,7 +86,7 @@ app.use(auth({
 }));
 ```
 
-Please note that the login and lgout routes are not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login. These are helpful if you need to provide user-facing links to login or logout.
+Please note that the login and logout routes are not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login. These are helpful if you need to provide user-facing links to login or logout.
 
 ## 4. Custom user session handling
 
