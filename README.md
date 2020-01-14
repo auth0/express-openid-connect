@@ -6,7 +6,6 @@ This library requires:
 
 - Node v10.13 or higher
 - Express v4.16 or higher
-- A session middleware like [express-session](https://www.npmjs.com/package/express-session) or [cookie-session](https://www.npmjs.com/package/cookie-session)
 
 **Please Note:** This library is currently in pre-release status and has not had a complete security review. We **do not** recommend using this library in production yet. As we move towards early access, please be aware that releases may contain breaking changes. We will be monitoring the Issues queue here for feedback and questions. PRs and comments on existing PRs are welcome!
 
@@ -66,7 +65,7 @@ app.use(auth({
 }));
 ```
 
-With this basic configuration, your application will require authentication for all routes and store the user identity in an encrypted and signed cookie. 
+With this basic configuration, your application will require authentication for all routes and store the user identity in an encrypted and signed cookie.
 
 See the [examples](EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
 
