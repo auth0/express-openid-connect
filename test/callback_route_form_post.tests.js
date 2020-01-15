@@ -134,7 +134,10 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should return the reason to the error handler', function() {
-        assert.match(this.response.body.err.message, /unexpected token/i);
+        assert.equal(
+          this.response.body.err.message,
+          'failed to decode JWT (JWTMalformed: JWTs must have three components)'
+        );
       });
     }
   }));
