@@ -128,6 +128,12 @@ interface ConfigParams {
     postLogoutRedirectUri?: string;
 
     /**
+     * If you give a full URI in a `returnTo` parameter that does not start with the `baseURL`,
+     * then you must register it here.
+     */
+    postLogoutRedirectUris?: string[];
+
+    /**
      * Require authentication for all routes.
      */
     required?: boolean | ((request: Request) => boolean);

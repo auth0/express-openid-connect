@@ -39,6 +39,7 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`logoutPath`** - Relative path to application logout. Default is `/logout`.
 - **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
 - **`postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after a logout has been performed. Default is `baseUrl`.
+- **`postLogoutRedirectUris`** - If you give a full URI in a `returnTo` parameter that does not start with the `baseURL`, then you must register it here.
 - **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
 - **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
 
