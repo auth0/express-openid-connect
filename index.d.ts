@@ -3,6 +3,9 @@
 import { AuthorizationParameters, TokenSet, UserinfoResponse } from 'openid-client';
 import { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
 
+/**
+ * Configuration parameters passed to the auth() middleware.
+ */
 interface ConfigParams {
     /**
      * Object defining application session cookie attributes.
@@ -131,12 +134,43 @@ interface ConfigParams {
     routes?: boolean;
 }
 
+/**
+ * Configuration parameters used in appSessionCookie.
+ *
+ * @see https://expressjs.com/en/api.html#res.cookie
+ */
 interface SessionCookieConfigParams {
+    /**
+     * Domain name for the cookie.
+     */
     domain?: string;
+
+    /**
+     * Set to true to use an ephemeral cookie.
+     * Default is false which will use appSessionDuration.
+     */
+    ephemeral?: boolean;
+
+    /**
+     * Flags the cookie to be accessible only by the web server.
+     * Set to `true` by default in lib/config.
+     */
     httpOnly?: boolean;
+
+    /**
+     * Path for the cookie.
+     */
     path?: string;
-    sameSite?: string;
+
+    /**
+     * Marks the cookie to be used with HTTPS only.
+     */
     secure?: boolean;
+
+    /**
+     * Value of the “SameSite” Set-Cookie attribute.
+     */
+    sameSite?: string;
 }
 
 export function auth(params?: ConfigParams): RequestHandler;
