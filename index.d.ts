@@ -23,7 +23,7 @@ interface ConfigParams {
      * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie.
      * Can use env key APP_SESSION_SECRET instead.
      */
-    appSessionSecret: boolean | string | string[];
+    appSessionSecret?: boolean | string | string[];
 
     /**
      * Boolean value to enable Auth0's logout feature.
