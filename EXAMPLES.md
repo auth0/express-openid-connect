@@ -34,7 +34,7 @@ What you get:
 
 ## 2. Require authentication for specific routes
 
-If your application has routes accessible to anonymous users, you can enable authorization per routes:
+If your application has routes accessible to anonymous users, you can enable authorization per route:
 
 ```js
 const { auth, requiresAuth } = require('express-openid-connect');
@@ -67,7 +67,7 @@ app.use('/admin/posts', (req, res) => res.render('admin-posts'));
 
 ## 3. Route customization
 
-If you need to customize the provided routes, you can opt-out from the default routes and write your own route handler:
+If you need to customize the provided login and logout routes, you can disable the default routes and write your own route handler:
 
 ```js
 app.use(auth({ routes: false }));
@@ -86,11 +86,11 @@ app.use(auth({
 }));
 ```
 
-Please note that both of these routes are completely optional and not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login.
+Please note that the login and logout routes are not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login. These are helpful if you need to provide user-facing links to login or logout.
 
 ## 4. Custom user session handling
 
-By default, this library uses an encrypted cookie to store the user identity claims used as a session. If the size of the user identity is too large or you're concerned about sensitive data being stored, you can provide your own session handling as part of the `getUser` function.
+By default, this library uses an encrypted and signed cookie to store the user identity claims as an application session. If the size of the user identity is too large or you're concerned about sensitive data being stored, you can provide your own session handling as part of the `getUser` function.
 
 If, for example, you want the user session to be stored on the server, you can use a session middleware like `express-session`. We recommend persisting the data in a session store other than in-memory (which is the default), otherwise all sessions will be lost when the server restarts. The basics of handling the user identity server-side is below:
 
