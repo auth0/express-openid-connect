@@ -121,7 +121,9 @@ interface ConfigParams {
     redirectUriPath?: string;
 
     /**
-     * Relative path where the user should be redirected to after logout.
+     * Either a relative path to the application
+     * or a valid URI to an external domain.
+     * The user will be redirected to this after a logout has been performed.
      */
     postLogoutRedirectUri?: string;
 
