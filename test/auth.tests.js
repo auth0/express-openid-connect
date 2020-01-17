@@ -92,7 +92,7 @@ describe('auth', function() {
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
-            response_mode: undefined,
+            response_mode: null,
             response_type: 'none',
           },
           required: false
@@ -135,7 +135,7 @@ describe('auth', function() {
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
-            response_mode: undefined,
+            response_mode: null,
             response_type: 'code',
           }
         });
@@ -181,7 +181,7 @@ describe('auth', function() {
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
-            response_mode: undefined,
+            response_mode: null,
             response_type: 'id_token',
           }
         });

@@ -24,6 +24,7 @@ interface ConfigParams {
 
     /**
      * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie.
+     * Use a single string key or array of keys for an encrypted session cookie or false to skip.
      * Can use env key APP_SESSION_SECRET instead.
      */
     appSessionSecret?: boolean | string | string[];

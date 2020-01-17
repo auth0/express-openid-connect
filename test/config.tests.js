@@ -43,7 +43,7 @@ describe('config', function() {
     });
 
     it('should default to response_mode=form_post', function() {
-      assert.equal(config.authorizationParams.response_mode, undefined);
+      assert.equal(config.authorizationParams.response_mode, 'form_post');
     });
 
     it('should default to scope=openid profile email ', function() {
