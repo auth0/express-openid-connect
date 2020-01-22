@@ -147,7 +147,7 @@ interface SessionCookieConfigParams {
 
     /**
      * Set to true to use an ephemeral cookie.
-     * Default is false which will use appSessionDuration.
+     * Defaults to false which will use appSessionDuration as the cookie expiration.
      */
     ephemeral?: boolean;
 
