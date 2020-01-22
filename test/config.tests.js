@@ -134,7 +134,7 @@ describe('config', function() {
       assert.notExists(config.appSessionCookie.domain);
       assert.notExists(config.appSessionCookie.path);
       assert.notExists(config.appSessionCookie.secure);
-      assert.notExists(config.appSessionCookie.sameSite);
+      assert.equal(config.appSessionCookie.sameSite, 'Lax');
       assert.equal(config.appSessionCookie.httpOnly, true);
     });
   });
@@ -150,7 +150,7 @@ describe('config', function() {
         ephemeral: true,
         httpOnly: false,
         secure: true,
-        sameSite: 'Lax',
+        sameSite: 'Strict',
       }
     });
 
@@ -174,7 +174,7 @@ describe('config', function() {
       assert.equal(config.appSessionCookie.ephemeral, true);
       assert.equal(config.appSessionCookie.httpOnly, false);
       assert.equal(config.appSessionCookie.secure, true);
-      assert.equal(config.appSessionCookie.sameSite, 'Lax');
+      assert.equal(config.appSessionCookie.sameSite, 'Strict');
     });
   });
 });
