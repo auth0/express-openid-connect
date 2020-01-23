@@ -44,7 +44,7 @@ describe('logout route', function() {
 
     it('should redirect to the base url', function() {
       assert.equal(logoutResponse.statusCode, 302);
-      assert.equal(logoutResponse.headers.location, 'https://example.org');
+      assert.equal(logoutResponse.headers.location, 'https://example.org/');
     });
   });
 
@@ -81,21 +81,15 @@ describe('logout route', function() {
       assert.notOk(currentSession.openidTokens);
     });
 
-    it('should redirect to the base url if no postLogoutRedirectUri is present', function() {
+    it('should redirect to the base url', function() {
       assert.equal(logoutResponse.statusCode, 302);
-      const parsedUrl = url.parse(logoutResponse.headers.location, true);
-      assert.deepInclude(parsedUrl, {
-        protocol: 'https:',
-        hostname: 'test.auth0.com',
-        query: { returnTo: 'https://example.org', client_id: '__test_client_id__' },
-        pathname: '/v2/logout',
-      });
+      assert.equal(logoutResponse.headers.location, 'https://example.org/');
     });
   });
 
 
   describe('should use postLogoutRedirectUri if present', function() {
-    describe('should allow relative paths, and prepend with baseURL', () => {
+    describe('should allow relative paths, and prepend with baseURL', () => {
       let baseUrl;
       const jar = request.jar();
   
