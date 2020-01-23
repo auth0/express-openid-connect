@@ -11,7 +11,7 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@hapi/joi": "^15.1.1",
+    "@hapi/joi": "^16.1.8",
     "cb": "^0.1.0",
     "clone": "^2.1.2",
     "cookie": "^0.4.0",

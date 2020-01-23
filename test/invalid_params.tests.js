@@ -21,7 +21,7 @@ describe('invalid parameters', function() {
         issuerBaseURL: '__invalid_url__',
         clientID: '__test_client_id__'
       });
-    }, '"issuerBaseURL" must be a valid uri');
+    }, '"issuerBaseURL" does not match any of the allowed types');
   });
 
   it('should fail when the baseURL is invalid', function() {
@@ -94,7 +94,7 @@ describe('invalid parameters', function() {
   it('should fail when app session secret is invalid', function() {
     assert.throws(() => {
       expressOpenid.auth(getTestConfig({appSessionSecret: {key: '__test_session_secret__'}}));
-    }, '"appSessionSecret" must be a string');
+    }, '"appSessionSecret" must be one of [string, array, false]');
   });
 
   it('should fail when app session cookie httpOnly is not a boolean', function() {
