@@ -21,8 +21,8 @@ If you are using a response type that includes `code` (typically combined with a
 
 Additional configuration keys that can be passed to `auth()` on initialization:
 
-- **`appSessionCookie`** - Object defining application session cookie attributes. Allowed keys are `domain`, `httpOnly`, `path`, `secure`, and `sameSite`. Defaults are `true` for `httpOnly` and `Lax` for `sameSite`.
-- **`appSessionDuration`** - Integer value, in seconds, for application session duration. Set to `0` to indicate the cookie should be ephemeral (no expiration). Default is 7 days.
+- **`appSessionCookie`** - Object defining application session cookie attributes. Allowed keys are `domain`, `ephemeral`, `httpOnly`, `path`, `secure`, and `sameSite`. Defaults are `true` for `httpOnly`, `Lax` for `sameSite`, and `false` for `ephemeral`. See the [Express Response documentation](https://expressjs.com/en/api.html#res.cookie) for more information on all properties except `ephemeral`.
+- **`appSessionDuration`** - Integer value, in seconds, for application session duration. Default is 7 days.
 - **`appSessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
 - **`auth0Logout`** - Boolean value to enable Auth0's logout feature. Default is `false`.
 - **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-key) for defaults and more details.
