@@ -24,6 +24,7 @@ interface ConfigParams {
 
     /**
      * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie.
+     * Use a single string key or array of keys for an encrypted session cookie or false to skip.
      * Can use env key APP_SESSION_SECRET instead.
      */
     appSessionSecret?: boolean | string | string[];
@@ -119,16 +120,16 @@ interface ConfigParams {
     logoutPath?: string;
 
     /**
-     * Relative path to the application callback to process the response from the authorization server.
-     */
-    redirectUriPath?: string;
-
-    /**
-     * Either a relative path to the application
-     * or a valid URI to an external domain.
+     * Either a relative path to the application or a valid URI to an external domain.
+     * This value must be registered on the authorization server.
      * The user will be redirected to this after a logout has been performed.
      */
     postLogoutRedirectUri?: string;
+
+    /**
+     * Relative path to the application callback to process the response from the authorization server.
+     */
+    redirectUriPath?: string;
 
     /**
      * Require authentication for all routes.
