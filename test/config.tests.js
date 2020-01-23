@@ -20,16 +20,16 @@ describe('config', function() {
       assert.equal(config.authorizationParams.response_mode, 'form_post');
     });
 
-    it('should default to scope=openid profile email ', function() {
+    it('should default to scope=openid profile email', function() {
       assert.equal(config.authorizationParams.scope, 'openid profile email');
     });
 
-    it('should default to required true ', function() {
+    it('should default to required true', function() {
       assert.ok(config.required);
     });
   });
 
-  describe('when authorizationParams is response_type=x', function() {
+  describe('when authorizationParams is response_type=code', function() {
     const customConfig = Object.assign({}, defaultConfig, {
       clientSecret: '__test_client_secret__',
       authorizationParams: {
@@ -38,15 +38,15 @@ describe('config', function() {
     });
     const config = getConfig(customConfig);
 
-    it('should default to response_type=id_token', function() {
+    it('should set new response_type', function() {
       assert.equal(config.authorizationParams.response_type, 'code');
     });
 
-    it('should default to response_mode=form_post', function() {
+    it('should allow undefined response_mode', function() {
       assert.equal(config.authorizationParams.response_mode, undefined);
     });
 
-    it('should default to scope=openid profile email ', function() {
+    it('should keep default to scope', function() {
       assert.equal(config.authorizationParams.scope, 'openid profile email');
     });
   });
