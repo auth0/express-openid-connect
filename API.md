@@ -37,14 +37,14 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`legacySameSiteCookie`** - Set a fallback cookie with no SameSite attribute when `authorizationParams.response_mode` is `form_post`. Default is `true`.
 - **`loginPath`** - Relative path to application login. Default is `/login`.
 - **`logoutPath`** - Relative path to application logout. Default is `/logout`.
+- **`postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after a logout has been performed. This value must be registered at the authorization server/ Default is `baseUrl`.
 - **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
-- **`postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after a logout has been performed. Default is `baseUrl`.
 - **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
 - **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
 
 ### Authorization Params Key
 
-The `authorizationParams` key defines the URL parameters used when redirecting users to the authorization server to log in. If this key is not provided by your application, its default value will be:
+The `authorizationParams` key defines the URL parameters used when redirecting users to the authorization server to log in. If this key is not provided by your application, its default values will be:
 
 ```js
 {
@@ -54,7 +54,7 @@ The `authorizationParams` key defines the URL parameters used when redirecting u
 }
 ```
 
-A new object can be passed in to change what is returned from the authorization server depending on your specific scenario.
+New values can be passed in to change what is returned from the authorization server depending on your specific scenario.
 
 For example, to receive an access token for an API, you could initialize like the sample below. Note that `response_mode` can be omitted because the OAuth2 default mode of `query` is fine:
 
