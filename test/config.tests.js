@@ -51,6 +51,20 @@ describe('config', function() {
     });
   });
 
+  describe('when authorizationParams response_type fuzzy matches issuer', function() {
+    const customConfig = Object.assign({}, defaultConfig, {
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'token id_token code'
+      }
+    });
+    const config = getConfig(customConfig);
+
+    it('should keep token code', function() {
+      assert.equal(config.authorizationParams.response_type, 'token id_token code');
+    });
+  });
+
   describe('with auth0Logout', function() {
     const config = getConfig(Object.assign({}, defaultConfig, {auth0Logout: true}));
 
