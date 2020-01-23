@@ -44,7 +44,7 @@ describe('logout route', function() {
 
     it('should redirect to the base url', function() {
       assert.equal(logoutResponse.statusCode, 302);
-      assert.equal(logoutResponse.headers.location, 'https://example.org/');
+      assert.equal(logoutResponse.headers.location, 'https://example.org');
     });
   });
 
@@ -83,7 +83,7 @@ describe('logout route', function() {
 
     it('should redirect to the base url', function() {
       assert.equal(logoutResponse.statusCode, 302);
-      assert.equal(logoutResponse.headers.location, 'https://example.org/');
+      assert.equal(logoutResponse.headers.location, 'https://example.org');
     });
   });
 
@@ -92,7 +92,7 @@ describe('logout route', function() {
     describe('should allow relative paths, and prepend with baseURL', () => {
       let baseUrl;
       const jar = request.jar();
-  
+
       before(async function() {
         const middleware = auth({
           idpLogout: false,
@@ -114,12 +114,12 @@ describe('logout route', function() {
           baseUrl, jar
         });
       });
-  
+
       it('should redirect to postLogoutRedirectUri in auth() config', async function() {
         const logoutResponse = await request.get({uri: '/logout', baseUrl, jar, followRedirect: false});
         assert.equal(logoutResponse.headers.location, 'https://example.org/after-logout-in-auth-config');
       });
-  
+
       it('should redirect to returnTo in logout query', async function() {
         const logoutResponse = await request.get({uri: '/logout', qs: {returnTo: '/after-logout-in-logout-query'}, baseUrl, jar, followRedirect: false});
         assert.equal(logoutResponse.headers.location, 'https://example.org/after-logout-in-logout-query');
@@ -129,7 +129,7 @@ describe('logout route', function() {
     describe('should allow absolute paths', () => {
       let baseUrl;
       const jar = request.jar();
-  
+
       before(async function() {
         const middleware = auth({
           idpLogout: false,
@@ -151,12 +151,12 @@ describe('logout route', function() {
           baseUrl, jar
         });
       });
-  
+
       it('should redirect to postLogoutRedirectUri in auth() config', async function() {
         const logoutResponse = await request.get({uri: '/logout', baseUrl, jar, followRedirect: false});
         assert.equal(logoutResponse.headers.location, 'https://external-domain.com/after-logout-in-auth-config');
       });
-  
+
       it('should redirect to returnTo in logout query', async function() {
         const logoutResponse = await request.get({uri: '/logout', qs: {returnTo: 'https://external-domain.com/after-logout-in-logout-query'}, baseUrl, jar, followRedirect: false});
         assert.equal(logoutResponse.headers.location, 'https://external-domain.com/after-logout-in-logout-query');

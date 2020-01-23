@@ -37,8 +37,8 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`legacySameSiteCookie`** - Set a fallback cookie with no SameSite attribute when `authorizationParams.response_mode` is `form_post`. Default is `true`.
 - **`loginPath`** - Relative path to application login. Default is `/login`.
 - **`logoutPath`** - Relative path to application logout. Default is `/logout`.
+- **`postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after a logout has been performed. This value must be registered at the authorization server/ Default is `baseUrl`.
 - **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
-- **`postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after a logout has been performed. Default is `baseUrl`.
 - **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
 - **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
 
