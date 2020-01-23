@@ -200,14 +200,14 @@ describe('auth', function() {
         assert.equal(parsed.query.client_id, '__test_client_id__');
         assert.equal(parsed.query.scope, 'openid profile email');
         assert.equal(parsed.query.response_type, 'id_token');
-        assert.equal(parsed.query.response_mode, undefined);
+        assert.equal(parsed.query.response_mode, 'form_post');
         assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
       });
 
       it('should contain the two callbacks route', function() {
-        assert.ok(router.stack.some(filterRoute('GET', '/callback')));
+        assert.ok(router.stack.some(filterRoute('POST', '/callback')));
       });
 
     });
