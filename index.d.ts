@@ -124,6 +124,13 @@ interface ConfigParams {
     redirectUriPath?: string;
 
     /**
+     * Either a relative path to the application
+     * or a valid URI to an external domain.
+     * The user will be redirected to this after a logout has been performed.
+     */
+    postLogoutRedirectUri?: string;
+
+    /**
      * Require authentication for all routes.
      */
     required?: boolean | ((request: Request) => boolean);
