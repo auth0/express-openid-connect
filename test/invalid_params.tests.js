@@ -104,7 +104,7 @@ describe('invalid parameters', function() {
           httpOnly: '__invalid_httponly__'
         }
       }));
-    }, '"httpOnly" must be a boolean');
+    }, '"appSessionCookie.httpOnly" must be a boolean');
   });
 
   it('should fail when app session cookie secure is not a boolean', function() {
@@ -114,7 +114,7 @@ describe('invalid parameters', function() {
           secure: '__invalid_secure__'
         }
       }));
-    }, '"secure" must be a boolean');
+    }, '"appSessionCookie.secure" must be a boolean');
   });
 
   it('should fail when app session cookie sameSite is invalid', function() {
@@ -124,7 +124,7 @@ describe('invalid parameters', function() {
           sameSite: '__invalid_samesite__'
         }
       }));
-    }, '"sameSite" must be one of [Lax, Strict, None]');
+    }, '"appSessionCookie.sameSite" must be one of [Lax, Strict, None]');
   });
 
   it('should fail when app session cookie domain is invalid', function() {
@@ -134,7 +134,7 @@ describe('invalid parameters', function() {
           domain: false
         }
       }));
-    }, '"domain" must be a string');
+    }, '"appSessionCookie.domain" must be a string');
   });
 
   it('should fail when app session cookie sameSite is an invalid value', function() {
@@ -144,6 +144,6 @@ describe('invalid parameters', function() {
           path: 123
         }
       }));
-    }, '"path" must be a string');
+    }, '"appSessionCookie.path" must be a string');
   });
 });
