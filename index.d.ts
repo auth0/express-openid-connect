@@ -69,6 +69,11 @@ interface ConfigParams {
     errorOnRequiredAuth?: boolean;
 
     /**
+     * Function that returns a transient state value for `res.openid.login()`.
+     */
+    getLoginState?: (req: Request, config: object) => string;
+
+    /**
      * Function that returns the profile for `req.openid.user`.
      */
     getUser?: (req: Request, config: ConfigParams) => undefined | UserinfoResponse;

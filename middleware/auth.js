@@ -9,6 +9,7 @@ const requiresAuth = require('./requiresAuth');
 const transient =  require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
+const {decode: decodeLoginState} = require('../lib/hooks/getLoginState');
 
 const enforceLeadingSlash = (path) => {
   return '/' === path.split('')[0] ? path : '/' + path;
@@ -83,13 +84,15 @@ module.exports = function (params) {
         const redirectUri = res.openid.getRedirectUri();
         const client = req.openid.client;
 
+        req.openidState = transient.getOnce('state', req, res, transientOpts);
+
         let tokenSet;
 
         try {
           const callbackParams = client.callbackParams(req);
           tokenSet = await client.callback(redirectUri, callbackParams, {
             nonce: transient.getOnce('nonce', req, res, transientOpts),
-            state: transient.getOnce('state', req, res, transientOpts),
+            state: req.openidState,
             response_type: authorizeParams.response_type,
           });
         } catch (err) {
@@ -115,7 +118,15 @@ module.exports = function (params) {
     },
     config.handleCallback,
     function (req, res) {
-      const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || config.baseURL;
+
+      let stateDecoded;
+      try {
+        stateDecoded = decodeLoginState(req.openidState);
+      } catch (err) {
+        stateDecoded = {};
+      }
+
+      const returnTo = stateDecoded.returnTo || config.baseURL;
       res.redirect(returnTo);
     }
   );
