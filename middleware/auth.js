@@ -49,10 +49,21 @@ module.exports = function (params) {
   });
 
   if (config.routes) {
-    router.get(enforceLeadingSlash(config.loginPath), express.urlencoded({ extended: false }), (req, res) => {
-      res.openid.login({ returnTo: config.baseURL });
-    });
-    router.get(enforceLeadingSlash(config.logoutPath), (req, res) => res.openid.logout());
+
+    // Login route, configurable with loginPath.
+    router.get(
+      enforceLeadingSlash(config.loginPath),
+      express.urlencoded({ extended: false }),
+      (req, res) => {
+        res.openid.login({ returnTo: config.baseURL });
+      }
+    );
+
+    // Logout route, configured with logoutPath.
+    router.get(
+      enforceLeadingSlash(config.logoutPath),
+      (req, res) => res.openid.logout()
+    );
   }
 
   let callbackMethod;
@@ -68,48 +79,55 @@ module.exports = function (params) {
       callbackMethod = 'get';
   }
 
-  router[callbackMethod](enforceLeadingSlash(config.redirectUriPath), express.urlencoded({ extended: false }), cookieParser(), async (req, res, next) => {
-    next = cb(next).once();
-    try {
-      const redirect_uri = res.openid.getRedirectUri();
-      const client = req.openid.client;
-      const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
-
-      let tokenSet;
-
+  // Callback route, configured with redirectUriPath.
+  router[callbackMethod](
+    enforceLeadingSlash(config.redirectUriPath),
+    express.urlencoded({ extended: false }),
+    cookieParser(),
+    async (req, res, next) => {
+      next = cb(next).once();
       try {
-        const callbackParams = client.callbackParams(req);
-        tokenSet = await client.callback(redirect_uri, callbackParams, {
-          nonce: transient.getOnce('nonce', req, res, transientOpts),
-          state: transient.getOnce('state', req, res, transientOpts),
-          response_type: authorizeParams.response_type,
-        });
+        const redirect_uri = res.openid.getRedirectUri();
+        const client = req.openid.client;
+        const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
+
+        let tokenSet;
+
+        try {
+          const callbackParams = client.callbackParams(req);
+          tokenSet = await client.callback(redirect_uri, callbackParams, {
+            nonce: transient.getOnce('nonce', req, res, transientOpts),
+            state: transient.getOnce('state', req, res, transientOpts),
+            response_type: authorizeParams.response_type,
+          });
+        } catch (err) {
+          throw createError.BadRequest(err.message);
+        }
+
+        req.openidTokens = tokenSet;
+
+        if (config.appSessionSecret) {
+          let identityClaims = tokenSet.claims();
+
+          config.identityClaimFilter.forEach(claim => {
+            delete identityClaims[claim];
+          });
+
+          req[config.appSessionName].claims = identityClaims;
+        }
+
+        next();
       } catch (err) {
-        throw createError.BadRequest(err.message);
+        next(err);
       }
-
-      req.openidTokens = tokenSet;
-
-      if (config.appSessionSecret) {
-        let identityClaims = tokenSet.claims();
-        config.identityClaimFilter.forEach(claim => {
-          delete identityClaims[claim];
-        });
-
-        req[config.appSessionName].claims = identityClaims;
-      }
-
-      next();
-    } catch (err) {
-      next(err);
+    },
+    config.handleCallback,
+    function (req, res) {
+      const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
+      const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || config.baseURL;
+      res.redirect(returnTo);
     }
-  },
-  config.handleCallback,
-  function (req, res) {
-    const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
-    const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || config.baseURL;
-    res.redirect(returnTo);
-  });
+  );
 
   if (config.required) {
     const requiresAuthMiddleware = requiresAuth();
@@ -123,8 +141,7 @@ module.exports = function (params) {
     }
   }
 
-  //We do this to either speed up the first request
-  // or fail fast, the first request
+  // Fail on initialization if config is invalid.
   getClient(config);
 
   return router;
