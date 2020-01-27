@@ -9,6 +9,7 @@ const expressOpenid = require('..');
 const server = require('./fixture/server');
 const cert = require('./fixture/cert');
 const clientID = '__test_client_id__';
+const expectedDefaultState = Buffer('{returnTo:"https://example.org"}').toString('base64');
 
 function testCase(params) {
   return () => {
@@ -184,8 +185,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when nonce is missing from cookies', testCase({
     cookies: {
-      state: '__test_state__',
-      returnTo: '/return-to'
+      state: '__test_state__'
     },
     body: {
       state: '__test_state__',
@@ -200,12 +200,11 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
   describe('when id_token is valid', testCase({
     cookies: {
-      _state: '__test_state__',
-      _nonce: '__test_nonce__',
-      _returnTo: '/return-to'
+      _state: expectedDefaultState,
+      _nonce: '__test_nonce__'
     },
     body: {
-      state: '__test_state__',
+      state: expectedDefaultState,
       id_token: makeIdToken()
     },
     assertions() {
@@ -214,7 +213,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       });
 
       it('should redirect to the intended url', function() {
-        assert.equal(this.response.headers['location'], '/return-to');
+        assert.equal(this.response.headers['location'], 'https://example.org');
       });
 
       it('should contain the claims in the current session', function() {
