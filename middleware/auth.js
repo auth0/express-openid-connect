@@ -36,13 +36,16 @@ module.exports = function (params) {
     }));
   }
 
+  // Express context and OpenID Issuer discovery.
   router.use(async (req, res, next) => {
     req.openid = new RequestContext(config, req, res, next);
+
     try {
       await req.openid.load();
     } catch(err) {
       next(err);
     }
+
     res.openid = new ResponseContext(config, req, res, next);
     req.isAuthenticated = () => req.openid.isAuthenticated;
     next();
@@ -66,18 +69,7 @@ module.exports = function (params) {
     );
   }
 
-  let callbackMethod;
-
-  switch (authorizeParams.response_mode) {
-    case 'form_post':
-      callbackMethod = 'post';
-      break;
-    case 'query':
-      callbackMethod = 'get';
-      break;
-    default:
-      callbackMethod = 'get';
-  }
+  const callbackMethod = ('form_post' === authorizeParams.response_mode ? 'post' : 'get');
 
   // Callback route, configured with redirectUriPath.
   router[callbackMethod](
@@ -87,7 +79,7 @@ module.exports = function (params) {
     async (req, res, next) => {
       next = cb(next).once();
       try {
-        const redirect_uri = res.openid.getRedirectUri();
+        const redirectUri = res.openid.getRedirectUri();
         const client = req.openid.client;
         const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
 
@@ -95,7 +87,7 @@ module.exports = function (params) {
 
         try {
           const callbackParams = client.callbackParams(req);
-          tokenSet = await client.callback(redirect_uri, callbackParams, {
+          tokenSet = await client.callback(redirectUri, callbackParams, {
             nonce: transient.getOnce('nonce', req, res, transientOpts),
             state: transient.getOnce('state', req, res, transientOpts),
             response_type: authorizeParams.response_type,
