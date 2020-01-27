@@ -24,11 +24,6 @@ const enforceLeadingSlash = (path) => {
 module.exports = function (params) {
   const config = getConfig(params);
   const authorizeParams = config.authorizationParams;
-
-  if (typeof express.Router === 'undefined') {
-    throw new Error(`express-openid-connect needs express@^3, current installed version ${require('express/package').version}`);
-  }
-
   const router = express.Router();
 
   // Only use the internal cookie-based session if appSessionSecret is provided.
