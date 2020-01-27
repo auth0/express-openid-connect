@@ -70,6 +70,7 @@ module.exports = function (params) {
   }
 
   const callbackMethod = ('form_post' === authorizeParams.response_mode ? 'post' : 'get');
+  const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
 
   // Callback route, configured with redirectUriPath.
   router[callbackMethod](
@@ -81,7 +82,6 @@ module.exports = function (params) {
       try {
         const redirectUri = res.openid.getRedirectUri();
         const client = req.openid.client;
-        const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
 
         let tokenSet;
 
@@ -115,7 +115,6 @@ module.exports = function (params) {
     },
     config.handleCallback,
     function (req, res) {
-      const transientOpts = { legacySameSiteCookie: config.legacySameSiteCookie };
       const returnTo = transient.getOnce('returnTo', req, res, transientOpts) || config.baseURL;
       res.redirect(returnTo);
     }
