@@ -46,7 +46,7 @@ describe('config', function() {
       assert.equal(config.authorizationParams.response_mode, undefined);
     });
 
-    it('should keep default to scope', function() {
+    it('should keep default scope', function() {
       assert.equal(config.authorizationParams.scope, 'openid profile email');
     });
   });
