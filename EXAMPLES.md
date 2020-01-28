@@ -231,3 +231,31 @@ app.use(auth({
   }
 }));
 ```
+
+## 8. Custom state handling
+
+If your application needs to keep track of the request state before redirecting to log in, you can use the built-in state handling. By default, this library stores the post-callback redirect URL in a state object (along with a generated nonce) that is converted to a string, base64 encoded, and verified during callback (see [our documentation](https://auth0.com/docs/protocols/oauth2/oauth-state) for general information about this parameter).
+
+You can define a `getLoginState` configuration key set to a function that takes an Express `RequestHandler` and an options object and returned a URL-safe string representation:
+
+```js
+const crypto = require('crypto');
+
+app.use(auth({
+  getLoginState: function (req, options) {
+    const state = {
+      // Property used by the library for redirecting after logging in.
+      returnTo: '/custom-return-path',
+      // Required to make sure the state parameter can't be replayed.
+      nonce: crypto.randomBytes(32).toString('hex');
+      // Additional properties as needed.
+      customProperty: req.someProperty,
+    };
+    return req.openid.encodeState(state);
+  },
+  handleCallback: function (req, res, next) {
+    const decodedState = req.openid.decodeState(eq.openidState);
+    // decodedState.customProperty now available to use.
+  }
+}));
+```
