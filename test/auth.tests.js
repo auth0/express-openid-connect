@@ -6,8 +6,8 @@ const request = require('request-promise-native').defaults({
 });
 
 const expressOpenid = require('..');
-const { prepare: encodeState, decode: decodeState } = require('../lib/hooks/getLoginState');
 const server = require('./fixture/server');
+
 const filterRoute = (method, path) => {
   return r => r.route &&
               r.route.path === path &&
@@ -240,15 +240,19 @@ describe('auth', function() {
   describe('custom login parameter values', () => {
 
     it('should redirect to the authorize url properly on /login', async function() {
+      let decodeState;
       const router = getRouter({routes: false});
-      router.get('/login', (req, res) => res.openid.login({
-        returnTo: 'https://example.org/custom-redirect',
-        authorizationParams: {
-          response_type: 'code',
-          response_mode: 'query',
-          scope: 'openid email',
-        }
-      }));
+      router.get('/login', (req, res) => {
+        decodeState = req.openid.decodeState;
+        res.openid.login({
+          returnTo: 'https://example.org/custom-redirect',
+          authorizationParams: {
+            response_type: 'code',
+            response_mode: 'query',
+            scope: 'openid email',
+          }
+        });
+      });
       const baseUrl = await server.create(router);
 
       const cookieJar = request.jar();
@@ -277,8 +281,10 @@ describe('auth', function() {
   describe('custom state building', () => {
 
     it('should use a custom state builder', async function() {
+      let decodeState;
       const router = getRouter({getLoginState: (req, opts) => {
-        return encodeState({
+        decodeState = req.openid.decodeState;
+        return req.openid.encodeState({
           returnTo: opts.returnTo + '/custom-page',
           nonce: '__test_nonce__',
           customProp: '__test_custom_prop__',

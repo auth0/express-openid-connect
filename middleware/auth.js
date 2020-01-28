@@ -126,8 +126,7 @@ module.exports = function (params) {
         stateDecoded = {};
       }
 
-      const returnTo = stateDecoded.returnTo || config.baseURL;
-      res.redirect(returnTo);
+      res.redirect(stateDecoded.returnTo || config.baseURL);
     }
   );
 
