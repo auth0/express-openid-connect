@@ -69,7 +69,7 @@ interface ConfigParams {
     errorOnRequiredAuth?: boolean;
 
     /**
-     * Function that returns a transient state value for `res.openid.login()`.
+     * Function that returns a URL-safe state value for `res.openid.login()`.
      */
     getLoginState?: (req: Request, config: object) => string;
 
