@@ -6,6 +6,7 @@ const request = require('request-promise-native').defaults({
 });
 
 const expressOpenid = require('..');
+const { prepare: encodeState, decode: decodeState } = require('../lib/hooks/getLoginState');
 const server = require('./fixture/server');
 const filterRoute = (method, path) => {
   return r => r.route &&
@@ -29,19 +30,24 @@ const getCookieFromResponse = (res, cookieName) => {
   return cookieValuePart.split('=')[1];
 };
 
+const defaultConfig = {
+  appSessionSecret: '__test_session_secret__',
+  clientID: '__test_client_id__',
+  baseURL: 'https://example.org',
+  issuerBaseURL: 'https://test.auth0.com',
+  required: false
+};
+
+function getRouter (customConfig) {
+  return expressOpenid.auth(Object.assign({}, defaultConfig, customConfig));
+}
+
 describe('auth', function() {
   describe('default', () => {
-
     let baseUrl, router;
 
     before(async function() {
-      router = expressOpenid.auth({
-        appSessionSecret: '__test_session_secret__',
-        clientID: '__test_client_id__',
-        baseURL: 'https://example.org',
-        issuerBaseURL: 'https://test.auth0.com',
-        required: false
-      });
+      router = getRouter();
       baseUrl = await server.create(router);
     });
 
@@ -86,17 +92,10 @@ describe('auth', function() {
       let baseUrl, router;
 
       before(async function() {
-        router = expressOpenid.auth({
-          appSessionSecret: '__test_session_secret__',
-          clientID: '__test_client_id__',
-          baseURL: 'https://example.org',
-          issuerBaseURL: 'https://test.auth0.com',
-          authorizationParams: {
-            response_mode: undefined,
-            response_type: 'none',
-          },
-          required: false
-        });
+        router = getRouter({authorizationParams: {
+          response_mode: undefined,
+          response_type: 'none',
+        }});
         baseUrl = await server.create(router);
       });
 
@@ -124,16 +123,11 @@ describe('auth', function() {
     });
 
     describe('response_type=code', () => {
-      let baseUrl;
-      let router;
+      let baseUrl, router;
 
       before(async function() {
-        router = expressOpenid.auth({
-          appSessionSecret: '__test_session_secret__',
-          clientID: '__test_client_id__',
+        router = getRouter({
           clientSecret: '__test_client_secret__',
-          baseURL: 'https://example.org',
-          issuerBaseURL: 'https://test.auth0.com',
           authorizationParams: {
             response_mode: undefined,
             response_type: 'code',
@@ -141,7 +135,6 @@ describe('auth', function() {
         });
         baseUrl = await server.create(router);
       });
-
 
       it('should redirect to the authorize url properly on /login', async function() {
         const cookieJar = request.jar();
@@ -171,20 +164,13 @@ describe('auth', function() {
     });
 
     describe('response_type=id_token', () => {
-      let router;
-      let baseUrl;
+      let baseUrl, router;
 
       before(async function() {
-        router = expressOpenid.auth({
-          appSessionSecret: '__test_session_secret__',
-          clientID: '__test_client_id__',
-          baseURL: 'https://example.org',
-          issuerBaseURL: 'https://test.auth0.com',
-          authorizationParams: {
-            response_mode: undefined,
-            response_type: 'id_token',
-          }
-        });
+        router = getRouter({authorizationParams: {
+          response_mode: undefined,
+          response_type: 'id_token',
+        }});
         baseUrl = await server.create(router);
       });
 
@@ -214,19 +200,15 @@ describe('auth', function() {
   });
 
   describe('custom path values', () => {
-
     let baseUrl, router;
 
     before(async function() {
-      router = expressOpenid.auth({
-        appSessionSecret: '__test_session_secret__',
-        clientID: '__test_client_id__',
-        baseURL: 'https://example.org',
-        issuerBaseURL: 'https://test.auth0.com',
+      router = getRouter({
         redirectUriPath: 'custom-callback',
         loginPath: 'custom-login',
         logoutPath: 'custom-logout',
       });
+
       baseUrl = await server.create(router);
     });
 
@@ -251,6 +233,69 @@ describe('auth', function() {
       assert.equal(parsed.hostname, 'test.auth0.com');
       assert.equal(parsed.pathname, '/authorize');
       assert.equal(parsed.query.redirect_uri, 'https://example.org/custom-callback');
+    });
+
+  });
+
+  describe('custom login parameter values', () => {
+
+    it('should redirect to the authorize url properly on /login', async function() {
+      const router = getRouter({routes: false});
+      router.get('/login', (req, res) => res.openid.login({
+        returnTo: 'https://example.org/custom-redirect',
+        authorizationParams: {
+          response_type: 'code',
+          response_mode: 'query',
+          scope: 'openid email',
+        }
+      }));
+      const baseUrl = await server.create(router);
+
+      const cookieJar = request.jar();
+      const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+
+      assert.equal(parsed.hostname, 'test.auth0.com');
+      assert.equal(parsed.pathname, '/authorize');
+      assert.equal(parsed.query.scope, 'openid email');
+      assert.equal(parsed.query.response_type, 'code');
+      assert.equal(parsed.query.response_mode, 'query');
+      assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+      assert.property(parsed.query, 'nonce');
+
+      const decodedState = decodeState(parsed.query.state);
+
+      assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
+      assert.isTrue(decodedState.nonce.length >= 16);
+      assert.notEqual(decodedState.nonce, parsed.query.nonce);
+    });
+
+  });
+
+  describe('custom state building', () => {
+
+    it('should use a custom state builder', async function() {
+      const router = getRouter({getLoginState: (req, opts) => {
+        return encodeState({
+          returnTo: opts.returnTo + '/custom-page',
+          nonce: '__test_nonce__',
+          customProp: '__test_custom_prop__',
+        });
+      }});
+      const baseUrl = await server.create(router);
+
+      const cookieJar = request.jar();
+      const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+      const decodedState = decodeState(parsed.query.state);
+
+      assert.equal(decodedState.returnTo, 'https://example.org/custom-page');
+      assert.equal(decodedState.nonce, '__test_nonce__');
+      assert.equal(decodedState.customProp, '__test_custom_prop__');
     });
 
   });
