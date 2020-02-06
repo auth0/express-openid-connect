@@ -9,7 +9,9 @@ This library requires:
 
 **Please Note:** This library is currently in pre-release status and has not had a complete security review. We **do not** recommend using this library in production yet. As we move towards early access, please be aware that releases may contain breaking changes. We will be monitoring the Issues queue here for feedback and questions. PRs and comments on existing PRs are welcome!
 
-[![Build Status](https://travis-ci.org/auth0/express-openid-connect.svg?branch=master)](https://travis-ci.org/auth0/express-openid-connect)
+
+[![CircleCI](https://img.shields.io/circleci/build/github/auth0/express-openid-connect/master?style=flat-square)](https://circleci.com/gh/auth0/express-openid-connect/tree/master)
+[![codecov](https://img.shields.io/codecov/c/github/auth0/express-openid-connect?style=flat-square)](https://codecov.io/gh/auth0/express-openid-connect)
 [![NPM version](https://img.shields.io/npm/v/express-openid-connect.svg?style=flat-square)](https://npmjs.org/package/express-openid-connect)
 
 ## Table of Contents
