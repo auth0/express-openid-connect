@@ -5,7 +5,7 @@ Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client). Easily ad
 This library requires:
 
 - Node v10.13 or higher
-- Express v4.16 or higher
+- Express v4.17 or higher
 
 **Please Note:** This library is currently in pre-release status and has not had a complete security review. We **do not** recommend using this library in production yet. As we move towards early access, please be aware that releases may contain breaking changes. We will be monitoring the Issues queue here for feedback and questions. PRs and comments on existing PRs are welcome!
 
@@ -60,13 +60,15 @@ APP_SESSION_SECRET=LONG_RANDOM_VALUE
 ```js
 // index.js
 
-const { auth } = require('express-openid-connect');
-app.use(auth({
-  issuerBaseURL: 'https://YOUR_DOMAIN',
-  baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
-  clientID: 'YOUR_CLIENT_ID',
-  appSessionKey: 'LONG_RANDOM_STRING'
-}));
+const { auth } = require("express-openid-connect");
+app.use(
+  auth({
+    issuerBaseURL: "https://YOUR_DOMAIN",
+    baseURL: "https://YOUR_APPLICATION_ROOT_URL",
+    clientID: "YOUR_CLIENT_ID",
+    appSessionSecret: "LONG_RANDOM_STRING"
+  })
+);
 ```
 
 With this basic configuration, your application will require authentication for all routes and store the user identity in an encrypted and signed cookie.
