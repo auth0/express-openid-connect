@@ -11,6 +11,9 @@
     "test": "mocha",
     "test:ci": "nyc --reporter=lcov npm test"
   },
+  "peerDependencies": {
+    "express": ">= 4.17.0"
+  },
   "dependencies": {
     "@hapi/joi": "^16.1.8",
     "cb": "^0.1.0",
