@@ -236,28 +236,27 @@ app.use(auth({
 
 If your application needs to keep track of the request state before redirecting to log in, you can use the built-in state handling. By default, this library stores the post-callback redirect URL in a state object (along with a generated nonce) that is converted to a string, base64 encoded, and verified during callback (see [our documentation](https://auth0.com/docs/protocols/oauth2/oauth-state) for general information about this parameter). This state object can be added to and used during callback.
 
-You can define a `getLoginState` configuration key set to a function that takes an Express `RequestHandler` and an options object and returns a URL-safe string representation:
+You can define a `getLoginState` configuration key set to a function that takes an Express `RequestHandler` and an options object and returns a plain object:
 
 ```js
-const crypto = require('crypto');
-
 app.use(auth({
   getLoginState: function (req, options) {
-    const state = {
+    // This object will be stringified and base64 URL-safe encoded.
+    return {
       // Property used by the library for redirecting after logging in.
       returnTo: '/custom-return-path',
-      // Required to make sure the state parameter can't be replayed.
-      nonce: crypto.randomBytes(32).toString('hex');
       // Additional properties as needed.
       customProperty: req.someProperty,
     };
-    // This value will be sent in a URL parameter so it should be transfer-safe.
-    return req.openid.encodeState(state);
   },
   handleCallback: function (req, res, next) {
-    const decodedState = req.openid.decodeState(eq.openidState);
-    // The decodedState.customProperty is now available to use.
-    // Call next() to redirect to decodedState.returnTo.
+    // The req.openidState.customProperty is now available to use.
+    if ( req.openidState.customProperty ) {
+      // Do something ...
+    }
+
+    // Call next() to redirect to req.openidState.returnTo.
+    next();
   }
 }));
 ```

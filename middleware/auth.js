@@ -9,7 +9,7 @@ const requiresAuth = require('./requiresAuth');
 const transient =  require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
-const {decode: decodeLoginState} = require('../lib/hooks/getLoginState');
+const { decodeState } = require('../lib/hooks/getLoginState');
 
 const enforceLeadingSlash = (path) => {
   return '/' === path.split('')[0] ? path : '/' + path;
@@ -87,7 +87,6 @@ module.exports = function (params) {
         req.openidState = transient.getOnce('state', req, res, transientOpts);
 
         let tokenSet;
-
         try {
           const callbackParams = client.callbackParams(req);
           tokenSet = await client.callback(redirectUri, callbackParams, {
@@ -99,6 +98,7 @@ module.exports = function (params) {
           throw createError.BadRequest(err.message);
         }
 
+        req.openidState = decodeState(req.openidState);
         req.openidTokens = tokenSet;
 
         if (config.appSessionSecret) {
@@ -118,15 +118,7 @@ module.exports = function (params) {
     },
     config.handleCallback,
     function (req, res) {
-
-      let stateDecoded;
-      try {
-        stateDecoded = decodeLoginState(req.openidState);
-      } catch (err) {
-        stateDecoded = {};
-      }
-
-      res.redirect(stateDecoded.returnTo || config.baseURL);
+      res.redirect(req.openidState.returnTo || config.baseURL);
     }
   );
 

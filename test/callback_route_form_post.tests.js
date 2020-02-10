@@ -5,11 +5,12 @@ const request = require('request-promise-native').defaults({
   resolveWithFullResponse: true
 });
 
+const { encodeState } = require('../lib/hooks/getLoginState');
 const expressOpenid = require('..');
 const server = require('./fixture/server');
 const cert = require('./fixture/cert');
 const clientID = '__test_client_id__';
-const expectedDefaultState = Buffer('{returnTo:"https://example.org"}').toString('base64');
+const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 
 function testCase(params) {
   return () => {
@@ -272,11 +273,11 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       }
     },
     cookies: {
-      _state: '__test_state__',
+      _state: expectedDefaultState,
       _nonce: '__test_nonce__'
     },
     body: {
-      state: '__test_state__',
+      state: expectedDefaultState,
       id_token: makeIdToken()
     },
     assertions() {
@@ -291,11 +292,11 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
       identityClaimFilter: []
     },
     cookies: {
-      _state: '__test_state__',
+      _state: expectedDefaultState,
       _nonce: '__test_nonce__'
     },
     body: {
-      state: '__test_state__',
+      state: expectedDefaultState,
       id_token: makeIdToken()
     },
     assertions() {
