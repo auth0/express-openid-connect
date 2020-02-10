@@ -71,7 +71,7 @@ interface ConfigParams {
     /**
      * Function that returns a URL-safe state value for `res.openid.login()`.
      */
-    getLoginState?: (req: Request, config: object) => string;
+    getLoginState?: (req: Request, config: object) => object;
 
     /**
      * Function that returns the profile for `req.openid.user`.
