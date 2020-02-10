@@ -5,6 +5,8 @@ const request = require('request-promise-native').defaults({
   resolveWithFullResponse: true
 });
 
+const { decodeState } = require('../lib/hooks/getLoginState');
+
 const expressOpenid = require('..');
 const server = require('./fixture/server');
 
@@ -240,10 +242,8 @@ describe('auth', function() {
   describe('custom login parameter values', () => {
 
     it('should redirect to the authorize url properly on /login', async function() {
-      let decodeState;
       const router = getRouter({routes: false});
       router.get('/login', (req, res) => {
-        decodeState = req.openid.decodeState;
         res.openid.login({
           returnTo: 'https://example.org/custom-redirect',
           authorizationParams: {
@@ -281,14 +281,11 @@ describe('auth', function() {
   describe('custom state building', () => {
 
     it('should use a custom state builder', async function() {
-      let decodeState;
       const router = getRouter({getLoginState: (req, opts) => {
-        decodeState = req.openid.decodeState;
-        return req.openid.encodeState({
+        return {
           returnTo: opts.returnTo + '/custom-page',
-          nonce: '__test_nonce__',
           customProp: '__test_custom_prop__',
-        });
+        };
       }});
       const baseUrl = await server.create(router);
 
@@ -300,7 +297,6 @@ describe('auth', function() {
       const decodedState = decodeState(parsed.query.state);
 
       assert.equal(decodedState.returnTo, 'https://example.org/custom-page');
-      assert.equal(decodedState.nonce, '__test_nonce__');
       assert.equal(decodedState.customProp, '__test_custom_prop__');
     });
 
