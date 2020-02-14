@@ -3,6 +3,24 @@
 import { AuthorizationParameters, TokenSet, UserinfoResponse } from 'openid-client';
 import { Request, Response, NextFunction, RequestHandler, ErrorRequestHandler } from 'express';
 
+interface OpenidRequest extends Request {
+    /**
+     * Library namespace for methods and data.
+     * See RequestContext and ResponseContext for how this is used.
+     */
+    openid: object;
+
+    /**
+     * Decoded state for use in config.handleCallback().
+     */
+    openidState: object;
+
+    /**
+     * Tokens for use in config.handleCallback().
+     */
+    openidTokens: TokenSet;
+}
+
 /**
  * Configuration parameters passed to the auth() middleware.
  */
@@ -71,17 +89,17 @@ interface ConfigParams {
     /**
      * Function that returns a URL-safe state value for `res.openid.login()`.
      */
-    getLoginState?: (req: Request, config: object) => object;
+    getLoginState?: (req: OpenidRequest, config: object) => object;
 
     /**
      * Function that returns the profile for `req.openid.user`.
      */
-    getUser?: (req: Request, config: ConfigParams) => undefined | UserinfoResponse;
+    getUser?: (req: OpenidRequest, config: ConfigParams) => undefined | UserinfoResponse;
 
     /**
      * Function that runs on the callback route, after callback processing but before redirection.
      */
-    handleCallback?: RequestHandler;
+    handleCallback?: (req: OpenidRequest, res: Response, next: NextFunction) => void;
 
     /**
      * Default options object used for all HTTP calls made by the library.
