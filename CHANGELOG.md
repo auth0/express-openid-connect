@@ -1,11 +1,29 @@
 # CHANGELOG
 
+## [v0.7.0](https://github.com/auth0/express-openid-connect/tree/v0.7.0) (2020-02-18)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.6.0...v0.7.0)
+
+**Added**
+- Update TS defs for config functions [\#65](https://github.com/auth0/express-openid-connect/pull/65) ([joshcanhelp](https://github.com/joshcanhelp))
+- Register Express as a peer dependency [\#63](https://github.com/auth0/express-openid-connect/pull/63) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Add custom state handling [\#60](https://github.com/auth0/express-openid-connect/pull/60) ([joshcanhelp](https://github.com/joshcanhelp))
+
+**Changed**
+- Merge seperate config schemas [\#57](https://github.com/auth0/express-openid-connect/pull/57) ([joshcanhelp](https://github.com/joshcanhelp))
+- Update hapi to v16 and fix breaking changes [\#56](https://github.com/auth0/express-openid-connect/pull/56) ([joshcanhelp](https://github.com/joshcanhelp))
+- Update hapi/joi to 15.x; update other deps to minor/patch [\#51](https://github.com/auth0/express-openid-connect/pull/51) ([joshcanhelp](https://github.com/joshcanhelp))
+
+**Fixed**
+- Additional allowed cookieOptions [\#53](https://github.com/auth0/express-openid-connect/pull/53) ([joshcanhelp](https://github.com/joshcanhelp))
+- Fix TS definition for appSessionSecret [\#52](https://github.com/auth0/express-openid-connect/pull/52) ([joshcanhelp](https://github.com/joshcanhelp))
+- Fix post logout redirect, add config for default [\#40](https://github.com/auth0/express-openid-connect/pull/40) ([balazsorban44](https://github.com/balazsorban44))
+
 ## [v0.6.0](https://github.com/auth0/express-openid-connect/tree/v0.6.0) (2020-01-14)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.5.0...v0.6.0)
 
 **Breaking changes in this release:**
 
-This release includes important changes to user session and token handling which will require an update for all applications. 
+This release includes important changes to user session and token handling which will require an update for all applications.
 
 First, a new, required configuration key - `appSessionSecret`- has been added. The value here will be used to generate keys which are in turn used to encrypt the user identity returned from the identity provider. This encrypted and signed identity is stored in a cookie and used to populate the `req.openid.user` property, as before. This key should be set to either a secure, random value to use this built-in session or `false` to provide [your own custom application session handling](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling). A value for this can be generated with `openssl` like so:
 
