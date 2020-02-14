@@ -84,21 +84,21 @@ module.exports = function (params) {
         const redirectUri = res.openid.getRedirectUri();
         const client = req.openid.client;
 
-        req.openidState = transient.getOnce('state', req, res, transientOpts);
+        const returnedState = transient.getOnce('state', req, res, transientOpts);
 
         let tokenSet;
         try {
           const callbackParams = client.callbackParams(req);
           tokenSet = await client.callback(redirectUri, callbackParams, {
             nonce: transient.getOnce('nonce', req, res, transientOpts),
-            state: req.openidState,
+            state: returnedState,
             response_type: authorizeParams.response_type,
           });
         } catch (err) {
           throw createError.BadRequest(err.message);
         }
 
-        req.openidState = decodeState(req.openidState);
+        req.openidState = decodeState(returnedState);
         req.openidTokens = tokenSet;
 
         if (config.appSessionSecret) {
