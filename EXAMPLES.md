@@ -137,10 +137,11 @@ app.use(session({
 app.use(auth({
   authorizationParams: {
     response_type: 'code',
-    audience: process.env.API_URL,
+    audience: process.env.API_AUDIENCE,
     scope: 'openid profile email read:reports'
   },
   handleCallback: async function (req, res, next) {
+    // Store recevied tokens (access and ID in this case) in server-side storage.
     req.session.openidTokens = req.openidTokens;
     next();
   }
@@ -169,7 +170,7 @@ app.use(auth({
     response_type: 'code id_token',
     response_mode: 'form_post',
     // API identifier to indicate which API this application will be calling.
-    audience: process.env.API_URL,
+    audience: process.env.API_AUDIENCE,
     // Include the required scopes as well as offline_access to generate a refresh token.
     scope: 'openid profile email read:reports offline_access'
   },
@@ -199,10 +200,15 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
     }
 
     // New tokenSet may not include a new refresh token.
-    tokenSet.refresh_token = tokenSet.refresh_token ?? refreshToken;
+    tokenSet.refresh_token = tokenSet.refresh_token || refreshToken;
 
     // Where you store the refreshed tokenSet will depend on how the tokens are stored.
     req.session.openidTokens = tokenSet;
+
+    // You can also refresh the session with a returned ID token.
+    // The req property below is the same as appSessionName, which defaults to "identity".
+    // If you're using custom session handling, the claims might be stored elsewhere.
+    req.identity.claims = tokenSet.claims();
   }
 
   // Check for and use tokenSet.access_token for the API call ...
