@@ -28,24 +28,7 @@ interface ConfigParams {
     /**
      * Object defining application session cookie attributes.
      */
-    appSessionCookie?: SessionCookieConfigParams;
-
-    /**
-     * Integer value, in seconds, for application session duration.
-     */
-    appSessionDuration?: number;
-
-    /**
-     * String value for the cookie name used for the internal session.
-     */
-    appSessionName?: string;
-
-    /**
-     * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie.
-     * Use a single string key or array of keys for an encrypted session cookie or false to skip.
-     * Can use env key APP_SESSION_SECRET instead.
-     */
-    appSessionSecret?: boolean | string | string[];
+    appSession: AppSessionConfigParams;
 
     /**
      * Boolean value to enable Auth0's logout feature.
@@ -166,42 +149,61 @@ interface ConfigParams {
 }
 
 /**
- * Configuration parameters used in appSessionCookie.
- *
- * @see https://expressjs.com/en/api.html#res.cookie
+ * Configuration parameters used for the application session.
  */
-interface SessionCookieConfigParams {
+interface AppSessionConfigParams {
+    /**
+     * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie.
+     * Use a single string key or array of keys for an encrypted session cookie.
+     * Can use env key APP_SESSION_SECRET instead.
+     */
+    secret?: string | Array<string>;
+
+    /**
+     * String value for the cookie name used for the internal session.
+     * This value must only include letters, numbers, and underscores.
+     * Default is `appSession`.
+     */
+    name?: string;
+
+    /**
+     * Integer value, in seconds, for application session duration.
+     * Default is 604800 seconds (7 days).
+     */
+    duration?: number
+
     /**
      * Domain name for the cookie.
      */
-    domain?: string;
+    cookieDomain?: string;
 
     /**
-     * Set to true to use an ephemeral cookie.
-     * Defaults to false which will use appSessionDuration as the cookie expiration.
+     * Set to true to use a transient cookie (cookie without an explicit expiration).
+     * Defaults to `false` which will use appSessionDuration as the cookie expiration.
      */
-    ephemeral?: boolean;
+    cookieTransient?: boolean;
 
     /**
      * Flags the cookie to be accessible only by the web server.
-     * Set to `true` by default in lib/config.
+     * Defaults to `true`.
      */
-    httpOnly?: boolean;
+    cookieHttpOnly?: boolean;
 
     /**
      * Path for the cookie.
      */
-    path?: string;
+    cookiePath?: string;
 
     /**
-     * Marks the cookie to be used with HTTPS only.
+     * Marks the cookie to be used over secure channels only.
      */
-    secure?: boolean;
+    cookieSecure?: boolean;
 
     /**
-     * Value of the “SameSite” Set-Cookie attribute.
+     * Value of the SameSite Set-Cookie attribute.
+     * Defaults to "Lax" but will be adjusted based on response_type.
      */
-    sameSite?: string;
+    cookieSameSite?: string;
 }
 
 export function auth(params?: ConfigParams): RequestHandler;
