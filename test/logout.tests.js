@@ -20,7 +20,7 @@ describe('logout route', function() {
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
-        appSessionSecret: '__test_session_secret__',
+        appSession: {secret: '__test_session_secret__'},
         required: false
       });
       baseUrl = await server.create(middleware);
@@ -59,7 +59,7 @@ describe('logout route', function() {
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
-        appSessionSecret: '__test_session_secret__',
+        appSession: {secret: '__test_session_secret__'},
         required: false
       });
       baseUrl = await server.create(middleware);
@@ -98,7 +98,7 @@ describe('logout route', function() {
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
-          appSessionSecret: '__test_session_secret__',
+          appSession: {secret: '__test_session_secret__'},
           postLogoutRedirectUri: '/after-logout-in-auth-config',
           required: false,
         });
@@ -135,7 +135,7 @@ describe('logout route', function() {
           clientID: '__test_client_id__',
           baseURL: 'https://example.org',
           issuerBaseURL: 'https://test.auth0.com',
-          appSessionSecret: '__test_session_secret__',
+          appSession: {secret: '__test_session_secret__'},
           postLogoutRedirectUri: 'https://external-domain.com/after-logout-in-auth-config',
           required: false,
         });

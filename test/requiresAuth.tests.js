@@ -14,7 +14,7 @@ describe('requiresAuth middleware', function() {
 
     before(async function() {
       const router = auth({
-        appSessionSecret: '__test_session_secret__',
+        appSession: {secret: '__test_session_secret__'},
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',
@@ -53,7 +53,7 @@ describe('requiresAuth middleware', function() {
 
     before(async function() {
       const router = auth({
-        appSessionSecret: '__test_session_secret__',
+        appSession: {secret: '__test_session_secret__'},
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://test.auth0.com',

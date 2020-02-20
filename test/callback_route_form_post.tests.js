@@ -15,7 +15,7 @@ const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 function testCase(params) {
   return () => {
     const authOpts = Object.assign({}, {
-      appSessionSecret: '__test_session_secret__',
+      appSession: {secret: '__test_session_secret__'},
       clientID: clientID,
       baseURL: 'https://example.org',
       issuerBaseURL: 'https://test.auth0.com',

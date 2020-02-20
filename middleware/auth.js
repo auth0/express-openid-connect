@@ -26,14 +26,15 @@ module.exports = function (params) {
   const config = getConfig(params);
   const authorizeParams = config.authorizationParams;
   const router = express.Router();
+  const useAppSession = config.appSession && config.appSession.secret;
 
-  // Only use the internal cookie-based session if appSessionSecret is provided.
-  if (config.appSessionSecret) {
+  // Only use the internal cookie-based session if appSession secret is provided.
+  if (useAppSession) {
     router.use(appSession({
-      name: config.appSessionName,
-      secret: config.appSessionSecret,
-      duration: config.appSessionDuration,
-      cookieOptions: config.appSessionCookie
+      name: config.appSession.name,
+      secret: config.appSession.secret,
+      duration: config.appSession.duration
+      // TODO: Add back cookie options
     }));
   }
 
@@ -101,14 +102,14 @@ module.exports = function (params) {
         req.openidState = decodeState(returnedState);
         req.openidTokens = tokenSet;
 
-        if (config.appSessionSecret) {
+        if (useAppSession) {
           let identityClaims = tokenSet.claims();
 
           config.identityClaimFilter.forEach(claim => {
             delete identityClaims[claim];
           });
 
-          req[config.appSessionName].claims = identityClaims;
+          req[config.appSession.name].claims = identityClaims;
         }
 
         next();
