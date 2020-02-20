@@ -16,7 +16,7 @@ describe('client initialization', function() {
 
   describe('default case', function() {
     const config = getConfig({
-      appSessionSecret: '__test_session_secret__',
+      appSession: {secret: '__test_session_secret__'},
       clientID: '__test_client_id__',
       clientSecret: '__test_client_secret__',
       issuerBaseURL: 'https://test.auth0.com',
@@ -52,7 +52,7 @@ describe('client initialization', function() {
 
   describe('custom headers', function() {
     const config = getConfig({
-      appSessionSecret: '__test_session_secret__',
+      appSession: {secret: '__test_session_secret__'},
       clientID: '__test_client_id__',
       clientSecret: '__test_client_secret__',
       issuerBaseURL: 'https://test.auth0.com',
