@@ -3,7 +3,7 @@ const appSession = require('../lib/appSession');
 const sessionEncryption = require('./fixture/sessionEncryption');
 
 const defaultConfig = {
-  name: 'identity',
+  name: 'appSession',
   secret: '__test_secret__',
   duration: 3155760000, // 100 years
 };
@@ -23,42 +23,42 @@ describe('appSession', function() {
       assert.ok(result);
     });
 
-    it('should set an empty identity', function() {
-      assert.isEmpty(req.identity);
+    it('should set an empty appSession', function() {
+      assert.isEmpty(req.appSession);
     });
   });
 
   describe('no session cookies, existing session property', () => {
     const appSessionMw = appSession(defaultConfig);
-    const thisReq = Object.assign({}, req, {identity: {sub: '__test_existing_sub__'}});
+    const thisReq = Object.assign({}, req, {appSession: {sub: '__test_existing_sub__'}});
     const result = appSessionMw(thisReq, {}, next);
 
     it('should call next', function() {
       assert.ok(result);
     });
 
-    it('should keep existing identity', function() {
-      assert.equal(thisReq.identity.sub, '__test_existing_sub__');
+    it('should keep existing appSession', function() {
+      assert.equal(thisReq.appSession.sub, '__test_existing_sub__');
     });
   });
 
   describe('malformed session cookies', () => {
     const appSessionMw = appSession(defaultConfig);
-    const thisReq = {get: () => 'identity=__invalid_identity__'};
+    const thisReq = {get: () => 'appSession=__invalid_identity__'};
 
-    it('should error with malformed identity', function() {
+    it('should error with malformed appSession', function() {
       assert.throws(() => appSessionMw(thisReq, {}, next), Error, 'JWE malformed or invalid serialization');
     });
   });
 
   describe('existing session cookies', () => {
     const appSessionMw = appSession(defaultConfig);
-    const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
+    const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
 
-    it('should set the identity on req', function() {
+    it('should set the appSession on req', function() {
       const result = appSessionMw(thisReq, {}, next);
       assert.ok(result);
-      assert.equal(thisReq.identity.sub, '__test_sub__');
+      assert.equal(thisReq.appSession.sub, '__test_sub__');
 
     });
   });
@@ -76,13 +76,13 @@ describe('appSession', function() {
     });
 
     it('should set the correct cookie by default', function() {
-      const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
+      const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
       const appSessionMw = appSession(defaultConfig);
       const result = appSessionMw(thisReq, thisRes, next);
       thisRes.writeHead();
 
       assert.ok(result);
-      assert.equal(cookieArgs['0'], 'identity');
+      assert.equal(cookieArgs['0'], 'appSession');
       assert.isNotEmpty(cookieArgs['1']);
       assert.isObject(cookieArgs['2']);
       assert.hasAllKeys(cookieArgs['2'], ['expires']);
@@ -103,7 +103,7 @@ describe('appSession', function() {
     });
 
     it('should set an ephemeral cookie', function() {
-      const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
+      const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
       const customConfig = Object.assign({}, defaultConfig, {cookieTransient: true});
       const appSessionMw = appSession(customConfig);
       const result = appSessionMw(thisReq, thisRes, next);
@@ -114,7 +114,7 @@ describe('appSession', function() {
     });
 
     it('should pass custom cookie options', function() {
-      const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
+      const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
       const cookieOptConfig = {
         cookieDomain: '__test_domain__',
         cookiePath: '__test_path__',

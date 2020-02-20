@@ -206,9 +206,9 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
     req.session.openidTokens = tokenSet;
 
     // You can also refresh the session with a returned ID token.
-    // The req property below is the same as appSession.name, which defaults to "identity".
+    // The req property below is the same as appSession.name, which defaults to "appSession".
     // If you're using custom session handling, the claims might be stored elsewhere.
-    req.identity.claims = tokenSet.claims();
+    req.appSession.claims = tokenSet.claims();
   }
 
   // Check for and use tokenSet.access_token for the API call ...
@@ -217,15 +217,15 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 
 ## 7. Calling userinfo
 
-If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. Save the claims retrieved from the userinfo endpoint to the `appSession.name` on the request object (default is `identity`):
+If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. Save the claims retrieved from the userinfo endpoint to the `appSession.name` on the request object (default is `appSession`):
 
 ```js
 app.use(auth({
   handleCallback: async function (req, res, next) {
     const client = req.openid.client;
-    req.identity = req.identity || {};
+    req.appSession = req.appSession || {};
     try {
-      req.identity.claims = await client.userinfo(req.openidTokens);
+      req.appSession.claims = await client.userinfo(req.openidTokens);
       next();
     } catch(e) {
       next(e);
