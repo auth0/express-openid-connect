@@ -6,7 +6,6 @@ const defaultConfig = {
   name: 'identity',
   secret: '__test_secret__',
   duration: 3155760000, // 100 years
-  cookieOptions: {}
 };
 
 const req = {
@@ -105,7 +104,7 @@ describe('appSession', function() {
 
     it('should set an ephemeral cookie', function() {
       const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
-      const customConfig = Object.assign({}, defaultConfig, {cookieOptions: {ephemeral: true}});
+      const customConfig = Object.assign({}, defaultConfig, {cookieTransient: true});
       const appSessionMw = appSession(customConfig);
       const result = appSessionMw(thisReq, thisRes, next);
       thisRes.writeHead();
@@ -116,13 +115,13 @@ describe('appSession', function() {
 
     it('should pass custom cookie options', function() {
       const thisReq = {get: () => 'identity=' + sessionEncryption.encrypted};
-      const cookieOptConfig = {cookieOptions: {
-        domain: '__test_domain__',
-        path: '__test_path__',
-        secure: true,
-        httpOnly: false,
-        sameSite: '__test_samesite__',
-      }};
+      const cookieOptConfig = {
+        cookieDomain: '__test_domain__',
+        cookiePath: '__test_path__',
+        cookieSecure: true,
+        cookieHttpOnly: false,
+        cookieSameSite: '__test_samesite__',
+      };
       const customConfig = Object.assign({}, defaultConfig, cookieOptConfig);
       const appSessionMw = appSession(customConfig);
       const result = appSessionMw(thisReq, thisRes, next);
@@ -132,8 +131,8 @@ describe('appSession', function() {
       assert.equal(cookieArgs['2'].domain, '__test_domain__');
       assert.equal(cookieArgs['2'].path, '__test_path__');
       assert.equal(cookieArgs['2'].secure, true);
-      assert.equal(cookieArgs['2'].httpOnly, false);
-      assert.equal(cookieArgs['2'].sameSite, '__test_samesite__');
+      assert.equal(cookieArgs['2'].httponly, false);
+      assert.equal(cookieArgs['2'].samesite, '__test_samesite__');
     });
   });
 });

@@ -30,12 +30,7 @@ module.exports = function (params) {
 
   // Only use the internal cookie-based session if appSession secret is provided.
   if (useAppSession) {
-    router.use(appSession({
-      name: config.appSession.name,
-      secret: config.appSession.secret,
-      duration: config.appSession.duration
-      // TODO: Add back cookie options
-    }));
+    router.use(appSession(config.appSession));
   }
 
   // Express context and OpenID Issuer discovery.

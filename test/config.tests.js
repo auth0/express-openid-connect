@@ -145,11 +145,11 @@ describe('config', function() {
     });
 
     it('should set the session cookie attributes to correct defaults', function() {
-      assert.notExists(config.appSession.domain);
-      assert.notExists(config.appSession.path);
-      assert.notExists(config.appSession.secure);
-      assert.equal(config.appSession.sameSite, 'Lax');
-      assert.equal(config.appSession.httpOnly, true);
+      assert.notExists(config.appSession.cookieDomain);
+      assert.notExists(config.appSession.cookiePath);
+      assert.notExists(config.appSession.cookieSecure);
+      assert.equal(config.appSession.cookieSameSite, 'Lax');
+      assert.equal(config.appSession.cookieHttpOnly, true);
     });
   });
 
@@ -159,12 +159,12 @@ describe('config', function() {
         secret: [ '__test_session_secret_1__', '__test_session_secret_2__' ],
         name: '__test_custom_session_name__',
         duration: 1234567890,
-        domain: '__test_custom_domain__',
-        path: '__test_custom_path__',
-        ephemeral: true,
-        httpOnly: false,
-        secure: true,
-        sameSite: 'Strict',
+        cookieDomain: '__test_custom_domain__',
+        cookiePath: '__test_custom_path__',
+        cookieTransient: true,
+        cookieHttpOnly: false,
+        cookieSecure: true,
+        cookieSameSite: 'Strict',
       }
     });
 
@@ -181,15 +181,14 @@ describe('config', function() {
       assert.equal(config.appSession.name, '__test_custom_session_name__');
     });
 
-    // TODO: Fix me
-    // it('should set the session cookie attributes to custom values', function() {
-    //   const config = getConfig(customConfig);
-    //   assert.equal(config.appSession.domain, '__test_custom_domain__');
-    //   assert.equal(config.appSession.path, '__test_custom_path__');
-    //   assert.equal(config.appSession.ephemeral, true);
-    //   assert.equal(config.appSession.httpOnly, false);
-    //   assert.equal(config.appSession.secure, true);
-    //   assert.equal(config.appSession.sameSite, 'Strict');
-    // });
+    it('should set the session cookie attributes to custom values', function() {
+      const config = getConfig(customConfig);
+      assert.equal(config.appSession.cookieDomain, '__test_custom_domain__');
+      assert.equal(config.appSession.cookiePath, '__test_custom_path__');
+      assert.equal(config.appSession.cookieTransient, true);
+      assert.equal(config.appSession.cookieHttpOnly, false);
+      assert.equal(config.appSession.cookieSecure, true);
+      assert.equal(config.appSession.cookieSameSite, 'Strict');
+    });
   });
 });
