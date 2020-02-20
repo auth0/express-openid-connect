@@ -140,8 +140,8 @@ describe('config', function() {
       assert.equal(config.appSession.duration, 604800);
     });
 
-    it('should set the session name to "identity" by default', function() {
-      assert.equal(config.appSession.name, 'identity');
+    it('should set the session name to "appSession" by default', function() {
+      assert.equal(config.appSession.name, 'appSession');
     });
 
     it('should set the session cookie attributes to correct defaults', function() {
