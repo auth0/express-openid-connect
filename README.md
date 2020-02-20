@@ -65,7 +65,9 @@ app.use(
     issuerBaseURL: "https://YOUR_DOMAIN",
     baseURL: "https://YOUR_APPLICATION_ROOT_URL",
     clientID: "YOUR_CLIENT_ID",
-    appSessionSecret: "LONG_RANDOM_STRING"
+    appSession: {
+      secret: "LONG_RANDOM_STRING"
+    }
   })
 );
 ```

@@ -25,7 +25,7 @@
 
 This release includes important changes to user session and token handling which will require an update for all applications.
 
-First, a new, required configuration key - `appSessionSecret`- has been added. The value here will be used to generate keys which are in turn used to encrypt the user identity returned from the identity provider. This encrypted and signed identity is stored in a cookie and used to populate the `req.openid.user` property, as before. This key should be set to either a secure, random value to use this built-in session or `false` to provide [your own custom application session handling](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling). A value for this can be generated with `openssl` like so:
+First, a new, required configuration key - `appSessionSecret` (changed to `appSession.secret`) - has been added. The value here will be used to generate keys which are in turn used to encrypt the user identity returned from the identity provider. This encrypted and signed identity is stored in a cookie and used to populate the `req.openid.user` property, as before. This key should be set to either a secure, random value to use this built-in session or `false` to provide [your own custom application session handling](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling). A value for this can be generated with `openssl` like so:
 
 ```
 ❯ openssl rand -hex 32
