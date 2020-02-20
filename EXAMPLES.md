@@ -106,7 +106,7 @@ app.use(session({
 
 app.use(auth({
   // Setting this configuration key to false will turn off internal session handling.
-  appSessionSecret: false,
+  appSession: false,
   handleCallback: async function (req, res, next) {
     // This will store the user identity claims in the session
     req.session.userIdentity = req.openidTokens.claims();
@@ -206,7 +206,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
     req.session.openidTokens = tokenSet;
 
     // You can also refresh the session with a returned ID token.
-    // The req property below is the same as appSessionName, which defaults to "identity".
+    // The req property below is the same as appSession.name, which defaults to "identity".
     // If you're using custom session handling, the claims might be stored elsewhere.
     req.identity.claims = tokenSet.claims();
   }
@@ -217,7 +217,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 
 ## 7. Calling userinfo
 
-If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. Save the claims retrieved from the userinfo endpoint to the `appSessionName` on the request object (default is `identity`):
+If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. Save the claims retrieved from the userinfo endpoint to the `appSession.name` on the request object (default is `identity`):
 
 ```js
 app.use(auth({

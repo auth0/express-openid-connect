@@ -8,7 +8,7 @@ Please see the [Getting Started section of the README](https://github.com/auth0/
 
 The `auth()` middleware has a few configuration keys that are required for initialization.
 
-- **`appSessionSecret`** - The secret used to derive an encryption key for the user identity in a session cookie.  It must be a string, an array of strings, or `false` to skip this internal storage and provide your own session mechanism in `getUser`. When array is provided the first member is used for signing and other members can be used for decrypting old cookies, this is to enable appSessionSecret rotation. This can be set automatically with an `APP_SESSION_SECRET` variable in your environment.
+- **`appSession.secret`** - The secret used to derive an encryption key for the user identity in a session cookie. It must be a string or an array of strings to use the built-in encrypted cookie session. When an array is provided, the first member is used for signing and other members can be used for decrypting old cookies, this is to enable secret rotation. This can be set automatically with an `APP_SESSION_SECRET` variable in your environment.
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
 - **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
 - **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
@@ -21,9 +21,15 @@ If you are using a response type that includes `code` (typically combined with a
 
 Additional configuration keys that can be passed to `auth()` on initialization:
 
-- **`appSessionCookie`** - Object defining application session cookie attributes. Allowed keys are `domain`, `ephemeral`, `httpOnly`, `path`, `secure`, and `sameSite`. Defaults are `true` for `httpOnly`, `Lax` for `sameSite`, and `false` for `ephemeral`. See the [Express Response documentation](https://expressjs.com/en/api.html#res.cookie) for more information on all properties except `ephemeral`.
-- **`appSessionDuration`** - Integer value, in seconds, for application session duration. Default is 7 days.
-- **`appSessionName`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
+- **`appSession`** - Object defining application session configuration. If this is set to `false`, the internal storage will not be used (see [this example](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling) for how to provide your own session mechanism). Otherwise, the `secret` key is required (see above).
+  - **`appSession.duration`** - Integer value, in seconds, for application session duration. Default is 7 days.
+  - **`appSession.name`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `identity`.
+  - **`appSession.cookieTransient`** - Sets the application session cookie expiration to `0` to create a transient cookie.
+  - **`appSession.cookieDomain`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`.
+  - **`appSession.cookieHttpOnly`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `httponly`. Set to `true` by default.
+  - **`appSession.cookiePath`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`.
+  - **`appSession.cookieSecure`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `secure`.
+  - **`appSession.cookieSecure`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `samesite`. Set to `"Lax"` by default.
 - **`auth0Logout`** - Boolean value to enable Auth0's logout feature. Default is `false`.
 - **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-key) for defaults and more details.
 - **`clockTolerance`** - Integer value for the system clock's tolerance (leeway) in seconds for ID token verification. Default is `60`.
