@@ -28,7 +28,7 @@ interface ConfigParams {
     /**
      * Object defining application session cookie attributes.
      */
-    appSession: AppSessionConfigParams;
+    appSession: boolean | AppSessionConfigParams;
 
     /**
      * Boolean value to enable Auth0's logout feature.
@@ -179,7 +179,7 @@ interface AppSessionConfigParams {
 
     /**
      * Set to true to use a transient cookie (cookie without an explicit expiration).
-     * Defaults to `false` which will use appSessionDuration as the cookie expiration.
+     * Defaults to `false` which will use appSession.duration as the cookie expiration.
      */
     cookieTransient?: boolean;
 
