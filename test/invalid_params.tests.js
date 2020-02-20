@@ -90,8 +90,7 @@ describe('invalid parameters', function() {
       expressOpenid.auth(getTestConfig({
         appSession: {
           secret: '__test_session_secret__',
-          duration: 3.14159,
-          httpOnly: '__invalid_httponly__'
+          duration: 3.14159
         }
       }));
     }, '"appSession.duration" must be an integer');
@@ -108,10 +107,10 @@ describe('invalid parameters', function() {
       expressOpenid.auth(getTestConfig({
         appSession: {
           secret: '__test_session_secret__',
-          httpOnly: '__invalid_httponly__'
+          cookieHttpOnly: '__invalid_httponly__'
         }
       }));
-    }, '"appSession.httpOnly" must be a boolean');
+    }, '"appSession.cookieHttpOnly" must be a boolean');
   });
 
   it('should fail when app session cookie secure is not a boolean', function() {
@@ -119,10 +118,10 @@ describe('invalid parameters', function() {
       expressOpenid.auth(getTestConfig({
         appSession: {
           secret: '__test_session_secret__',
-          secure: '__invalid_secure__'
+          cookieSecure: '__invalid_secure__'
         }
       }));
-    }, '"appSession.secure" must be a boolean');
+    }, '"appSession.cookieSecure" must be a boolean');
   });
 
   it('should fail when app session cookie sameSite is invalid', function() {
@@ -130,10 +129,10 @@ describe('invalid parameters', function() {
       expressOpenid.auth(getTestConfig({
         appSession: {
           secret: '__test_session_secret__',
-          sameSite: '__invalid_samesite__'
+          cookieSameSite: '__invalid_samesite__'
         }
       }));
-    }, '"appSession.sameSite" must be one of [Lax, Strict, None]');
+    }, '"appSession.cookieSameSite" must be one of [Lax, Strict, None]');
   });
 
   it('should fail when app session cookie domain is invalid', function() {
@@ -141,10 +140,10 @@ describe('invalid parameters', function() {
       expressOpenid.auth(getTestConfig({
         appSession: {
           secret: '__test_session_secret__',
-          domain: false
+          cookieDomain: false
         }
       }));
-    }, '"appSession.domain" must be a string');
+    }, '"appSession.cookieDomain" must be a string');
   });
 
   it('should fail when app session cookie sameSite is an invalid value', function() {
@@ -152,9 +151,9 @@ describe('invalid parameters', function() {
       expressOpenid.auth(getTestConfig({
         appSession: {
           secret: '__test_session_secret__',
-          path: 123
+          cookiePath: 123
         }
       }));
-    }, '"appSession.path" must be a string');
+    }, '"appSession.cookiePath" must be a string');
   });
 });
