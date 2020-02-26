@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [v0.8.0](https://github.com/auth0/express-openid-connect/tree/v0.8.0) (2020-02-26)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.7.0...v0.8.0)
+
+This release contains a breaking change for all applications. Please see the PR below for migration info.
+
+**Changed**
+- App session settings [\#68](https://github.com/auth0/express-openid-connect/pull/68) ([joshcanhelp](https://github.com/joshcanhelp))
+
 ## [v0.7.0](https://github.com/auth0/express-openid-connect/tree/v0.7.0) (2020-02-18)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.6.0...v0.7.0)
 
