@@ -118,11 +118,6 @@ describe('logout route', function() {
         const logoutResponse = await request.get({uri: '/logout', baseUrl, jar, followRedirect: false});
         assert.equal(logoutResponse.headers.location, 'https://example.org/after-logout-in-auth-config');
       });
-
-      it('should redirect to returnTo in logout query', async function() {
-        const logoutResponse = await request.get({uri: '/logout', qs: {returnTo: '/after-logout-in-logout-query'}, baseUrl, jar, followRedirect: false});
-        assert.equal(logoutResponse.headers.location, 'https://example.org/after-logout-in-logout-query');
-      });
     });
 
     describe('should allow absolute paths', () => {
@@ -154,11 +149,6 @@ describe('logout route', function() {
       it('should redirect to postLogoutRedirectUri in auth() config', async function() {
         const logoutResponse = await request.get({uri: '/logout', baseUrl, jar, followRedirect: false});
         assert.equal(logoutResponse.headers.location, 'https://external-domain.com/after-logout-in-auth-config');
-      });
-
-      it('should redirect to returnTo in logout query', async function() {
-        const logoutResponse = await request.get({uri: '/logout', qs: {returnTo: 'https://external-domain.com/after-logout-in-logout-query'}, baseUrl, jar, followRedirect: false});
-        assert.equal(logoutResponse.headers.location, 'https://external-domain.com/after-logout-in-logout-query');
       });
     });
   });
