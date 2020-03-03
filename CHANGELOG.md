@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v0.8.1](https://github.com/auth0/express-openid-connect/tree/v0.8.1) (2020-03-02)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.8.0...v0.8.1)
+
+**Fixed**
+- Remove returnTo parameter for logout [\#72](https://github.com/auth0/express-openid-connect/pull/72) ([joshcanhelp](https://github.com/joshcanhelp))
+
 ## [v0.8.0](https://github.com/auth0/express-openid-connect/tree/v0.8.0) (2020-02-26)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.7.0...v0.8.0)
 
