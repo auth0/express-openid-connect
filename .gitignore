@@ -81,3 +81,5 @@ typings/
 .fusebox/
 
 # End of https://www.gitignore.io/api/node
+
+.idea
