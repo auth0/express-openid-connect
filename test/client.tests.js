@@ -1,6 +1,7 @@
-const { assert } = require('chai');
+const { assert } = require('chai').use(require('chai-as-promised'));
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
+const wellKnown = require('./fixture/well-known.json');
 const nock = require('nock');
 const pkg = require('../package.json');
 
@@ -86,6 +87,45 @@ describe('client initialization', function() {
       // Telemetry header should not be overridden.
       assert.include(headerProps, 'auth0-client');
       assert.notEqual('__test_custom_telemetry__', headers['x-custom-header']);
+    });
+  });
+
+  describe('idTokenAlg configuration is not overridden by discovery server', function() {
+    const config = getConfig({
+      appSession: {secret: '__test_session_secret__'},
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://test-too.auth0.com',
+      baseURL: 'https://example.org',
+      httpOptions: {
+        headers: {
+          'User-Agent' : '__test_custom_user_agent__',
+          'X-Custom-Header' : '__test_custom_header__',
+          'Auth0-Client' : '__test_custom_telemetry__',
+        }
+      },
+      idTokenAlg: 'RS256'
+    });
+
+    it('should fail if idTokenAlg is not supported by the idP', async function() {
+      nock('https://test-too.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, Object.assign({}, wellKnown, {
+          id_token_signing_alg_values_supported: ['none']
+        }));
+
+      await assert.isRejected(getClient(config), /^ID token algorithm "RS256" is not supported by the issuer./);
+    });
+
+    it('should prefer user configuration regardless of idP discovery', async function() {
+      nock('https://test-too.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, Object.assign({}, wellKnown, {
+          id_token_signing_alg_values_supported: ['none', 'RS256']
+        }));
+
+      const client = await getClient(config);
+      assert.equal(client.id_token_signed_response_alg, 'RS256');
     });
   });
 });
