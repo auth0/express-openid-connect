@@ -65,6 +65,12 @@ interface ConfigParams {
     clockTolerance?: number;
 
     /**
+     * Opt-in to sending the library and node version to your authorization server
+     * via the `Auth0-Client` header.
+     */
+    enableTelemetry?: boolean;
+
+    /**
      * Throw a 401 error instead of triggering the login process for routes that require authentication.
      */
     errorOnRequiredAuth?: boolean;

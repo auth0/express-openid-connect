@@ -34,6 +34,7 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 - **`auth0Logout`** - Boolean value to enable Auth0's logout feature. Default is `false`.
 - **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-key) for defaults and more details.
 - **`clockTolerance`** - Integer value for the system clock's tolerance (leeway) in seconds for ID token verification. Default is `60`.
+- **`enableTelemetry`** - Opt-in to sending the library and node version to your authorization server via the `Auth0-Client` header. Default is `true`.
 - **`errorOnRequiredAuth`** - Boolean value to throw a `Unauthorized 401` error instead of triggering the login process for routes that require authentication. Default is `false`.
 - **`getUser`** - Function that returns the profile for `req.openid.user`. This runs on each application page load for authenticated users. Default is [here](lib/hooks/getUser.js).
 - **`handleCallback`** - Function that runs on the callback route, after callback processing but before redirection. Default is [here](lib/hooks/handleCallback.js).
