@@ -131,8 +131,8 @@ describe('appSession', function() {
       assert.equal(cookieArgs['2'].domain, '__test_domain__');
       assert.equal(cookieArgs['2'].path, '__test_path__');
       assert.equal(cookieArgs['2'].secure, true);
-      assert.equal(cookieArgs['2'].httponly, false);
-      assert.equal(cookieArgs['2'].samesite, '__test_samesite__');
+      assert.equal(cookieArgs['2'].httpOnly, false);
+      assert.equal(cookieArgs['2'].sameSite, '__test_samesite__');
     });
   });
 });
