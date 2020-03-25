@@ -29,6 +29,42 @@ describe('config', function() {
     });
   });
 
+  describe('simple case with environment variables', function() {
+    let config;
+    let env;
+
+    beforeEach(function() {
+      env = process.env;
+      process.env = Object.assign({}, process.env, {
+        ISSUER_BASE_URL: defaultConfig.issuerBaseURL,
+        CLIENT_ID: defaultConfig.clientID,
+        APP_SESSION_SECRET: defaultConfig.appSession.secret,
+        BASE_URL: defaultConfig.baseURL
+      });
+      config = getConfig();
+    });
+
+    afterEach(function() {
+      process.env = env;
+    });
+
+    it('should default to response_type=id_token', function() {
+      assert.equal(config.authorizationParams.response_type, 'id_token');
+    });
+
+    it('should default to response_mode=form_post', function() {
+      assert.equal(config.authorizationParams.response_mode, 'form_post');
+    });
+
+    it('should default to scope=openid profile email', function() {
+      assert.equal(config.authorizationParams.scope, 'openid profile email');
+    });
+
+    it('should default to required true', function() {
+      assert.ok(config.required);
+    });
+  });
+
   describe('when authorizationParams is response_type=code', function() {
     const customConfig = Object.assign({}, defaultConfig, {
       clientSecret: '__test_client_secret__',

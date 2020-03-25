@@ -62,7 +62,7 @@ describe('invalid parameters', function() {
         baseURL: 'https://example.org',
         clientID: '__test_client_id__',
       });
-    }, '"appSession" is required');
+    }, '"appSession.secret" is required');
   });
 
   it('should fail when client secret is not provided and using the response type code in mode query', function() {
