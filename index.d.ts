@@ -174,7 +174,7 @@ interface AppSessionConfigParams {
 
     /**
      * Integer value, in seconds, for application session duration.
-     * Default is 604800 seconds (7 days).
+     * Default is 86400 seconds (1 day).
      */
     duration?: number
 
