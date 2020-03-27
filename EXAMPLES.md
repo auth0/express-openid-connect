@@ -108,7 +108,7 @@ app.use(auth({
   // Setting this configuration key to false will turn off internal session handling.
   appSession: false,
   handleCallback: async function (req, res, next) {
-    // This will store the user identity claims in the session
+    // This will store the user identity claims in the session.
     req.session.userIdentity = req.openidTokens.claims();
     next();
   },

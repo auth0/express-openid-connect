@@ -90,6 +90,29 @@ describe('client initialization', function() {
     });
   });
 
+  describe('telemetry header', function() {
+    const config = getConfig({
+      appSession: {secret: '__test_session_secret__'},
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://test.auth0.com',
+      baseURL: 'https://example.org',
+      enableTelemetry: false
+    });
+
+    let client;
+    before(async function() {
+      client = await getClient(config);
+    });
+
+    it('should send the correct default headers', async function() {
+      const headers = await client.introspect('__test_token__', '__test_hint__');
+      const headerProps = Object.getOwnPropertyNames(headers);
+
+      assert.notInclude(headerProps, 'auth0-client');
+    });
+  });
+
   describe('idTokenAlg configuration is not overridden by discovery server', function() {
     const config = getConfig({
       appSession: {secret: '__test_session_secret__'},
