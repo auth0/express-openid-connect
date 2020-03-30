@@ -78,6 +78,12 @@ See the [examples](EXAMPLES.md) for route-specific authentication, custom applic
 
 See the [API documentation](API.md) for additional configuration possibilities and provided methods.
 
+## A note on error handling
+
+Errors raised by this library are handled by the [default Express error handler](https://expressjs.com/en/guide/error-handling.html#the-default-error-handler) which, in the interests of security, does not include the stack trace in the production environment.
+
+But you may want to go one step further and hide additional error details from client, like the error message. To do this see the Express documentation on writing [Custom error handlers](https://expressjs.com/en/guide/error-handling.html#writing-error-handlers)
+
 ## Contributing
 
 We appreciate feedback and contribution to this repo! Before you get started, please see the following:
