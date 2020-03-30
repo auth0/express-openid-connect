@@ -23,7 +23,7 @@ Additional configuration keys that can be passed to `auth()` on initialization:
 
 - **`appSession`** - Object defining application session configuration. If this is set to `false`, the internal storage will not be used (see [this example](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling) for how to provide your own session mechanism). Otherwise, the `secret` key is required (see above).
   - **`appSession.secret`** - See the **Required Keys** section above.
-  - **`appSession.duration`** - Integer value, in seconds, for application session duration. Default is 7 days.
+  - **`appSession.duration`** - Integer value, in seconds, for application session duration. Default is 1 day.
   - **`appSession.name`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `appSession`.
   - **`appSession.cookieTransient`** - Sets the application session cookie expiration to `0` to create a transient cookie. Set to `false` by default.
   - **`appSession.cookieDomain`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`.
