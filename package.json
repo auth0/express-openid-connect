@@ -6,6 +6,11 @@
   "license": "MIT",
   "author": "Auth0 <support@auth0.com>",
   "main": "index.js",
+  "files": [
+    "lib",
+    "middleware",
+    "index.d.ts"
+  ],
   "scripts": {
     "lint": "eslint . --ignore-path .gitignore",
     "test": "mocha",
