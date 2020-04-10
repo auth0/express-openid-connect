@@ -162,7 +162,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 
 ## 6. Obtaining and using refresh tokens
 
-[Refresh tokens](https://auth0.com/docs/tokens/refresh-token/current) can be requested along with access tokens using the `offline_access` scope during login. Please see the section on access tokens above for information on token storage.
+[Refresh tokens](https://auth0.com/docs/tokens/concepts/refresh-tokens) can be requested along with access tokens using the `offline_access` scope during login. Please see the section on access tokens above for information on token storage.
 
 ```js
 app.use(auth({
