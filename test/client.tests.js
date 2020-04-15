@@ -51,6 +51,18 @@ describe('client initialization', function() {
       assert.include( headerProps, 'user-agent');
       assert.equal( `express-openid-connect/${pkg.version}`, headers['user-agent']);
     });
+
+    it('should not strip new headers', async function() {
+      const response = await client.requestResource('https://test.auth0.com/introspection', 'token', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer foo',
+        }
+      });
+      const headerProps = Object.getOwnPropertyNames(JSON.parse(response.body));
+
+      assert.include( headerProps, 'authorization');
+    });
   });
 
   describe('custom headers', function() {
