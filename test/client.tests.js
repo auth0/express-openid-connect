@@ -61,7 +61,7 @@ describe('client initialization', function() {
       });
       const headerProps = Object.getOwnPropertyNames(JSON.parse(response.body));
 
-      assert.include( headerProps, 'authorization');
+      assert.include(headerProps, 'authorization');
     });
   });
 
@@ -119,11 +119,11 @@ describe('client initialization', function() {
       await getClient(config);
     });
 
-    after(async function() {
+    after(function() {
       openidClient.custom.setHttpOptionsDefaults.restore();
     });
 
-    it('should set the correct default headers', async function() {
+    it('should set the correct default headers', function() {
       assert.doesNotHaveAnyKeys(
         openidClient.custom.setHttpOptionsDefaults.firstCall.args[0].headers,
         ['auth0-client']
