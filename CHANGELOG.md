@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.0.1](https://github.com/auth0/express-openid-connect/tree/v1.0.1) (2020-04-17)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.0...v1.0.1)
+
+**Fixed**
+- Fix issue where authz header was overridden in code exchange [\#86](https://github.com/auth0/express-openid-connect/pull/86) ([adamjmcgrath](https://github.com/adamjmcgrath)) 
+
 ## [v1.0.0](https://github.com/auth0/express-openid-connect/tree/v1.0.0) (2020-03-30)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.8.1...v1.0.0)
 
