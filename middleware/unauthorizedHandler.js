@@ -7,7 +7,7 @@
 */
 module.exports = function() {
   return (err, req, res, next) => {
-    if (err.statusCode === 401) {
+    if (err.statusCode === 401 || err.status === 401) {
       return res.openid.login();
     }
     next(err);
