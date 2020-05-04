@@ -30,6 +30,12 @@ describe('requiresAuth middleware', function() {
     it('should contain a location header to the issuer', function() {
       assert.include(response.headers.location, 'https://test.auth0.com');
     });
+    it('should contain a location header with state containing return url', function() {
+      const state = (new URL(response.headers.location)).searchParams.get('state');
+      const decoded = Buffer.from(state, 'base64');
+      const parsed = JSON.parse(decoded);
+      assert.equal(parsed.returnTo, '/protected');
+    });
   });
 
   describe('when removing the auth middleware', function() {
