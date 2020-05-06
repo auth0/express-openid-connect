@@ -152,4 +152,46 @@ describe('logout route', function() {
       });
     });
   });
+
+  describe('logout with custom path', function() {
+    let baseUrl;
+    let currentSession;
+    const jar = request.jar();
+
+    before(async function() {
+      const middleware = auth({
+        idpLogout: false,
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org/foo',
+        issuerBaseURL: 'https://test.auth0.com',
+        appSession: {
+          secret: '__test_secret__',
+          cookiePath: '/foo'
+        },
+        required: false
+      });
+      baseUrl = (await server.create(middleware, null, '/foo')) + '/foo';
+      await request.post({
+        uri: '/session',
+        json: {
+          openidTokens: {
+            id_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+          },
+          claims: {}
+        },
+        baseUrl, jar
+      });
+    });
+
+    it('should populate the session', async function() {
+      currentSession = JSON.parse((await request.get({uri: '/session', baseUrl, jar})).body);
+      assert.ok(currentSession.openidTokens);
+    });
+
+    it('should clear the session', async function() {
+      await request.get({uri: '/logout', baseUrl, jar, followRedirect: false});
+      currentSession = JSON.parse((await request.get({uri: '/session', baseUrl, jar})).body);
+      assert.notOk(currentSession.openidTokens);
+    });
+  });
 });
