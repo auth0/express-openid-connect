@@ -41,11 +41,9 @@ npm i express-openid-connect --save
 
 Follow our [Secure Local Development guide](https://auth0.com/docs/libraries/secure-local-development) to ensure that applications using this library are running over secure channels (HTTPS URLs). Applications using this library without HTTPS may experience "invalid state" errors.
 
-The library needs [the following required configuration keys](https://github.com/auth0/express-openid-connect/blob/master/API.md#required-keys) to request and accept authentication. These can be configured in a `.env` file in the root of your application:
+The library needs [the following required configuration keys](https://github.com/auth0/express-openid-connect/blob/master/API.md#required-keys) to request and accept authentication. These can be configured with environmental variables:
 
 ```text
-# .env
-
 ISSUER_BASE_URL=https://YOUR_DOMAIN
 CLIENT_ID=YOUR_CLIENT_ID
 BASE_URL=https://YOUR_APPLICATION_ROOT_URL
