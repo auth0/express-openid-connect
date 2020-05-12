@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [v1.0.2](https://github.com/auth0/express-openid-connect/tree/v1.0.2) (2020-05-12)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.1...v1.0.2)
+
+**Fixed**
+- Fix returnTo on Login [\#95](https://github.com/auth0/express-openid-connect/pull/95) ([davidpatrick](https://github.com/davidpatrick)) 
+
 ## [v1.0.1](https://github.com/auth0/express-openid-connect/tree/v1.0.1) (2020-04-17)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.0...v1.0.1)
 
