@@ -1,6 +1,6 @@
 # Express OpenID Connect
 
-Express.js middleware for OpenID Relying Party (aka OAuth 2.0 Client). Easily add secure and standards-based authentication to Express applications.
+Express JS middleware implementing sign on for Express web apps using OpenID Connect.
 
 This library requires:
 
