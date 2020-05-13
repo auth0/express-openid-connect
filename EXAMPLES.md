@@ -44,11 +44,11 @@ app.use(auth({
 }));
 
 // Anyone can access the homepage
-app.use('/', (req, res) => res.render('home'));
+app.get('/', (req, res) => res.render('home'));
 
 // Require routes under the /admin/ prefix to check authentication.
-app.use('/admin/users', requiresAuth(), (req, res) => res.render('admin-users'));
-app.use('/admin/posts', requiresAuth(), (req, res) => res.render('admin-posts'));
+app.get('/admin/users', requiresAuth(), (req, res) => res.render('admin-users'));
+app.get('/admin/posts', requiresAuth(), (req, res) => res.render('admin-posts'));
 ```
 
 Another way to configure this scenario:
