@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . --ignore-path .gitignore",
-    "test": "mocha",
+    "test": "mocha; npm run test:jest",
     "test:jest": "jest",
     "test:ci": "nyc --reporter=lcov npm test"
   },
