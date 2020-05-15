@@ -4,6 +4,8 @@ const { get: getClient } = require('../lib/client');
 const wellKnown = require('./fixture/well-known.json');
 const nock = require('nock');
 const pkg = require('../package.json');
+const sinon = require('sinon');
+const openidClient = require('openid-client');
 
 describe('client initialization', function() {
 
@@ -48,6 +50,18 @@ describe('client initialization', function() {
 
       assert.include( headerProps, 'user-agent');
       assert.equal( `express-openid-connect/${pkg.version}`, headers['user-agent']);
+    });
+
+    it('should not strip new headers', async function() {
+      const response = await client.requestResource('https://test.auth0.com/introspection', 'token', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer foo',
+        }
+      });
+      const headerProps = Object.getOwnPropertyNames(JSON.parse(response.body));
+
+      assert.include(headerProps, 'authorization');
     });
   });
 
@@ -100,16 +114,20 @@ describe('client initialization', function() {
       enableTelemetry: false
     });
 
-    let client;
     before(async function() {
-      client = await getClient(config);
+      sinon.spy(openidClient.custom, 'setHttpOptionsDefaults');
+      await getClient(config);
     });
 
-    it('should send the correct default headers', async function() {
-      const headers = await client.introspect('__test_token__', '__test_hint__');
-      const headerProps = Object.getOwnPropertyNames(headers);
+    after(function() {
+      openidClient.custom.setHttpOptionsDefaults.restore();
+    });
 
-      assert.notInclude(headerProps, 'auth0-client');
+    it('should set the correct default headers', function() {
+      assert.doesNotHaveAnyKeys(
+        openidClient.custom.setHttpOptionsDefaults.firstCall.args[0].headers,
+        ['auth0-client']
+      );
     });
   });
 

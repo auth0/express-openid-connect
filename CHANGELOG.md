@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [v1.0.2](https://github.com/auth0/express-openid-connect/tree/v1.0.2) (2020-05-12)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.1...v1.0.2)
+
+**Fixed**
+- Fix returnTo on Login [\#95](https://github.com/auth0/express-openid-connect/pull/95) ([davidpatrick](https://github.com/davidpatrick)) 
+
+## [v1.0.1](https://github.com/auth0/express-openid-connect/tree/v1.0.1) (2020-04-17)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.0...v1.0.1)
+
+**Fixed**
+- Fix issue where authz header was overridden in code exchange [\#86](https://github.com/auth0/express-openid-connect/pull/86) ([adamjmcgrath](https://github.com/adamjmcgrath)) 
+
+## [v1.0.0](https://github.com/auth0/express-openid-connect/tree/v1.0.0) (2020-03-30)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.8.1...v1.0.0)
+
+**Added**
+- Allow to opt-out from sending SDK Telemetry [\#78](https://github.com/auth0/express-openid-connect/pull/78) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Changed**
+- Change the default session duration to 1 day [\#80](https://github.com/auth0/express-openid-connect/pull/80) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fix case where APP_SESSION_SECRET is set and appSession is not [\#74](https://github.com/auth0/express-openid-connect/pull/74) ([adamjmcgrath](https://github.com/adamjmcgrath)) 
+- Fix cookie options case [\#76](https://github.com/auth0/express-openid-connect/pull/76) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v0.8.1](https://github.com/auth0/express-openid-connect/tree/v0.8.1) (2020-03-02)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v0.8.0...v0.8.1)
 

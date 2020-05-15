@@ -172,8 +172,8 @@ describe('config', function() {
       assert.equal(config.appSession.secret, '__test_session_secret__');
     });
 
-    it('should set the session length to 7 days by default', function() {
-      assert.equal(config.appSession.duration, 604800);
+    it('should set the session length to 1 day by default', function() {
+      assert.equal(config.appSession.duration, 86400);
     });
 
     it('should set the session name to "appSession" by default', function() {
