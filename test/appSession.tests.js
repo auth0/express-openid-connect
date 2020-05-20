@@ -45,9 +45,14 @@ describe('appSession', function() {
   describe('malformed session cookies', () => {
     const appSessionMw = appSession(defaultConfig);
     const thisReq = {get: () => 'appSession=__invalid_identity__'};
+    const result = appSessionMw(thisReq, {}, next);
 
-    it('should error with malformed appSession', function() {
-      assert.throws(() => appSessionMw(thisReq, {}, next), Error, 'JWE malformed or invalid serialization');
+    it('should call next', function() {
+      assert.ok(result);
+    });
+
+    it('should set an empty appSession', function() {
+      assert.isEmpty(thisReq.appSession);
     });
   });
 
