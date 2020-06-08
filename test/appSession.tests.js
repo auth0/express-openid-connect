@@ -51,6 +51,32 @@ describe('appSession', function() {
     });
   });
 
+  describe('session cookies with old secrets', () => {
+    const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
+    const appSessionMw = appSession({ ...defaultConfig, secret: 'another secret' });
+
+    it('should not error with JWEDecryptionFailed appSession', function() {
+      const result = appSessionMw(thisReq, {}, next);
+      assert.ok(result);
+      assert.isEmpty(req.appSession);
+    });
+  });
+
+  describe('session cookies with rotated secrets', () => {
+    const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
+
+    it('should use the old valid secret and re-encrypt using the new one', function() {
+      let appSessionMw = appSession({ ...defaultConfig, secret: ['new secret', '__test_secret__'] });
+      let result = appSessionMw(thisReq, {}, next);
+      assert.ok(result);
+      assert.equal(thisReq.appSession.sub, '__test_sub__');
+      appSessionMw = appSession({ ...defaultConfig, secret: 'new secret' });
+      result = appSessionMw(thisReq, {}, next);
+      assert.ok(result);
+      assert.equal(thisReq.appSession.sub, '__test_sub__');
+    });
+  });
+
   describe('existing session cookies', () => {
     const appSessionMw = appSession(defaultConfig);
     const thisReq = {get: () => 'appSession=' + sessionEncryption.encrypted};
@@ -59,7 +85,6 @@ describe('appSession', function() {
       const result = appSessionMw(thisReq, {}, next);
       assert.ok(result);
       assert.equal(thisReq.appSession.sub, '__test_sub__');
-
     });
   });
 
