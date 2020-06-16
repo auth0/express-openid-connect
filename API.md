@@ -1,58 +1,58 @@
 # Public API
 
-## Configuration Keys
+## Configuration
 
 Please see the [Getting Started section of the README](https://github.com/auth0/express-openid-connect#getting-started) for examples of how to apply the configuration options to the `auth()` middleware.
 
-### Required Keys
+### Required Configuration
 
-The `auth()` middleware has a few configuration keys that are required for initialization.
+The `auth()` middleware has a few configuration properties that are required for initialization.
 
-- **`appSession.secret`** - The secret used to derive an encryption key for the user identity in a session cookie. It must be a string or an array of strings to use the built-in encrypted cookie session. When an array is provided, the first member is used for signing and other members can be used for decrypting old cookies (to enable secret rotation). This can be set automatically with an `APP_SESSION_SECRET` variable in your environment.
+- **`secret`** - The secret used to derive various keys utilized by the library for signing, encryption, etc. It must be a string, buffer, or an array of strings or buffers. When an array is provided, the first member is used for current operations while the other array members are used for decrypting/verifying old cookies, this enables secret rotation. This can be set automatically with a `SECRET` variable in your environment.
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
 - **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
 - **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
 
-If you are using a response type that includes `code` (typically combined with an `audience` parameter), you will need an additional key:
+If you are using a response type that includes `code`, you will need an additional configuration property:
 
 - **`clientSecret`** - The Client Secret for your application. This can be set automatically with a `CLIENT_SECRET` variable in your environment.
 
-### Optional Keys
+### Optional Configuration
 
-Additional configuration keys that can be passed to `auth()` on initialization:
+Additional configuration properties that can be passed to `auth()` on initialization:
 
-- **`appSession`** - Object defining application session configuration. If this is set to `false`, the internal storage will not be used (see [this example](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling) for how to provide your own session mechanism). Otherwise, the `secret` key is required (see above).
-  - **`appSession.secret`** - See the **Required Keys** section above.
-  - **`appSession.duration`** - Integer value, in seconds, for application session duration. Default is 1 day.
-  - **`appSession.name`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `appSession`.
-  - **`appSession.cookieTransient`** - Sets the application session cookie expiration to `0` to create a transient cookie. Set to `false` by default.
-  - **`appSession.cookieDomain`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`.
-  - **`appSession.cookieHttpOnly`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `httponly`. Set to `true` by default.
-  - **`appSession.cookiePath`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`.
-  - **`appSession.cookieSecure`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `secure`.
-  - **`appSession.cookieSameSite`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `samesite`. Set to `"Lax"` by default.
+- **`secret`** - See the **Required Configuration** section above.
+- **`session`** - Object defining application session configuration. If this is set to `false`, the internal storage will not be used (see [this example](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#4-custom-user-session-handling) for how to provide your own session mechanism). Otherwise, the `secret` property is required (see above).
+  - **`session.rolling`** - Boolean value, for TODO. Set to `true` by default.
+  - **`session.rollingDuration`** - Integer value, in seconds, for TODO. Default is 1 day.
+  - **`session.absoluteDuration`** - Integer value, in seconds, for TODO. Default is 7 days.
+  - **`session.name`** - String value for the cookie name used for the internal session. This value must only include letters, numbers, and underscores. Default is `appSession`.
+  - **`session.cookie`** - Object defining application session cookie configuration.
+  - **`session.cookie.transient`** - Sets the application session cookie expiration to `0` to create a transient cookie. Set to `false` by default.
+  - **`session.cookie.domain`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`.
+  - **`session.cookie.httpOnly`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `httponly`. Set to `true` by default.
+  - **`session.cookie.secure`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `secure`.
+  - **`session.cookie.sameSite`** - Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `samesite`. Set to `"Lax"` by default.
 - **`auth0Logout`** - Boolean value to enable Auth0's logout feature. Default is `false`.
-- **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-key) for defaults and more details.
+- **`attemptSilentLogin`** - Boolean value to enable silent login attempt when anonymous user is encountered. Default is `false`.
+- **`authorizationParams`** - Object that describes the authorization server request. [See below](#authorization-params-property) for defaults and more details.
 - **`clockTolerance`** - Integer value for the system clock's tolerance (leeway) in seconds for ID token verification. Default is `60`.
 - **`enableTelemetry`** - Opt-in to sending the library and node version to your authorization server via the `Auth0-Client` header. Default is `true`.
 - **`errorOnRequiredAuth`** - Boolean value to throw a `Unauthorized 401` error instead of triggering the login process for routes that require authentication. Default is `false`.
-- **`getUser`** - Function that returns the profile for `req.openid.user`. This runs on each application page load for authenticated users. Default is [here](lib/hooks/getUser.js).
-- **`handleCallback`** - Function that runs on the callback route, after callback processing but before redirection. Default is [here](lib/hooks/handleCallback.js).
-- **`httpOptions`** - Default options object used for all HTTP calls made by the library ([possible options](https://github.com/sindresorhus/got/tree/v9.6.0#options)). Default is empty.
 - **`identityClaimFilter`** - Array value of claims to remove from the ID token before storing the cookie session. Default is `['aud', 'iss', 'iat', 'exp', 'nonce', 'azp', 'auth_time']`.
 - **`idpLogout`** - Boolean value to log the user out from the identity provider on application logout. Requires the issuer to provide a `end_session_endpoint` value. Default is `false`.
-- **`idTokenAlg`** - String value for the expected ID token algorithm. Default is `RS256`.
+- **`idTokenSigningAlg`** - String value for the expected ID token algorithm. Default is `RS256`.
 - **`legacySameSiteCookie`** - Set a fallback cookie with no SameSite attribute when `authorizationParams.response_mode` is `form_post`. Default is `true`.
-- **`loginPath`** - Relative path to application login. Default is `/login`.
-- **`logoutPath`** - Relative path to application logout. Default is `/logout`.
-- **`postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after a logout has been performed. Adding a `returnTo` parameter on the logout route will override this value. The value used must be registered at the authorization server. Default is `baseUrl`.
-- **`redirectUriPath`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirectUri` parameter. Default is `/callback`.
-- **`required`** - Use a boolean value to require authentication for all routes. Pass a function instead to base this value on the request. Default is `true`.
-- **`routes`** - Boolean value to automatically install the login and logout routes. See [the examples](EXAMPLES.md) for more information on how this key is used. Default is `true`.
+- **`authRequired`** - Use a boolean value to require authentication for all routes. Default is `true` (authentication is required for all routes). TODO: for fine grained control apply `requiresAuth` middlewares.
+- **`routes`** -
+  - **`routes.login`** - Relative path to application login route which triggers the login flow. Default is `/login`. Set to `false` when you want to completely omit the route from being exposed.
+  - **`routes.logout`** - Relative path to application logout route which triggers the logout flow. Default is `/logout`. Set to `false` when you want to completely omit the route from being exposed.
+  - **`routes.callback`** - Relative path to the application callback to process the response from the authorization server. This value is combined with the `baseUrl` and sent to the authorize endpoint as the `redirect_uri` parameter. Default is `/callback`. The resulting URL used must be registered at the authorization server.
+  - **`routes.postLogoutRedirectUri`** - Either a relative path to the application or a valid URI to an external domain. The user will be redirected to this after logout has been performed. Adding a `returnTo` parameter on the logout route will override this value. The value used must be registered at the authorization server. Default is `baseUrl`.
 
-### Authorization Params Key
+### Authorization Params Property
 
-The `authorizationParams` key defines the URL parameters used when redirecting users to the authorization server to log in. If this key is not provided by your application, its default values will be:
+The `authorizationParams` property defines the URL parameters used when redirecting users to the authorization server to log in. If this property is not provided by your application, its default values will be:
 
 ```js
 {
@@ -95,18 +95,18 @@ app.use(auth({
 
 ## `requiresAuth()`
 
-The `requiresAuth()` function is an optional middleware that protects specific application routes when the `required` configuration key is set to `false`:
+The `requiresAuth()` function is an optional middleware that protects specific application routes when the `authRequired` configuration property is set to `false`:
 
-```javascript
+```js
 const { auth, requiresAuth } = require('express-openid-connect');
-app.use( auth( { required: false } ) );
+app.use( auth( { authRequired: false } ) );
 app.use( '/admin', requiresAuth(), (req, res) => res.render('admin') );
 ```
 
 Using `requiresAuth()` on its own without initializing `auth()` will throw a `401 Unauthorized` error instead of triggering the login process:
 
 ```js
-// app.use(auth({required: true}));
+// app.use(auth({ authRequired: true }));
 app.get('/', requiresAuth(), (req, res) => res.render('home'));
 ```
 
@@ -116,19 +116,25 @@ This library adds properties and methods to the request and response objects use
 
 ### Request
 
-Every request object (typically named `req` in your route handler) is augmented with the following when the request is authenticated. If the request is not authenticated, `req.openid` is `undefined` and `req.isAuthenticated()` returns `false`.
+Every request object (typically named `req` in your route handler) is augmented with the following:
 
-- **`req.openid.user`** - Contains the user information returned from the authorization server. You can change what is provided here by passing a function to the `getUser` configuration key.
-- **`req.openid.client`** - Is the [OpenID Client](https://github.com/panva/node-openid-client/blob/master/docs/README.md#client) instance that can be used for additional OAuth2 and OpenID calls. See [the examples](EXAMPLES.md) for more information on how this is used.
-- **`req.isAuthenticated()`** - Returns true if the request is authenticated.
-- **`req.makeTokenSet()`** - Make a TokenSet object from a JSON representation of one.
+- **`req.oidc.isAuthenticated()`** - Returns `true` when the request is authenticated, `false` when it is not.
+- **`req.oidc.idTokenClaims`** - Returns the ID Token claims from an ID Token returned by the authorization server. Is `undefined` when there's no authenticated user.
+- **`req.oidc.user`** - Contains the authenticated user information from the authorization server. Is `undefined` when there's no authenticated user.
+- **`req.oidc.idToken`** - Contains the value of the ID Token as returned by the authorization server. Is `undefined` when there's no authenticated user.
+- **`req.oidc.accessToken`** - Contains an object with Access Token details. Is `undefined` when there's no authenticated user or authentication flow resulted in no Access Token being issued.
+  - **`req.oidc.accessToken.access_token`** - Contains the String value of an Access Token as returned by the authorization server.
+  - **`req.oidc.accessToken.token_type`** - Contains the String value of the Access Token `token_type` as returned by the authorization server.
+  - **`req.oidc.accessToken.expires_in`** - Contains the Number value representing the number of seconds until the Access Token expires.
+  - **`req.oidc.accessToken.isExpired()`** - Returns `true` when the Access Token is expired, `false` when it is not.
+- **`req.oidc.refreshToken`** - Contains the value of a Refresh Token as optionally returned by the authorization server. Is `undefined` when there's no authenticated user or authentication flow resulted in no Refresh Token being issued.
 
 ### Response
 
 Every response object (typically named `res` in your route handler) is augmented with the following:
 
-- **`res.openid.login({})`** - trigger an authentication request from any route. It receives an object with the following keys:
+- **`res.oidc.login({})`** - trigger an authentication request from any route. It receives an object with the following properties:
   - `returnTo`: The URL to return to after authentication. Defaults to the current URL for `GET` routes and `baseURL` for other methods.
   - `authorizationParams`: Additional parameters for the authorization call.
-- **`res.openid.logout({})`** - trigger the openid connect logout if supported by the issuer. It receives an object with the following key:
+- **`res.oidc.logout({})`** - trigger the openid connect logout if supported by the issuer. It receives an object with the following properties:
   - `returnTo`: The URL to return to after signing out at the authorization server. Defaults to the `baseURL`.

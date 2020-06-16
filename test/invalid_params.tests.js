@@ -2,21 +2,21 @@ const { assert } = require('chai');
 const expressOpenid = require('..');
 
 const validConfiguration = {
-  appSession: {secret: '__test_session_secret__'},
-  issuerBaseURL: 'https://test.auth0.com',
+  secret: '__test_session_secret__',
+  issuerBaseURL: 'https://op.example.com',
   baseURL: 'https://example.org',
-  clientID: '__test_client_id__',
+  clientID: '__test_client_id__'
 };
 
-function getTestConfig(modify) {
+function getTestConfig (modify) {
   return Object.assign({}, validConfiguration, modify);
 }
 
-describe('invalid parameters', function() {
-  it('should fail when the issuerBaseURL is invalid', function() {
+describe('invalid parameters', function () {
+  it('should fail when the issuerBaseURL is invalid', function () {
     assert.throws(() => {
       expressOpenid.auth({
-        appSession: {secret: '__test_session_secret__'},
+        secret: '__test_session_secret__',
         baseURL: 'https://example.org',
         issuerBaseURL: '__invalid_url__',
         clientID: '__test_client_id__'
@@ -24,52 +24,52 @@ describe('invalid parameters', function() {
     }, '"issuerBaseURL" does not match any of the allowed types');
   });
 
-  it('should fail when the baseURL is invalid', function() {
+  it('should fail when the baseURL is invalid', function () {
     assert.throws(() => {
       expressOpenid.auth({
-        appSession: {secret: '__test_session_secret__'},
+        secret: '__test_session_secret__',
         baseURL: '__invalid_url__',
-        issuerBaseURL: 'https://test.auth0.com',
+        issuerBaseURL: 'https://op.example.com',
         clientID: '__test_client_id__'
       });
     }, '"baseURL" must be a valid uri');
   });
 
-  it('should fail when the clientID is not provided', function() {
+  it('should fail when the clientID is not provided', function () {
     assert.throws(() => {
       expressOpenid.auth({
-        appSession: {secret: '__test_session_secret__'},
+        secret: '__test_session_secret__',
         baseURL: 'https://example.org',
-        issuerBaseURL: 'https://test.auth0.com',
+        issuerBaseURL: 'https://op.example.com'
       });
     }, '"clientID" is required');
   });
 
-  it('should fail when the baseURL is not provided', function() {
+  it('should fail when the baseURL is not provided', function () {
     assert.throws(() => {
       expressOpenid.auth({
-        appSession: {secret: '__test_session_secret__'},
-        issuerBaseURL: 'https://test.auth0.com',
-        clientID: '__test_client_id__',
+        secret: '__test_session_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        clientID: '__test_client_id__'
       });
     }, '"baseURL" is required');
   });
 
-  it('should fail when the appSession.secret is not provided', function() {
+  it('should fail when the secret is not provided', function () {
     assert.throws(() => {
       expressOpenid.auth({
-        issuerBaseURL: 'https://test.auth0.com',
+        issuerBaseURL: 'https://op.example.com',
         baseURL: 'https://example.org',
-        clientID: '__test_client_id__',
+        clientID: '__test_client_id__'
       });
-    }, '"appSession.secret" is required');
+    }, '"secret" is required');
   });
 
-  it('should fail when client secret is not provided and using the response type code in mode query', function() {
+  it('should fail when client secret is not provided and using the response type code in mode query', function () {
     assert.throws(() => {
       expressOpenid.auth({
-        appSession: {secret: '__test_session_secret__'},
-        issuerBaseURL: 'https://test.auth0.com',
+        secret: '__test_session_secret__',
+        issuerBaseURL: 'https://op.example.com',
         baseURL: 'https://example.org',
         clientID: '__test_client_id__',
         authorizationParams: {
@@ -79,81 +79,78 @@ describe('invalid parameters', function() {
     }, '"clientSecret" is required for response_type code');
   });
 
-  it('should fail when client secret is not provided and using an HS256 ID token algorithm', function() {
+  it('should fail when client secret is not provided and using an HS256 ID token algorithm', function () {
     assert.throws(() => {
-      expressOpenid.auth(getTestConfig({idTokenAlg: 'HS256'}));
+      expressOpenid.auth(getTestConfig({ idTokenSigningAlg: 'HS256' }));
     }, '"clientSecret" is required for ID tokens with HS algorithms');
   });
 
-  it('should fail when app session length is not an integer', function() {
+  it('should fail when app session length is not an integer', function () {
     assert.throws(() => {
       expressOpenid.auth(getTestConfig({
-        appSession: {
-          secret: '__test_session_secret__',
-          duration: 3.14159
+        secret: '__test_session_secret__',
+        session: {
+          rollingDuration: 3.14159
         }
       }));
-    }, '"appSession.duration" must be an integer');
+    }, '"session.rollingDuration" must be an integer');
   });
 
-  it('should fail when app session secret is invalid', function() {
+  it('should fail when app session secret is invalid', function () {
     assert.throws(() => {
-      expressOpenid.auth(getTestConfig({appSession: {secret: {key: '__test_session_secret__'}}}));
-    }, '"appSession.secret" must be one of [string, array]');
+      expressOpenid.auth(getTestConfig({ secret: { key: '__test_session_secret__' } }));
+    }, '"secret" must be one of [string, binary, array]');
   });
 
-  it('should fail when app session cookie httpOnly is not a boolean', function() {
-    assert.throws(() => {
-      expressOpenid.auth(getTestConfig({
-        appSession: {
-          secret: '__test_session_secret__',
-          cookieHttpOnly: '__invalid_httponly__'
-        }
-      }));
-    }, '"appSession.cookieHttpOnly" must be a boolean');
-  });
-
-  it('should fail when app session cookie secure is not a boolean', function() {
+  it('should fail when app session cookie httpOnly is not a boolean', function () {
     assert.throws(() => {
       expressOpenid.auth(getTestConfig({
-        appSession: {
-          secret: '__test_session_secret__',
-          cookieSecure: '__invalid_secure__'
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            httpOnly: '__invalid_httponly__'
+          }
         }
       }));
-    }, '"appSession.cookieSecure" must be a boolean');
+    }, '"session.cookie.httpOnly" must be a boolean');
   });
 
-  it('should fail when app session cookie sameSite is invalid', function() {
+  it('should fail when app session cookie secure is not a boolean', function () {
     assert.throws(() => {
       expressOpenid.auth(getTestConfig({
-        appSession: {
-          secret: '__test_session_secret__',
-          cookieSameSite: '__invalid_samesite__'
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            secure: '__invalid_secure__'
+          }
         }
       }));
-    }, '"appSession.cookieSameSite" must be one of [Lax, Strict, None]');
+    }, '"session.cookie.secure" must be a boolean');
   });
 
-  it('should fail when app session cookie domain is invalid', function() {
+  it('should fail when app session cookie sameSite is invalid', function () {
     assert.throws(() => {
       expressOpenid.auth(getTestConfig({
-        appSession: {
-          secret: '__test_session_secret__',
-          cookieDomain: false
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            sameSite: '__invalid_samesite__'
+          }
         }
       }));
-    }, '"appSession.cookieDomain" must be a string');
+    }, '"session.cookie.sameSite" must be one of [Lax, Strict, None]');
   });
 
-  it('should fail when app session cookie sameSite is an invalid value', function() {
+  it('should fail when app session cookie domain is invalid', function () {
     assert.throws(() => {
       expressOpenid.auth(getTestConfig({
-        appSession: {
-          secret: '__test_session_secret__',
-          cookiePath: 123
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            domain: false
+          }
         }
       }));
-    }, '"appSession.cookiePath" must be a string');
+    }, '"session.cookie.domain" must be a string');
   });
 });
