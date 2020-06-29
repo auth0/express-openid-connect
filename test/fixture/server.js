@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const http = require('http');
 
-module.exports.create = function(router, protect, path) {
+module.exports.create = function (router, protect, path) {
   const app = express();
 
   app.use(bodyParser.urlencoded({ extended: false }));
@@ -15,24 +15,27 @@ module.exports.create = function(router, protect, path) {
   });
 
   app.post('/session', (req, res) => {
-    req.appSession = req.body;
+    Object.keys(req.appSession).forEach((prop) => {
+      delete req.appSession[prop];
+    });
+    Object.assign(req.appSession, req.body);
     res.json();
   });
 
   app.get('/user', (req, res) => {
-    res.json(req.openid.user);
+    res.json(req.oidc.user);
   });
 
   if (protect) {
     app.get('/protected', protect, (req, res) => {
-      res.json(req.openid.tokens);
+      res.json(req.oidc.tokens);
     });
   }
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     res.status(err.status || 500)
-      .json({ err: { message: err.message }});
+      .json({ err: { message: err.message } });
   });
 
   let mainApp;

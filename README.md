@@ -2,11 +2,6 @@
 
 Express JS middleware implementing sign on for Express web apps using OpenID Connect.
 
-This library requires:
-
-- Node v10.13 or higher
-- Express v4.17 or higher
-
 [![CircleCI](https://img.shields.io/circleci/build/github/auth0/express-openid-connect/master?style=flat-square)](https://circleci.com/gh/auth0/express-openid-connect/tree/master)
 [![codecov](https://img.shields.io/codecov/c/github/auth0/express-openid-connect?style=flat-square)](https://codecov.io/gh/auth0/express-openid-connect)
 [![NPM version](https://img.shields.io/npm/v/express-openid-connect.svg?style=flat-square)](https://npmjs.org/package/express-openid-connect)
@@ -14,7 +9,7 @@ This library requires:
 ## Table of Contents
 
 - [Documentation](#documentation)
-- [Installation](#installation)
+- [Install](#install)
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
 - [Support + Feedback](#support--feedback)
@@ -29,12 +24,12 @@ This library requires:
 - The [API documentation](https://github.com/auth0/express-openid-connect/blob/master/API.md) details all configuration options, methods, and data that this library provides.
 - You can [run the sample application](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master) to see how this SDK functions without writing your own integration.
 
-## Installation
+## Install
 
-This library is installed with [npm](https://npmjs.org/package/express-openid-connect):
+Node.js version **>=12.0.0** is recommended, but **^10.13.0** lts/dubnium is also supported.
 
-```
-npm i express-openid-connect --save
+```bash
+npm install express-openid-connect
 ```
 
 ## Getting Started
@@ -47,7 +42,7 @@ The library needs [the following required configuration keys](https://github.com
 ISSUER_BASE_URL=https://YOUR_DOMAIN
 CLIENT_ID=YOUR_CLIENT_ID
 BASE_URL=https://YOUR_APPLICATION_ROOT_URL
-APP_SESSION_SECRET=LONG_RANDOM_VALUE
+SECRET=LONG_RANDOM_VALUE
 ```
 
 ... or in the library initialization:
@@ -61,9 +56,7 @@ app.use(
     issuerBaseURL: "https://YOUR_DOMAIN",
     baseURL: "https://YOUR_APPLICATION_ROOT_URL",
     clientID: "YOUR_CLIENT_ID",
-    appSession: {
-      secret: "LONG_RANDOM_STRING"
-    }
+    secret: "LONG_RANDOM_STRING"
   })
 );
 ```

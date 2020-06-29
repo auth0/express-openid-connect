@@ -13,35 +13,34 @@ const filterRoute = (method, path) => {
               r.route.methods[method.toLowerCase()];
 };
 
-describe('auth with redirectUriPath', function() {
+describe('auth with routes.callback', function () {
   describe('default', () => {
-
     let baseUrl, router;
 
-    before(async function() {
+    before(async function () {
       router = expressOpenid.auth({
-        appSession: {secret: '__test_session_secret__'},
+        secret: '__test_session_secret__',
         clientID: '__test_client_id__',
         baseURL: 'https://example.org',
-        issuerBaseURL: 'https://test.auth0.com',
-        required: false,
-        redirectUriPath: '/auth-finish'
+        issuerBaseURL: 'https://op.example.com',
+        authRequired: false,
+        routes: {
+          callback: '/auth-finish',
+        },
       });
       baseUrl = await server.create(router);
     });
 
-    it('should contain a callback route', function() {
+    it('should contain a callback route', function () {
       assert.ok(router.stack.some(filterRoute('POST', '/auth-finish')));
     });
 
-    it('should have the correct redirect_uri parameter', async function() {
+    it('should have the correct redirect_uri parameter', async function () {
       const jar = request.jar();
       const res = await request.get('/login', { jar, baseUrl, followRedirect: false });
       assert.equal(res.statusCode, 302);
       const parsed = url.parse(res.headers.location, true);
       assert.equal(parsed.query.redirect_uri, 'https://example.org/auth-finish');
     });
-
   });
-
 });

@@ -8,7 +8,7 @@ interface OpenidRequest extends Request {
      * Library namespace for methods and data.
      * See RequestContext and ResponseContext for how this is used.
      */
-    openid: object;
+    oidc: object;
 
     /**
      * Decoded state for use in config.handleCallback().
@@ -76,24 +76,14 @@ interface ConfigParams {
     errorOnRequiredAuth?: boolean;
 
     /**
-     * Function that returns a URL-safe state value for `res.openid.login()`.
+     * Function that returns a URL-safe state value for `res.oidc.login()`.
      */
     getLoginState?: (req: OpenidRequest, config: object) => object;
-
-    /**
-     * Function that returns the profile for `req.openid.user`.
-     */
-    getUser?: (req: OpenidRequest, config: ConfigParams) => undefined | UserinfoResponse;
 
     /**
      * Function that runs on the callback route, after callback processing but before redirection.
      */
     handleCallback?: (req: OpenidRequest, res: Response, next: NextFunction) => void;
-
-    /**
-     * Default options object used for all HTTP calls made by the library.
-     */
-    httpOptions?: object;
 
     /**
      * Array value of claims to remove from the ID token before storing the cookie session.
@@ -108,7 +98,7 @@ interface ConfigParams {
     /**
      * String value for the expected ID token algorithm.
      */
-    idTokenAlg?: string;
+    idTokenSigningAlg?: string;
 
     /**
      * REQUIRED. The root URL for the token issuer with no trailing slash.
@@ -122,36 +112,36 @@ interface ConfigParams {
     legacySameSiteCookie?: boolean;
 
     /**
-     * Relative path to application login.
-     */
-    loginPath?: string;
-
-    /**
-     * Relative path to application logout.
-     */
-    logoutPath?: string;
-
-    /**
-     * Either a relative path to the application or a valid URI to an external domain.
-     * This value must be registered on the authorization server.
-     * The user will be redirected to this after a logout has been performed.
-     */
-    postLogoutRedirectUri?: string;
-
-    /**
-     * Relative path to the application callback to process the response from the authorization server.
-     */
-    redirectUriPath?: string;
-
-    /**
      * Require authentication for all routes.
      */
-    required?: boolean | ((request: Request) => boolean);
+    authRequired?: boolean | ((request: Request) => boolean);
 
     /**
      * Boolean value to automatically install the login and logout routes.
      */
-    routes?: boolean;
+    routes?: {
+      /**
+       * Relative path to application login.
+       */
+      login?: string | false;
+
+      /**
+       * Relative path to application logout.
+       */
+      logoutPath?: string | false;
+
+      /**
+       * Either a relative path to the application or a valid URI to an external domain.
+       * This value must be registered on the authorization server.
+       * The user will be redirected to this after a logout has been performed.
+       */
+      postLogoutRedirectUri?: string;
+
+      /**
+       * Relative path to the application callback to process the response from the authorization server.
+       */
+      callback?: string;
+    }
 }
 
 /**
@@ -161,7 +151,7 @@ interface AppSessionConfigParams {
     /**
      * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie.
      * Use a single string key or array of keys for an encrypted session cookie.
-     * Can use env key APP_SESSION_SECRET instead.
+     * Can use env key SESSION_SECRET instead.
      */
     secret?: string | Array<string>;
 
@@ -173,10 +163,10 @@ interface AppSessionConfigParams {
     name?: string;
 
     /**
-     * Integer value, in seconds, for application session duration.
+     * Integer value, in seconds, for application session rolling duration.
      * Default is 86400 seconds (1 day).
      */
-    duration?: number
+    rollingDuration?: number
 
     /**
      * Domain name for the cookie.
@@ -185,7 +175,7 @@ interface AppSessionConfigParams {
 
     /**
      * Set to true to use a transient cookie (cookie without an explicit expiration).
-     * Defaults to `false` which will use appSession.duration as the cookie expiration.
+     * Default is `false`
      */
     cookieTransient?: boolean;
 
@@ -214,4 +204,6 @@ interface AppSessionConfigParams {
 
 export function auth(params?: ConfigParams): RequestHandler;
 export function requiresAuth(): RequestHandler;
-export function unauthorizedHandler(): ErrorRequestHandler;
+// TODO: add requiresAuth.withClaimEqualCheck()
+// TODO: add requiresAuth.withClaimIncluding()
+// TODO: add requiresAuth.custom()
