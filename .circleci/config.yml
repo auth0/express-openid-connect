@@ -27,6 +27,9 @@ jobs:
           name: Run Tests
           command: npm run test:ci
       - run:
+          name: Run End to End Tests
+          command: npm run test:end-to-end
+      - run:
           name: Run Lint
           command: npm run lint
       - store_artifacts:

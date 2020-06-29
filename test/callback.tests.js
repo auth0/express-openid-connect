@@ -449,7 +449,7 @@ describe('callback response_mode: form_post', () => {
     const reply = sinon.spy(() => ({
       access_token: '__new_access_token__',
       refresh_token: '__new_refresh_token__',
-      id_token: tokens.id_token,
+      id_token: tokens.idToken,
       token_type: 'Bearer',
       expires_in: 86400,
     }));
@@ -474,6 +474,16 @@ describe('callback response_mode: form_post', () => {
     assert.equal(tokens.refreshToken, '__test_refresh_token__');
     assert.equal(newTokens.accessToken.access_token, '__new_access_token__');
     assert.equal(newTokens.refreshToken, '__new_refresh_token__');
+
+    const newerTokens = await request
+      .get('/tokens', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+
+    assert.equal(
+      newerTokens.accessToken.access_token,
+      '__new_access_token__',
+      'the new access token should be persisted in the session'
+    );
   });
 
   it('should refresh an access token and keep original refresh token', async () => {
