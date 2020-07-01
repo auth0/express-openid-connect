@@ -27,6 +27,8 @@ const setup = async (params) => {
 
   const jar = request.jar();
   const baseUrl = await server.create(router);
+  let tokenReqHeader;
+  let tokenReqBody;
 
   Object.keys(params.cookies).forEach(function (cookieName) {
     let value;
@@ -44,11 +46,28 @@ const setup = async (params) => {
     );
   });
 
+  const { interceptors: [ interceptor ] } = nock('https://op.example.com', { allowUnmocked: true })
+    .post('/oauth/token')
+    .reply(200, function(uri, requestBody) {
+      console.log('params.body.id_token', params.body);
+      tokenReqHeader = this.req.headers;
+      tokenReqBody = requestBody;
+      return {
+        access_token: '__test_access_token__',
+        refresh_token: '__test_refresh_token__',
+        id_token: params.body.id_token,
+        token_type: 'Bearer',
+        expires_in: 86400
+      };
+    });
+
   const response = await request.post('/callback', { baseUrl, jar, json: params.body });
   const currentUser = await request.get('/user', { baseUrl, jar, json: true }).then(r => r.body);
   const tokens = await request.get('/tokens', { baseUrl, jar, json: true }).then(r => r.body);
 
-  return { baseUrl, jar, response, currentUser, tokens };
+  nock.removeInterceptor(interceptor);
+
+  return { baseUrl, jar, response, currentUser, tokenReqHeader, tokenReqBody, tokens };
 };
 
 function makeIdToken (payload) {
@@ -240,23 +259,9 @@ describe('callback response_mode: form_post', () => {
   });
 
   it('should expose all tokens when id_token is valid and response_type is \'code id_token\'', async () => {
-    const idToken = makeIdToken();
-    let authHeader, body;
-
-    nock('https://op.example.com', { allowUnmocked: true })
-      .persist()
-      .post('/oauth/token')
-      .reply(200, function(uri, requestBody) {
-        body = requestBody;
-        authHeader = Buffer.from(this.req.headers.authorization.replace('Basic ', ''), 'base64').toString();
-        return {
-          access_token: '__test_access_token__',
-          refresh_token: '__test_refresh_token__',
-          id_token: idToken,
-          token_type: 'Bearer',
-          expires_in: 86400
-        };
-      });
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ'
+    });
 
     const { tokens } = await setup({
       authOpts: {
@@ -273,9 +278,7 @@ describe('callback response_mode: form_post', () => {
       },
       body: {
         state: expectedDefaultState,
-        id_token: makeIdToken({
-          c_hash: '77QmUPtjPfzWtF2AnpK9RQ'
-        }),
+        id_token: idToken,
         code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
       }
     });
@@ -290,7 +293,35 @@ describe('callback response_mode: form_post', () => {
     assert.include(tokens.idTokenClaims, {
       sub: '__test_sub__'
     });
-    assert.equal(authHeader, '__test_client_id__:__test_client_secret__');
-    assert.match(body, /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/);
+  });
+
+  it('should use basic auth on token endpoint when using code flow', async () => {
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ'
+    });
+
+    const { tokenReqBody, tokenReqHeader } = await setup({
+      authOpts: {
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email read:reports offline_access'
+        }
+      },
+      cookies: {
+        _state: expectedDefaultState,
+        _nonce: '__test_nonce__'
+      },
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      }
+    });
+
+    const credentials = Buffer.from(tokenReqHeader.authorization.replace('Basic ', ''), 'base64');
+    assert.equal(credentials, '__test_client_id__:__test_client_secret__');
+    assert.match(tokenReqBody, /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/);
   });
 });
