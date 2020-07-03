@@ -222,7 +222,6 @@ describe('get config', () => {
   it('should not allow empty scope', () => {
     assert.throws(() => validateAuthorizationParams({ scope: null }), TypeError, '"authorizationParams.scope" must be a string');
     assert.throws(() => validateAuthorizationParams({ scope: '' }), TypeError, '"authorizationParams.scope" is not allowed to be empty');
-    // assert.throws(() => validateAuthorizationParams({ scope: undefined }), TypeError, '"authorizationParams.scope" is not allowed to be set to undefined');
   });
 
   it('should not allow scope without openid', () => {
@@ -238,7 +237,6 @@ describe('get config', () => {
   it('should not allow empty response_type', () => {
     assert.throws(() => validateAuthorizationParams({ response_type: null }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
     assert.throws(() => validateAuthorizationParams({ response_type: '' }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
-    // assert.throws(() => validateAuthorizationParams({ response_type: undefined }), TypeError, '"response_type" is not allowed to be set to undefined');
   });
 
   it('should not allow invalid response_types', () => {
@@ -262,7 +260,6 @@ describe('get config', () => {
     assert.throws(() => validateAuthorizationParams({ response_mode: null }), TypeError, '"authorizationParams.response_mode" must be [form_post]');
     assert.throws(() => validateAuthorizationParams({ response_mode: '' }), TypeError, '"authorizationParams.response_mode" must be [form_post]');
     assert.throws(() => validateAuthorizationParams({ response_type: 'code', response_mode: '' }), TypeError, '"authorizationParams.response_mode" must be one of [query, form_post]');
-    // assert.throws(() => validateAuthorizationParams({ response_mode: undefined }), TypeError, '"authorizationParams.response_mode" is not allowed to be set to undefined');
   });
 
   it('should not allow response_type id_token and response_mode query', () => {
@@ -280,6 +277,11 @@ describe('get config', () => {
     assert.doesNotThrow(() => config({ response_type: 'code', response_mode: 'form_post' }));
     assert.doesNotThrow(() => validateAuthorizationParams({ response_type: 'id_token', response_mode: 'form_post' }));
     assert.doesNotThrow(() => config({ response_type: 'code id_token', response_mode: 'form_post' }));
+  });
+
+  it('should not default to any invalid values', () => {
+    const config = getConfig(defaultConfig);
+    assert.doesNotThrow(() => getConfig(config));
   });
 
 });
