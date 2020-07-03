@@ -174,6 +174,116 @@ describe('get config', () => {
     });
   });
 
+  it('should fail when the baseURL is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        baseURL: '__invalid_url__',
+      });
+    }, '"baseURL" must be a valid uri');
+  });
+
+  it('should fail when the clientID is not provided', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        clientID: undefined,
+      });
+    }, '"clientID" is required');
+  });
+
+  it('should fail when the baseURL is not provided', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        baseURL: undefined,
+      });
+    }, '"baseURL" is required');
+  });
+
+  it('should fail when the secret is not provided', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: undefined,
+      });
+    }, '"secret" is required');
+  });
+
+  it('should fail when app session length is not an integer', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          rollingDuration: 3.14159
+        }
+      });
+    }, '"session.rollingDuration" must be an integer');
+  });
+
+  it('should fail when app session secret is invalid', function () {
+    assert.throws(() => {
+      getConfig(({ ...defaultConfig, secret: { key: '__test_session_secret__' } }));
+    }, '"secret" must be one of [string, binary, array]');
+  });
+
+  it('should fail when app session cookie httpOnly is not a boolean', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            httpOnly: '__invalid_httponly__'
+          }
+        }
+      });
+    }, '"session.cookie.httpOnly" must be a boolean');
+  });
+
+  it('should fail when app session cookie secure is not a boolean', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            secure: '__invalid_secure__'
+          }
+        }
+      });
+    }, '"session.cookie.secure" must be a boolean');
+  });
+
+  it('should fail when app session cookie sameSite is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            sameSite: '__invalid_samesite__'
+          }
+        }
+      });
+    }, '"session.cookie.sameSite" must be one of [Lax, Strict, None]');
+  });
+
+  it('should fail when app session cookie domain is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            domain: false
+          }
+        }
+      });
+    }, '"session.cookie.domain" must be a string');
+  });
+
   it('shouldn\'t allow a secret of less than 8 chars', () => {
     assert.throws(() => getConfig({ ...defaultConfig, secret: 'short' }), TypeError, '"secret" does not match any of the allowed types');
     assert.throws(() => getConfig({ ...defaultConfig, secret: ['short', 'too'] }), TypeError, '"secret[0]" does not match any of the allowed types');
@@ -285,11 +395,6 @@ describe('get config', () => {
     assert.doesNotThrow(() => config({ response_type: 'code', response_mode: 'form_post' }));
     assert.doesNotThrow(() => validateAuthorizationParams({ response_type: 'id_token', response_mode: 'form_post' }));
     assert.doesNotThrow(() => config({ response_type: 'code id_token', response_mode: 'form_post' }));
-  });
-
-  it('should not default to any invalid values', () => {
-    const config = getConfig(defaultConfig);
-    assert.doesNotThrow(() => getConfig(config));
   });
 
 });

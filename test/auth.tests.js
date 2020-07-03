@@ -113,7 +113,7 @@ describe('auth', function () {
         assert.equal(parsed.query.client_id, '__test_client_id__');
         assert.equal(parsed.query.scope, 'openid profile email');
         assert.equal(parsed.query.response_type, 'code');
-        assert.equal(parsed.query.response_mode, undefined);
+        assert.equal(parsed.query.response_mode, 'query');
         assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
         assert.property(parsed.query, 'nonce');
         assert.property(parsed.query, 'state');
@@ -236,6 +236,23 @@ describe('auth', function () {
       const decodedState = decodeState(parsed.query.state);
 
       assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
+    });
+
+    it('should not allow removing openid from scope', async function () {
+      const router = getRouter({ routes: { login: false } });
+      router.get('/login', (req, res) => {
+        res.oidc.login({
+          authorizationParams: {
+            scope: 'email'
+          }
+        });
+      });
+      const baseUrl = await server.create(router);
+
+      const cookieJar = request.jar();
+      const res = await request.get('/login', { cookieJar, baseUrl, json: true, followRedirect: false });
+      assert.equal(res.statusCode, 500);
+      assert.equal(res.body.err.message, 'scope should contain "openid"');
     });
   });
 
