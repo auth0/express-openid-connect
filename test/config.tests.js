@@ -64,6 +64,14 @@ describe('get config', () => {
     });
   });
 
+  it('should require a fully qualified URL for issuer', () => {
+    const config = {
+      ...defaultConfig,
+      issuerBaseURL: 'www.example.com'
+    };
+    assert.throws(() => getConfig(config), TypeError, '"issuerBaseURL" must be a valid uri');
+  });
+
   it('should set idpLogout to true when auth0Logout is true', () => {
     const config = getConfig({
       ...defaultConfig,
