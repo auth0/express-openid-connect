@@ -8,10 +8,11 @@ const request = require('request-promise-native').defaults({
 const TransientCookieHandler = require('../lib/transientHandler');
 const { encodeState } = require('../lib/hooks/getLoginState');
 const expressOpenid = require('..');
-const server = require('./fixture/server');
+const { create: createServer } = require('./fixture/server');
 const cert = require('./fixture/cert');
 const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
+const baseUrl = 'http://localhost:3000';
 
 function testCase (params) {
   return () => {
@@ -24,14 +25,13 @@ function testCase (params) {
     }, params.authOpts || {});
     const router = expressOpenid.auth(authOpts);
     const transient = new TransientCookieHandler(authOpts);
-
-    let baseUrl;
+    let server;
 
     const jar = request.jar();
 
     before(async function () {
       this.jar = jar;
-      this.baseUrl = baseUrl = await server.create(router);
+      server = await createServer(router);
 
       Object.keys(params.cookies).forEach(function (cookieName) {
         let value;
@@ -51,6 +51,10 @@ function testCase (params) {
 
       this.response = await request.post('/callback', { baseUrl, jar, json: params.body });
       this.currentUser = await request.get('/user', { baseUrl, jar, json: true }).then(r => r.body);
+    });
+
+    after(() => {
+      server.close();
     });
 
     params.assertions();
@@ -243,7 +247,7 @@ describe('callback routes response_type: id_token, response_mode: form_post', fu
 
       it('should expose the user in the request', async function () {
         const res = await request.get('/user', {
-          baseUrl: this.baseUrl,
+          baseUrl: baseUrl,
           json: true,
           jar: this.jar
         });
