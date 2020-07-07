@@ -114,7 +114,7 @@ describe('auth', () => {
     assert.equal(parsed.query.client_id, '__test_client_id__');
     assert.equal(parsed.query.scope, 'openid profile email');
     assert.equal(parsed.query.response_type, 'code');
-    assert.equal(parsed.query.response_mode, 'query');
+    assert.equal(parsed.query.response_mode, undefined);
     assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
     assert.property(parsed.query, 'nonce');
     assert.property(parsed.query, 'state');

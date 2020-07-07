@@ -57,7 +57,6 @@ describe('get config', () => {
     assert.deepInclude(config, {
       authorizationParams: {
         response_type: 'code',
-        response_mode: 'query',
         scope: 'openid profile email'
       },
       authRequired: true
