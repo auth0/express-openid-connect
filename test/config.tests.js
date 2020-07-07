@@ -309,7 +309,7 @@ describe('get config', () => {
     assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for a response_type that includes code');
   });
 
-  it('should require clientSecret for ID tokens with HS algorithms', () => {
+  it('should require clientSecret for ID tokens with HMAC based algorithms', () => {
     const config = {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
@@ -317,10 +317,10 @@ describe('get config', () => {
         response_type: 'id_token'
       }
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HS algorithms');
+    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HMAC based algorithms');
   });
 
-  it('should require clientSecret for ID tokens in hybrid flow with HS algorithms', () => {
+  it('should require clientSecret for ID tokens in hybrid flow with HMAC based algorithms', () => {
     const config = {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
@@ -328,10 +328,10 @@ describe('get config', () => {
         response_type: 'code id_token'
       }
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HS algorithms');
+    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HMAC based algorithms');
   });
 
-  it('should require clientSecret for ID tokens in code flow with HS algorithms', () => {
+  it('should require clientSecret for ID tokens in code flow with HMAC based algorithms', () => {
     const config = {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
@@ -339,7 +339,7 @@ describe('get config', () => {
         response_type: 'code'
       }
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HS algorithms');
+    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HMAC based algorithms');
   });
 
   it('should allow empty auth params', () => {
