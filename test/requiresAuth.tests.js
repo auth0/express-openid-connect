@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-const server = require('./fixture/server');
+const { create: createServer } = require('./fixture/server');
 const { auth, requiresAuth } = require('./..');
 const request = require('request-promise-native').defaults({
   simple: false,
@@ -7,74 +7,53 @@ const request = require('request-promise-native').defaults({
   followRedirect: false
 });
 
-describe('requiresAuth middleware', function () {
-  describe('when trying to access a protected route without being logged in', function () {
-    let baseUrl;
-    let response;
+const defaultConfig = {
+  secret: '__test_session_secret__',
+  clientID: '__test_client_id__',
+  baseURL: 'https://example.org',
+  issuerBaseURL: 'https://op.example.com',
+};
 
-    before(async function () {
-      const router = auth({
-        secret: '__test_session_secret__',
-        clientID: '__test_client_id__',
-        baseURL: 'https://example.org',
-        issuerBaseURL: 'https://op.example.com',
-        authRequired: false
-      });
-      baseUrl = await server.create(router, requiresAuth());
-      response = await request({ baseUrl, url: '/protected' });
-    });
+describe('requiresAuth', () => {
 
-    it('should return a 302', function () {
-      assert.equal(response.statusCode, 302);
-    });
-    it('should contain a location header to the issuer', function () {
-      assert.include(response.headers.location, 'https://op.example.com');
-    });
-    it('should contain a location header with state containing return url', function () {
-      const state = (new URL(response.headers.location)).searchParams.get('state');
-      const decoded = Buffer.from(state, 'base64');
-      const parsed = JSON.parse(decoded);
-      assert.equal(parsed.returnTo, '/protected');
-    });
+  let server;
+  const baseUrl = 'http://localhost:3000';
+
+  afterEach(async () => {
+    if (server) {
+      server.close();
+    }
   });
 
-  describe('when removing the auth middleware', function () {
-    let baseUrl;
-    let response;
+  it('should ask anonymous user to login when visiting a protected route', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      authRequired: false
+    }), requiresAuth());
+    const response = await request({ baseUrl, url: '/protected' });
+    const state = (new URL(response.headers.location)).searchParams.get('state');
+    const decoded = Buffer.from(state, 'base64');
+    const parsed = JSON.parse(decoded);
 
-    before(async function () {
-      const router = (req, res, next) => next();
-      baseUrl = await server.create(router, requiresAuth());
-      response = await request({ baseUrl, url: '/protected' });
-    });
-
-    it('should return a 401', function () {
-      const body = JSON.parse(response.body);
-      assert.equal(response.statusCode, 500);
-      assert.ok(body.err);
-      assert.equal(body.err.message, 'req.oidc is not found, did you include the auth middleware?');
-    });
+    assert.equal(response.statusCode, 302);
+    assert.include(response.headers.location, 'https://op.example.com');
+    assert.equal(parsed.returnTo, '/protected');
   });
 
-  describe('when requiring auth in a route', function () {
-    let baseUrl;
-    let response;
+  it('should return 401 when anonymous user visits a protected route', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      authRequired: false,
+      errorOnRequiredAuth: true
+    }), requiresAuth());
+    const response = await request({ baseUrl, url: '/protected' });
 
-    before(async function () {
-      const router = auth({
-        secret: '__test_session_secret__',
-        clientID: '__test_client_id__',
-        baseURL: 'https://example.org',
-        issuerBaseURL: 'https://op.example.com',
-        authRequired: false,
-        errorOnRequiredAuth: true
-      });
-      baseUrl = await server.create(router, requiresAuth());
-      response = await request({ baseUrl, url: '/protected' });
-    });
+    assert.equal(response.statusCode, 401);
+  });
 
-    it('should return a 401', function () {
-      assert.equal(response.statusCode, 401);
-    });
+  it('should throw when no auth middleware', async () => {
+    server = await createServer(null, requiresAuth());
+    const { body: { err } } = await request({ baseUrl, url: '/protected', json: true });
+    assert.equal(err.message, 'req.oidc is not found, did you include the auth middleware?');
   });
 });

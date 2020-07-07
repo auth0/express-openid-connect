@@ -7,8 +7,8 @@ const request = require('request-promise-native').defaults({
 
 const { decodeState } = require('../lib/hooks/getLoginState');
 
-const expressOpenid = require('..');
-const server = require('./fixture/server');
+const { auth } = require('..');
+const { create: createServer } = require('./fixture/server');
 
 const filterRoute = (method, path) => {
   return r => r.route &&
@@ -40,226 +40,227 @@ const defaultConfig = {
   authRequired: false
 };
 
-function getRouter (customConfig) {
-  return expressOpenid.auth(Object.assign({}, defaultConfig, customConfig));
-}
+describe('auth', () => {
 
-describe('auth', function () {
-  describe('default', () => {
-    let baseUrl, router;
+  let server;
+  const baseUrl = 'http://localhost:3000';
 
-    before(async function () {
-      router = getRouter();
-      baseUrl = await server.create(router);
-    });
-
-    it('should contain a login route', function () {
-      assert.ok(router.stack.some(filterRoute('GET', '/login')));
-    });
-
-    it('should contain a logout route', function () {
-      assert.ok(router.stack.some(filterRoute('GET', '/logout')));
-    });
-
-    it('should contain a callback route', function () {
-      assert.ok(router.stack.some(filterRoute('POST', '/callback')));
-    });
-
-    it('should redirect to the authorize url properly on /login', async function () {
-      const jar = request.jar();
-      const res = await request.get('/login', { jar, baseUrl, followRedirect: false });
-      assert.equal(res.statusCode, 302);
-
-      const parsed = url.parse(res.headers.location, true);
-      assert.equal(parsed.hostname, 'op.example.com');
-      assert.equal(parsed.pathname, '/authorize');
-      assert.equal(parsed.query.client_id, '__test_client_id__');
-      assert.equal(parsed.query.scope, 'openid profile email');
-      assert.equal(parsed.query.response_type, 'id_token');
-      assert.equal(parsed.query.response_mode, 'form_post');
-      assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
-      assert.property(parsed.query, 'nonce');
-      assert.property(parsed.query, 'state');
-
-      assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
-      assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
-    });
+  afterEach(async () => {
+    if (server) {
+      server.close();
+    }
   });
 
-  describe('implied response_mode', () => {
-    describe('response_type=code', () => {
-      let baseUrl, router;
-
-      before(async function () {
-        router = getRouter({
-          clientSecret: '__test_client_secret__',
-          authorizationParams: {
-            response_mode: undefined,
-            response_type: 'code'
-          }
-        });
-        baseUrl = await server.create(router);
-      });
-
-      it('should redirect to the authorize url properly on /login', async function () {
-        const cookieJar = request.jar();
-        const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
-        assert.equal(res.statusCode, 302);
-
-        const parsed = url.parse(res.headers.location, true);
-
-        assert.equal(parsed.hostname, 'op.example.com');
-        assert.equal(parsed.pathname, '/authorize');
-        assert.equal(parsed.query.client_id, '__test_client_id__');
-        assert.equal(parsed.query.scope, 'openid profile email');
-        assert.equal(parsed.query.response_type, 'code');
-        assert.equal(parsed.query.response_mode, undefined);
-        assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
-        assert.property(parsed.query, 'nonce');
-        assert.property(parsed.query, 'state');
-        assert.property(res.headers, 'set-cookie');
-
-        assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
-        assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
-      });
-
-      it('should contain a callback route', function () {
-        assert.ok(router.stack.some(filterRoute('GET', '/callback')));
-      });
-    });
-
-    describe('response_type=id_token', () => {
-      let baseUrl, router;
-
-      before(async function () {
-        router = getRouter({
-          authorizationParams: {
-            response_mode: undefined,
-            response_type: 'id_token'
-          }
-        });
-        baseUrl = await server.create(router);
-      });
-
-      it('should redirect to the authorize url properly on /login', async function () {
-        const cookieJar = request.jar();
-        const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
-        assert.equal(res.statusCode, 302);
-
-        const parsed = url.parse(res.headers.location, true);
-
-        assert.equal(parsed.hostname, 'op.example.com');
-        assert.equal(parsed.pathname, '/authorize');
-        assert.equal(parsed.query.client_id, '__test_client_id__');
-        assert.equal(parsed.query.scope, 'openid profile email');
-        assert.equal(parsed.query.response_type, 'id_token');
-        assert.equal(parsed.query.response_mode, 'form_post');
-        assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
-        assert.property(parsed.query, 'nonce');
-        assert.property(parsed.query, 'state');
-      });
-
-      it('should contain the two callbacks route', function () {
-        assert.ok(router.stack.some(filterRoute('POST', '/callback')));
-      });
-    });
+  it('should contain the default authentication routes', async () => {
+    const router = auth(defaultConfig);
+    server = await createServer(router);
+    assert.ok(router.stack.some(filterRoute('GET', '/login')));
+    assert.ok(router.stack.some(filterRoute('GET', '/logout')));
+    assert.ok(router.stack.some(filterRoute('POST', '/callback')));
+    assert.ok(router.stack.some(filterRoute('GET', '/callback')));
   });
 
-  describe('custom path values', () => {
-    let baseUrl, router;
+  it('should contain custom authentication routes', async () => {
+    const router = auth({
+      ...defaultConfig,
+      routes: {
+        callback: 'custom-callback',
+        login: 'custom-login',
+        logout: 'custom-logout'
+      }
+    });
+    server = await createServer(router);
+    assert.ok(router.stack.some(filterRoute('GET', '/custom-login')));
+    assert.ok(router.stack.some(filterRoute('GET', '/custom-logout')));
+    assert.ok(router.stack.some(filterRoute('POST', '/custom-callback')));
+    assert.ok(router.stack.some(filterRoute('GET', '/custom-callback')));
+  });
 
-    before(async function () {
-      router = getRouter({
-        routes: {
-          callback: 'custom-callback',
-          login: 'custom-login',
-          logout: 'custom-logout'
+  it('should redirect to the authorize url for /login', async () => {
+    server = await createServer(auth(defaultConfig));
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+
+    assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
+    assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
+  });
+
+  it('should redirect to the authorize url for /login in code flow', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code'
+      }
+    }));
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'code');
+    assert.equal(parsed.query.response_mode, undefined);
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+    assert.property(res.headers, 'set-cookie');
+
+    assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
+    assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
+  });
+
+  it('should redirect to the authorize url for /login in id_token flow', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'id_token'
+      }
+    }));
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+  });
+
+  it('should redirect to the authorize url for /login in hybrid flow', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code id_token'
+      }
+    }));
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'code id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+  });
+
+  it('should redirect to the authorize url for custom login route', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      routes: {
+        callback: 'custom-callback',
+        login: 'custom-login',
+        logout: 'custom-logout'
+      }
+    }));
+    const res = await request.get('/custom-login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/custom-callback');
+  });
+
+  it('should allow custom login route with additional login params', async () => {
+    const router = auth({
+      ...defaultConfig,
+      routes: { login: false }
+    });
+    router.get('/login', (req, res) => {
+      res.oidc.login({
+        returnTo: 'https://example.org/custom-redirect',
+        authorizationParams: {
+          response_type: 'code',
+          response_mode: 'query',
+          scope: 'openid email'
         }
       });
-
-      baseUrl = await server.create(router);
     });
+    server = await createServer(router);
 
-    it('should contain the custom login route', function () {
-      assert.ok(router.stack.some(filterRoute('GET', '/custom-login')));
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
 
-    it('should contain the custom logout route', function () {
-      assert.ok(router.stack.some(filterRoute('GET', '/custom-logout')));
-    });
+    const parsed = url.parse(res.headers.location, true);
 
-    it('should contain the custom callback route', function () {
-      assert.ok(router.stack.some(filterRoute('POST', '/custom-callback')));
-    });
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.scope, 'openid email');
+    assert.equal(parsed.query.response_type, 'code');
+    assert.equal(parsed.query.response_mode, 'query');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
 
-    it('should redirect to the authorize url properly on /login', async function () {
-      const jar = request.jar();
-      const res = await request.get('/custom-login', { jar, baseUrl, followRedirect: false });
-      assert.equal(res.statusCode, 302);
+    const decodedState = decodeState(parsed.query.state);
 
-      const parsed = url.parse(res.headers.location, true);
-      assert.equal(parsed.hostname, 'op.example.com');
-      assert.equal(parsed.pathname, '/authorize');
-      assert.equal(parsed.query.redirect_uri, 'https://example.org/custom-callback');
-    });
+    assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
   });
 
-  describe('custom login parameter values', () => {
-    it('should redirect to the authorize url properly on /login', async function () {
-      const router = getRouter({ routes: { login: false } });
-      router.get('/login', (req, res) => {
-        res.oidc.login({
-          returnTo: 'https://example.org/custom-redirect',
-          authorizationParams: {
-            response_type: 'code',
-            response_mode: 'query',
-            scope: 'openid email'
-          }
-        });
-      });
-      const baseUrl = await server.create(router);
+  it('should use a custom state builder', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      getLoginState: (req, opts) => {
+        return {
+          returnTo: opts.returnTo + '/custom-page',
+          customProp: '__test_custom_prop__'
+        };
+      }
+    }));
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
 
-      const cookieJar = request.jar();
-      const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
-      assert.equal(res.statusCode, 302);
+    const parsed = url.parse(res.headers.location, true);
+    const decodedState = decodeState(parsed.query.state);
 
-      const parsed = url.parse(res.headers.location, true);
-
-      assert.equal(parsed.hostname, 'op.example.com');
-      assert.equal(parsed.pathname, '/authorize');
-      assert.equal(parsed.query.scope, 'openid email');
-      assert.equal(parsed.query.response_type, 'code');
-      assert.equal(parsed.query.response_mode, 'query');
-      assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
-      assert.property(parsed.query, 'nonce');
-
-      const decodedState = decodeState(parsed.query.state);
-
-      assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
-    });
+    assert.equal(decodedState.returnTo, 'https://example.org/custom-page');
+    assert.equal(decodedState.customProp, '__test_custom_prop__');
   });
 
-  describe('custom state building', () => {
-    it('should use a custom state builder', async function () {
-      const router = getRouter({
-        getLoginState: (req, opts) => {
-          return {
-            returnTo: opts.returnTo + '/custom-page',
-            customProp: '__test_custom_prop__'
-          };
-        }
-      });
-      const baseUrl = await server.create(router);
+  it('should use PKCE when response_type includes code', async () => {
+    server = await createServer(auth({
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code id_token'
+      }
+    }));
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
 
-      const cookieJar = request.jar();
-      const res = await request.get('/login', { cookieJar, baseUrl, followRedirect: false });
-      assert.equal(res.statusCode, 302);
+    const parsed = url.parse(res.headers.location, true);
 
-      const parsed = url.parse(res.headers.location, true);
-      const decodedState = decodeState(parsed.query.state);
+    assert.isDefined(parsed.query.code_challenge);
+    assert.equal(parsed.query.code_challenge_method, 'S256');
 
-      assert.equal(decodedState.returnTo, 'https://example.org/custom-page');
-      assert.equal(decodedState.customProp, '__test_custom_prop__');
-    });
+    assert.isDefined(getCookieFromResponse(res, 'code_verifier'));
   });
+
 });
