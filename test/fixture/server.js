@@ -33,6 +33,7 @@ module.exports.create = function (router, protect, path) {
       idToken: req.oidc.idToken,
       refreshToken: req.oidc.refreshToken,
       accessToken: req.oidc.accessToken,
+      accessTokenExpired: req.oidc.accessToken ? req.oidc.accessToken.isExpired() : undefined,
       idTokenClaims: req.oidc.idTokenClaims,
     });
   });

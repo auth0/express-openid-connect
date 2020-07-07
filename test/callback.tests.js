@@ -1,4 +1,5 @@
 const assert = require('chai').assert;
+const sinon = require('sinon');
 const jose = require('jose');
 const request = require('request-promise-native').defaults({
   simple: false,
@@ -8,11 +9,14 @@ const request = require('request-promise-native').defaults({
 const TransientCookieHandler = require('../lib/transientHandler');
 const { encodeState } = require('../lib/hooks/getLoginState');
 const expressOpenid = require('..');
-const server = require('./fixture/server');
+const { create: createServer } = require('./fixture/server');
 const cert = require('./fixture/cert');
 const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
+
+const baseUrl = 'http://localhost:3000';
+let server;
 
 const setup = async (params) => {
   const authOpts = Object.assign({}, {
@@ -26,7 +30,7 @@ const setup = async (params) => {
   const transient = new TransientCookieHandler(authOpts);
 
   const jar = request.jar();
-  const baseUrl = await server.create(router);
+  server = await createServer(router);
   let tokenReqHeader;
   let tokenReqBody;
 
@@ -49,7 +53,6 @@ const setup = async (params) => {
   const { interceptors: [ interceptor ] } = nock('https://op.example.com', { allowUnmocked: true })
     .post('/oauth/token')
     .reply(200, function(uri, requestBody) {
-      console.log('params.body.id_token', params.body);
       tokenReqHeader = this.req.headers;
       tokenReqBody = requestBody;
       return {
@@ -89,6 +92,12 @@ function makeIdToken (payload) {
 // http://expressjs.com/en/guide/error-handling.html
 
 describe('callback response_mode: form_post', () => {
+
+  afterEach(() => {
+    if (server) {
+      server.close();
+    }
+  });
 
   it('should error when the body is empty', async () => {
     const { response: { statusCode, body: { err } } } = await setup({
@@ -293,6 +302,42 @@ describe('callback response_mode: form_post', () => {
     assert.include(tokens.idTokenClaims, {
       sub: '__test_sub__'
     });
+  });
+
+  it('should handle access token expiry', async () => {
+    const clock = sinon.useFakeTimers({ toFake: ['Date']});
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+    const hrSecs = 60 * 60;
+    const hrMs = hrSecs * 1000;
+
+    const { tokens, jar } = await setup({
+      authOpts: {
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code',
+        }
+      },
+      cookies: {
+        _state: expectedDefaultState,
+        _nonce: '__test_nonce__'
+      },
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      }
+    });
+    assert.equal(tokens.accessToken.expires_in, 24 * hrSecs);
+    clock.tick(4 * hrMs);
+    const tokens2 = await request.get('/tokens', { baseUrl, jar, json: true }).then(r => r.body);
+    assert.equal(tokens2.accessToken.expires_in, 20 * hrSecs);
+    assert.isFalse(tokens2.accessTokenExpired);
+    clock.tick(21 * hrMs);
+    const tokens3 = await request.get('/tokens', { baseUrl, jar, json: true }).then(r => r.body);
+    assert.isTrue(tokens3.accessTokenExpired);
+    clock.restore();
   });
 
   it('should use basic auth on token endpoint when using code flow', async () => {
