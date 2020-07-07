@@ -331,6 +331,17 @@ describe('get config', () => {
     assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HS algorithms');
   });
 
+  it('should require clientSecret for ID tokens in code flow with HS algorithms', () => {
+    const config = {
+      ...defaultConfig,
+      idTokenSigningAlg: 'HS256',
+      authorizationParams: {
+        response_type: 'code'
+      }
+    };
+    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HS algorithms');
+  });
+
   it('should allow empty auth params', () => {
     assert.doesNotThrow(validateAuthorizationParams);
     assert.doesNotThrow(() => validateAuthorizationParams({}));
