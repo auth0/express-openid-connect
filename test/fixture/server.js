@@ -1,6 +1,5 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const http = require('http');
 
 module.exports.create = function (router, protect, path) {
   const app = express();
@@ -8,7 +7,9 @@ module.exports.create = function (router, protect, path) {
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json());
 
-  app.use(router);
+  if (router) {
+    app.use(router);
+  }
 
   app.get('/session', (req, res) => {
     res.json(req.appSession);
@@ -56,12 +57,7 @@ module.exports.create = function (router, protect, path) {
     mainApp = app;
   }
 
-  const server = http.createServer(mainApp);
-
   return new Promise((resolve) => {
-    server.unref();
-    server.listen(0, () => {
-      resolve(`http://localhost:${server.address().port}`);
-    });
+    const server = mainApp.listen(3000, () => resolve(server));
   });
 };
