@@ -69,18 +69,13 @@ describe('appSession', () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
     const random = crypto.randomBytes(4000).toString('base64');
-    jar.setCookie(`appSession=${sessionEncryption.encrypt({
+    await request.post('/session', { baseUrl, jar, json: {
       sub: '__test_sub__',
       random
-    })}`, baseUrl);
+    }});
+    assert.deepEqual(jar.getCookies(baseUrl).map(({ key }) => key), [ 'appSession.0', 'appSession.1' ]);
     const res = await request.get('/session', { baseUrl, json: true, jar });
-    jar.setCookie(`appSession=;expires=${new Date(0)}`, baseUrl);
-    const cookieString = jar.getCookieString(baseUrl);
-    const cookies = jar.getCookies(baseUrl);
-    assert.lengthOf(cookies, 2);
-    assert.match(cookieString, /appSession\.0=.+; ?appSession\.1=.+/);
-    const res2 = await request.get('/session', { baseUrl, json: true, jar });
-    assert.equal(res2.statusCode, 200);
+    assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, {
       sub: '__test_sub__',
       random
