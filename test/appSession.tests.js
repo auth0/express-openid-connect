@@ -4,6 +4,7 @@ const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true
 });
+const sinon = require('sinon');
 
 const appSession = require('../lib/appSession');
 const sessionEncryption = require('./fixture/sessionEncryption');
@@ -82,6 +83,34 @@ describe('appSession', () => {
     });
   });
 
+  it('should handle unordered chunked cookies', async () => {
+    server = await createServer(appSession(getConfig(defaultConfig)));
+    const jar = request.jar();
+    const random = crypto.randomBytes(4000).toString('base64');
+    await request.post('/session', { baseUrl, jar, json: {
+      sub: '__test_sub__',
+      random
+    }});
+    const newJar = request.jar();
+    jar.getCookies(baseUrl).reverse().forEach(({ key, value }) => newJar.setCookie(`${key}=${value}`, baseUrl));
+    assert.deepEqual(newJar.getCookies(baseUrl).map(({ key }) => key), [ 'appSession.1', 'appSession.0' ]);
+    const res = await request.get('/session', { baseUrl, json: true, jar: newJar });
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, {
+      sub: '__test_sub__',
+      random
+    });
+  });
+
+  it('should not throw for malformed cookie chunks', async () => {
+    server = await createServer(appSession(getConfig(defaultConfig)));
+    const jar = request.jar();
+    jar.setCookie('appSession.0=foo', baseUrl);
+    jar.setCookie('appSession.1=bar', baseUrl);
+    const res = await request.get('/session', { baseUrl, json: true, jar });
+    assert.equal(res.statusCode, 200);
+  });
+
   it('should set the default cookie options', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
@@ -155,4 +184,53 @@ describe('appSession', () => {
     assert.isFalse(cookie.hasOwnProperty('expires'));
   });
 
+  it('should not throw for expired cookies', async () => {
+    const twoWeeks = 2* 7 * 24 * 60 * 60 * 1000;
+    const clock = sinon.useFakeTimers({
+      now: Date.now(),
+      toFake: ['Date']
+    });
+    server = await createServer(appSession(getConfig(defaultConfig)));
+    const jar = request.jar();
+    clock.tick(twoWeeks);
+    const res = await request.get('/session', { baseUrl, json: true, jar, headers: {
+      cookie: `appSession=${sessionEncryption.encrypted}`
+    }});
+    assert.equal(res.statusCode, 200);
+    clock.restore();
+  });
+
+  it('should throw for duplicate mw', async () => {
+    server = await createServer((req, res, next) => {
+      req.appSession = {};
+      appSession(getConfig(defaultConfig))(req, res, next);
+    });
+    const res = await request.get('/session', { baseUrl, json: true });
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.err.message, 'req[appSession] is already set, do you run this middleware twice?');
+  });
+
+  it('should throw for reassigning session', async () => {
+    server = await createServer((req, res, next) => {
+      appSession(getConfig(defaultConfig))(req, res, () => {
+        req.appSession = {};
+        next();
+      });
+    });
+    const res = await request.get('/session', { baseUrl, json: true });
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.err.message, 'session object cannot be reassigned');
+  });
+
+  it('should not throw for reassigining session to empty', async () => {
+    server = await createServer((req, res, next) => {
+      appSession(getConfig(defaultConfig))(req, res, () => {
+        req.appSession = null;
+        req.appSession = undefined;
+        next();
+      });
+    });
+    const res = await request.get('/session', { baseUrl, json: true });
+    assert.equal(res.statusCode, 200);
+  });
 });
