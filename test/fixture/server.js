@@ -27,9 +27,20 @@ module.exports.create = function (router, protect, path) {
     res.json(req.oidc.user);
   });
 
+  app.get('/tokens', (req, res) => {
+    res.json({
+      isAuthenticated: req.oidc.isAuthenticated(),
+      idToken: req.oidc.idToken,
+      refreshToken: req.oidc.refreshToken,
+      accessToken: req.oidc.accessToken,
+      accessTokenExpired: req.oidc.accessToken ? req.oidc.accessToken.isExpired() : undefined,
+      idTokenClaims: req.oidc.idTokenClaims,
+    });
+  });
+
   if (protect) {
     app.get('/protected', protect, (req, res) => {
-      res.json(req.oidc.tokens);
+      res.json({});
     });
   }
 
