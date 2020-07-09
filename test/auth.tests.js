@@ -224,6 +224,23 @@ describe('auth', () => {
     assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
   });
 
+  it('should not allow removing openid from scope', async function () {
+    const router = auth({ ...defaultConfig, routes: { login: false } });
+    router.get('/login', (req, res) => {
+      res.oidc.login({
+        authorizationParams: {
+          scope: 'email'
+        }
+      });
+    });
+    server = await createServer(router);
+
+    const cookieJar = request.jar();
+    const res = await request.get('/login', { cookieJar, baseUrl, json: true, followRedirect: false });
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.err.message, 'scope should contain "openid"');
+  });
+
   it('should use a custom state builder', async () => {
     server = await createServer(auth({
       ...defaultConfig,
