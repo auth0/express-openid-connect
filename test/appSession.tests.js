@@ -2,7 +2,7 @@ const assert = require('chai').assert;
 const crypto = require('crypto');
 const request = require('request-promise-native').defaults({
   simple: false,
-  resolveWithFullResponse: true
+  resolveWithFullResponse: true,
 });
 const sinon = require('sinon');
 
@@ -38,30 +38,46 @@ describe('appSession', () => {
 
   it('should not error for malformed sessions', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const res = await request.get('/session', { baseUrl, json: true, headers: {
-      cookie: 'appSession=__invalid_identity__'
-    }});
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      headers: {
+        cookie: 'appSession=__invalid_identity__',
+      },
+    });
     assert.equal(res.statusCode, 200);
     assert.isEmpty(res.body);
   });
 
   it('should not error with JWEDecryptionFailed when using old secrets', async () => {
-    server = await createServer(appSession(getConfig({
-      ...defaultConfig,
-      secret: 'another secret'
-    })));
-    const res = await request.get('/session', { baseUrl, json: true, headers: {
-      cookie: `appSession=${sessionEncryption.encrypted}`
-    }});
+    server = await createServer(
+      appSession(
+        getConfig({
+          ...defaultConfig,
+          secret: 'another secret',
+        })
+      )
+    );
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      headers: {
+        cookie: `appSession=${sessionEncryption.encrypted}`,
+      },
+    });
     assert.equal(res.statusCode, 200);
     assert.isEmpty(res.body);
   });
 
   it('should get an existing session', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const res = await request.get('/session', { baseUrl, json: true, headers: {
-      cookie: `appSession=${sessionEncryption.encrypted}`
-    }});
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      headers: {
+        cookie: `appSession=${sessionEncryption.encrypted}`,
+      },
+    });
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.sub, '__test_sub__');
   });
@@ -70,16 +86,23 @@ describe('appSession', () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
     const random = crypto.randomBytes(4000).toString('base64');
-    await request.post('/session', { baseUrl, jar, json: {
-      sub: '__test_sub__',
-      random
-    }});
-    assert.deepEqual(jar.getCookies(baseUrl).map(({ key }) => key), [ 'appSession.0', 'appSession.1' ]);
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random,
+      },
+    });
+    assert.deepEqual(
+      jar.getCookies(baseUrl).map(({ key }) => key),
+      ['appSession.0', 'appSession.1']
+    );
     const res = await request.get('/session', { baseUrl, json: true, jar });
     assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, {
       sub: '__test_sub__',
-      random
+      random,
     });
   });
 
@@ -87,18 +110,34 @@ describe('appSession', () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
     const random = crypto.randomBytes(4000).toString('base64');
-    await request.post('/session', { baseUrl, jar, json: {
-      sub: '__test_sub__',
-      random
-    }});
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random,
+      },
+    });
     const newJar = request.jar();
-    jar.getCookies(baseUrl).reverse().forEach(({ key, value }) => newJar.setCookie(`${key}=${value}`, baseUrl));
-    assert.deepEqual(newJar.getCookies(baseUrl).map(({ key }) => key), [ 'appSession.1', 'appSession.0' ]);
-    const res = await request.get('/session', { baseUrl, json: true, jar: newJar });
+    jar
+      .getCookies(baseUrl)
+      .reverse()
+      .forEach(({ key, value }) =>
+        newJar.setCookie(`${key}=${value}`, baseUrl)
+      );
+    assert.deepEqual(
+      newJar.getCookies(baseUrl).map(({ key }) => key),
+      ['appSession.1', 'appSession.0']
+    );
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar: newJar,
+    });
     assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, {
       sub: '__test_sub__',
-      random
+      random,
     });
   });
 
@@ -114,18 +153,21 @@ describe('appSession', () => {
   it('should set the default cookie options', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
-    await request.get('/session', { baseUrl, json: true, jar, headers: {
-      cookie: `appSession=${sessionEncryption.encrypted}`
-    }});
-    const [ cookie ] = jar.getCookies(baseUrl);
+    await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `appSession=${sessionEncryption.encrypted}`,
+      },
+    });
+    const [cookie] = jar.getCookies(baseUrl);
     assert.deepInclude(cookie, {
       key: 'appSession',
       domain: 'localhost',
       path: '/',
       httpOnly: true,
-      extensions: [
-        'SameSite=Lax'
-      ]
+      extensions: ['SameSite=Lax'],
     });
     const expDate = new Date(cookie.expires);
     const now = Date.now();
@@ -133,69 +175,99 @@ describe('appSession', () => {
   });
 
   it('should set the custom cookie options', async () => {
-    server = await createServer(appSession(getConfig({
-      ...defaultConfig,
-      session: {
-        cookie: {
-          httpOnly: false,
-          sameSite: 'Strict'
-        }
-      }
-    })));
+    server = await createServer(
+      appSession(
+        getConfig({
+          ...defaultConfig,
+          session: {
+            cookie: {
+              httpOnly: false,
+              sameSite: 'Strict',
+            },
+          },
+        })
+      )
+    );
     const jar = request.jar();
-    await request.get('/session', { baseUrl, json: true, jar, headers: {
-      cookie: `appSession=${sessionEncryption.encrypted}`
-    }});
-    const [ cookie ] = jar.getCookies(baseUrl);
+    await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `appSession=${sessionEncryption.encrypted}`,
+      },
+    });
+    const [cookie] = jar.getCookies(baseUrl);
     assert.deepInclude(cookie, {
       key: 'appSession',
       httpOnly: false,
-      extensions: [
-        'SameSite=Strict'
-      ]
+      extensions: ['SameSite=Strict'],
     });
   });
 
   it('should use a custom cookie name', async () => {
-    server = await createServer(appSession(getConfig({
-      ...defaultConfig,
-      session: { name: 'customName' }
-    })));
+    server = await createServer(
+      appSession(
+        getConfig({
+          ...defaultConfig,
+          session: { name: 'customName' },
+        })
+      )
+    );
     const jar = request.jar();
-    const res = await request.get('/session', { baseUrl, json: true, jar, headers: {
-      cookie: `customName=${sessionEncryption.encrypted}`
-    }});
-    const [ cookie ] = jar.getCookies(baseUrl);
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `customName=${sessionEncryption.encrypted}`,
+      },
+    });
+    const [cookie] = jar.getCookies(baseUrl);
     assert.equal(res.statusCode, 200);
     assert.equal(cookie.key, 'customName');
   });
 
   it('should set an ephemeral cookie', async () => {
-    server = await createServer(appSession(getConfig({
-      ...defaultConfig,
-      session: { cookie: { transient: true } }
-    })));
+    server = await createServer(
+      appSession(
+        getConfig({
+          ...defaultConfig,
+          session: { cookie: { transient: true } },
+        })
+      )
+    );
     const jar = request.jar();
-    const res = await request.get('/session', { baseUrl, json: true, jar, headers: {
-      cookie: `appSession=${sessionEncryption.encrypted}`
-    }});
-    const [ cookie ] = jar.getCookies(baseUrl);
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `appSession=${sessionEncryption.encrypted}`,
+      },
+    });
+    const [cookie] = jar.getCookies(baseUrl);
     assert.equal(res.statusCode, 200);
     assert.isFalse(cookie.hasOwnProperty('expires'));
   });
 
   it('should not throw for expired cookies', async () => {
-    const twoWeeks = 2* 7 * 24 * 60 * 60 * 1000;
+    const twoWeeks = 2 * 7 * 24 * 60 * 60 * 1000;
     const clock = sinon.useFakeTimers({
       now: Date.now(),
-      toFake: ['Date']
+      toFake: ['Date'],
     });
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
     clock.tick(twoWeeks);
-    const res = await request.get('/session', { baseUrl, json: true, jar, headers: {
-      cookie: `appSession=${sessionEncryption.encrypted}`
-    }});
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `appSession=${sessionEncryption.encrypted}`,
+      },
+    });
     assert.equal(res.statusCode, 200);
     clock.restore();
   });
@@ -207,7 +279,10 @@ describe('appSession', () => {
     });
     const res = await request.get('/session', { baseUrl, json: true });
     assert.equal(res.statusCode, 500);
-    assert.equal(res.body.err.message, 'req[appSession] is already set, do you run this middleware twice?');
+    assert.equal(
+      res.body.err.message,
+      'req[appSession] is already set, do you run this middleware twice?'
+    );
   });
 
   it('should throw for reassigning session', async () => {

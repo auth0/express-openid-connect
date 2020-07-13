@@ -6,13 +6,13 @@ const defaultConfig = {
   secret: '__test_session_secret__',
   clientID: '__test_client_id__',
   issuerBaseURL: 'https://op.example.com',
-  baseURL: 'https://example.org'
+  baseURL: 'https://example.org',
 };
 
-const validateAuthorizationParams = (authorizationParams) => getConfig({ ...defaultConfig, authorizationParams });
+const validateAuthorizationParams = (authorizationParams) =>
+  getConfig({ ...defaultConfig, authorizationParams });
 
 describe('get config', () => {
-
   afterEach(() => sinon.restore());
 
   it('should get config for default config', () => {
@@ -21,9 +21,9 @@ describe('get config', () => {
       authorizationParams: {
         response_type: 'id_token',
         response_mode: 'form_post',
-        scope: 'openid profile email'
+        scope: 'openid profile email',
       },
-      authRequired: true
+      authRequired: true,
     });
   });
 
@@ -40,9 +40,9 @@ describe('get config', () => {
       authorizationParams: {
         response_type: 'id_token',
         response_mode: 'form_post',
-        scope: 'openid profile email'
+        scope: 'openid profile email',
       },
-      authRequired: true
+      authRequired: true,
     });
   });
 
@@ -51,34 +51,38 @@ describe('get config', () => {
       ...defaultConfig,
       clientSecret: '__test_client_secret__',
       authorizationParams: {
-        response_type: 'code'
-      }
+        response_type: 'code',
+      },
     });
     assert.deepInclude(config, {
       authorizationParams: {
         response_type: 'code',
-        scope: 'openid profile email'
+        scope: 'openid profile email',
       },
-      authRequired: true
+      authRequired: true,
     });
   });
 
   it('should require a fully qualified URL for issuer', () => {
     const config = {
       ...defaultConfig,
-      issuerBaseURL: 'www.example.com'
+      issuerBaseURL: 'www.example.com',
     };
-    assert.throws(() => getConfig(config), TypeError, '"issuerBaseURL" must be a valid uri');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"issuerBaseURL" must be a valid uri'
+    );
   });
 
   it('should set idpLogout to true when auth0Logout is true', () => {
     const config = getConfig({
       ...defaultConfig,
-      auth0Logout: true
+      auth0Logout: true,
     });
     assert.include(config, {
       auth0Logout: true,
-      idpLogout: true
+      idpLogout: true,
     });
   });
 
@@ -86,18 +90,18 @@ describe('get config', () => {
     const config = getConfig(defaultConfig);
     assert.include(config, {
       auth0Logout: false,
-      idpLogout: false
+      idpLogout: false,
     });
   });
 
   it('should not set auth0Logout to true when idpLogout is true', () => {
     const config = getConfig({
       ...defaultConfig,
-      idpLogout: true
+      idpLogout: true,
     });
     assert.include(config, {
       auth0Logout: false,
-      idpLogout: true
+      idpLogout: true,
     });
   });
 
@@ -116,8 +120,8 @@ describe('get config', () => {
       routes: {
         callback: '/custom-callback',
         login: '/custom-login',
-        logout: '/custom-logout'
-      }
+        logout: '/custom-logout',
+      },
     });
     assert.include(config.routes, {
       callback: '/custom-callback',
@@ -135,7 +139,7 @@ describe('get config', () => {
         sameSite: 'Lax',
         httpOnly: true,
         transient: false,
-      }
+      },
     });
   });
 
@@ -151,9 +155,9 @@ describe('get config', () => {
           transient: true,
           httpOnly: false,
           secure: true,
-          sameSite: 'Strict'
-        }
-      }
+          sameSite: 'Strict',
+        },
+      },
     });
     assert.deepInclude(config, {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
@@ -168,8 +172,8 @@ describe('get config', () => {
           httpOnly: false,
           secure: true,
           sameSite: 'Strict',
-        }
-      }
+        },
+      },
     });
   });
 
@@ -215,15 +219,18 @@ describe('get config', () => {
         ...defaultConfig,
         secret: '__test_session_secret__',
         session: {
-          rollingDuration: 3.14159
-        }
+          rollingDuration: 3.14159,
+        },
       });
     }, '"session.rollingDuration" must be an integer');
   });
 
   it('should fail when app session secret is invalid', function () {
     assert.throws(() => {
-      getConfig(({ ...defaultConfig, secret: { key: '__test_session_secret__' } }));
+      getConfig({
+        ...defaultConfig,
+        secret: { key: '__test_session_secret__' },
+      });
     }, '"secret" must be one of [string, binary, array]');
   });
 
@@ -234,9 +241,9 @@ describe('get config', () => {
         secret: '__test_session_secret__',
         session: {
           cookie: {
-            httpOnly: '__invalid_httponly__'
-          }
-        }
+            httpOnly: '__invalid_httponly__',
+          },
+        },
       });
     }, '"session.cookie.httpOnly" must be a boolean');
   });
@@ -248,9 +255,9 @@ describe('get config', () => {
         secret: '__test_session_secret__',
         session: {
           cookie: {
-            secure: '__invalid_secure__'
-          }
-        }
+            secure: '__invalid_secure__',
+          },
+        },
       });
     }, '"session.cookie.secure" must be a boolean');
   });
@@ -262,9 +269,9 @@ describe('get config', () => {
         secret: '__test_session_secret__',
         session: {
           cookie: {
-            sameSite: '__invalid_samesite__'
-          }
-        }
+            sameSite: '__invalid_samesite__',
+          },
+        },
       });
     }, '"session.cookie.sameSite" must be one of [Lax, Strict, None]');
   });
@@ -276,37 +283,57 @@ describe('get config', () => {
         secret: '__test_session_secret__',
         session: {
           cookie: {
-            domain: false
-          }
-        }
+            domain: false,
+          },
+        },
       });
     }, '"session.cookie.domain" must be a string');
   });
 
-  it('shouldn\'t allow a secret of less than 8 chars', () => {
-    assert.throws(() => getConfig({ ...defaultConfig, secret: 'short' }), TypeError, '"secret" does not match any of the allowed types');
-    assert.throws(() => getConfig({ ...defaultConfig, secret: ['short', 'too'] }), TypeError, '"secret[0]" does not match any of the allowed types');
-    assert.throws(() => getConfig({ ...defaultConfig, secret: Buffer.from('short') }), TypeError, '"secret" must be at least 8 bytes');
+  it("shouldn't allow a secret of less than 8 chars", () => {
+    assert.throws(
+      () => getConfig({ ...defaultConfig, secret: 'short' }),
+      TypeError,
+      '"secret" does not match any of the allowed types'
+    );
+    assert.throws(
+      () => getConfig({ ...defaultConfig, secret: ['short', 'too'] }),
+      TypeError,
+      '"secret[0]" does not match any of the allowed types'
+    );
+    assert.throws(
+      () => getConfig({ ...defaultConfig, secret: Buffer.from('short') }),
+      TypeError,
+      '"secret" must be at least 8 bytes'
+    );
   });
 
-  it('shouldn\'t allow code flow without clientSecret', () => {
+  it("shouldn't allow code flow without clientSecret", () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
-        response_type: 'code'
-      }
+        response_type: 'code',
+      },
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for a response_type that includes code');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for a response_type that includes code'
+    );
   });
 
-  it('shouldn\'t allow hybrid flow without clientSecret', () => {
+  it("shouldn't allow hybrid flow without clientSecret", () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
-        response_type: 'code id_token'
-      }
+        response_type: 'code id_token',
+      },
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for a response_type that includes code');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for a response_type that includes code'
+    );
   });
 
   it('should require clientSecret for ID tokens with HMAC based algorithms', () => {
@@ -314,10 +341,14 @@ describe('get config', () => {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
       authorizationParams: {
-        response_type: 'id_token'
-      }
+        response_type: 'id_token',
+      },
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HMAC based algorithms');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+    );
   });
 
   it('should require clientSecret for ID tokens in hybrid flow with HMAC based algorithms', () => {
@@ -325,10 +356,14 @@ describe('get config', () => {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
       authorizationParams: {
-        response_type: 'code id_token'
-      }
+        response_type: 'code id_token',
+      },
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HMAC based algorithms');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+    );
   });
 
   it('should require clientSecret for ID tokens in code flow with HMAC based algorithms', () => {
@@ -336,10 +371,14 @@ describe('get config', () => {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
       authorizationParams: {
-        response_type: 'code'
-      }
+        response_type: 'code',
+      },
     };
-    assert.throws(() => getConfig(config), TypeError, '"clientSecret" is required for ID tokens with HMAC based algorithms');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+    );
   });
 
   it('should allow empty auth params', () => {
@@ -348,63 +387,145 @@ describe('get config', () => {
   });
 
   it('should not allow empty scope', () => {
-    assert.throws(() => validateAuthorizationParams({ scope: null }), TypeError, '"authorizationParams.scope" must be a string');
-    assert.throws(() => validateAuthorizationParams({ scope: '' }), TypeError, '"authorizationParams.scope" is not allowed to be empty');
+    assert.throws(
+      () => validateAuthorizationParams({ scope: null }),
+      TypeError,
+      '"authorizationParams.scope" must be a string'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ scope: '' }),
+      TypeError,
+      '"authorizationParams.scope" is not allowed to be empty'
+    );
   });
 
   it('should not allow scope without openid', () => {
-    assert.throws(() => validateAuthorizationParams({ scope: 'profile email' }), TypeError, '"authorizationParams.scope" with value "profile email" fails to match the contains openid pattern');
+    assert.throws(
+      () => validateAuthorizationParams({ scope: 'profile email' }),
+      TypeError,
+      '"authorizationParams.scope" with value "profile email" fails to match the contains openid pattern'
+    );
   });
 
   it('should allow scope with openid', () => {
-    assert.doesNotThrow(() => validateAuthorizationParams({ scope: 'openid read:users' }));
-    assert.doesNotThrow(() => validateAuthorizationParams({ scope: 'read:users openid' }));
-    assert.doesNotThrow(() => validateAuthorizationParams({ scope: 'read:users openid profile email' }));
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ scope: 'openid read:users' })
+    );
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ scope: 'read:users openid' })
+    );
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ scope: 'read:users openid profile email' })
+    );
   });
 
   it('should not allow empty response_type', () => {
-    assert.throws(() => validateAuthorizationParams({ response_type: null }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
-    assert.throws(() => validateAuthorizationParams({ response_type: '' }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: null }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: '' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
   });
 
   it('should not allow invalid response_types', () => {
-    assert.throws(() => validateAuthorizationParams({ response_type: 'foo' }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
-    assert.throws(() => validateAuthorizationParams({ response_type: 'foo id_token' }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
-    assert.throws(() => validateAuthorizationParams({ response_type: 'id_token code' }), TypeError, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: 'foo' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: 'foo id_token' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: 'id_token code' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
   });
 
   it('should allow valid response_types', () => {
     const config = (authorizationParams) => ({
       ...defaultConfig,
       clientSecret: 'foo',
-      authorizationParams
+      authorizationParams,
     });
-    assert.doesNotThrow(() => validateAuthorizationParams({ response_type: 'id_token' }));
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ response_type: 'id_token' })
+    );
     assert.doesNotThrow(() => config({ response_type: 'code id_token' }));
     assert.doesNotThrow(() => config({ response_type: 'code' }));
   });
 
   it('should not allow empty response_mode', () => {
-    assert.throws(() => validateAuthorizationParams({ response_mode: null }), TypeError, '"authorizationParams.response_mode" must be [form_post]');
-    assert.throws(() => validateAuthorizationParams({ response_mode: '' }), TypeError, '"authorizationParams.response_mode" must be [form_post]');
-    assert.throws(() => validateAuthorizationParams({ response_type: 'code', response_mode: '' }), TypeError, '"authorizationParams.response_mode" must be one of [query, form_post]');
+    assert.throws(
+      () => validateAuthorizationParams({ response_mode: null }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_mode: '' }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'code',
+          response_mode: '',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be one of [query, form_post]'
+    );
   });
 
   it('should not allow response_type id_token and response_mode query', () => {
-    assert.throws(() => validateAuthorizationParams({ response_type: 'id_token', response_mode: 'query' }), TypeError, '"authorizationParams.response_mode" must be [form_post]');
-    assert.throws(() => validateAuthorizationParams({ response_type: 'code id_token', response_mode: 'query' }), TypeError, '"authorizationParams.response_mode" must be [form_post]');
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'id_token',
+          response_mode: 'query',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'code id_token',
+          response_mode: 'query',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
   });
 
   it('should allow valid response_type response_mode combinations', () => {
     const config = (authorizationParams) => ({
       ...defaultConfig,
       clientSecret: 'foo',
-      authorizationParams
+      authorizationParams,
     });
-    assert.doesNotThrow(() => config({ response_type: 'code', response_mode: 'query' }));
-    assert.doesNotThrow(() => config({ response_type: 'code', response_mode: 'form_post' }));
-    assert.doesNotThrow(() => validateAuthorizationParams({ response_type: 'id_token', response_mode: 'form_post' }));
-    assert.doesNotThrow(() => config({ response_type: 'code id_token', response_mode: 'form_post' }));
+    assert.doesNotThrow(() =>
+      config({ response_type: 'code', response_mode: 'query' })
+    );
+    assert.doesNotThrow(() =>
+      config({ response_type: 'code', response_mode: 'form_post' })
+    );
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({
+        response_type: 'id_token',
+        response_mode: 'form_post',
+      })
+    );
+    assert.doesNotThrow(() =>
+      config({ response_type: 'code id_token', response_mode: 'form_post' })
+    );
   });
-
 });

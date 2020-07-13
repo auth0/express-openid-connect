@@ -4,7 +4,7 @@
  *
  * This middleware needs to be included after your application
  * routes.
-*/
+ */
 module.exports = function () {
   return (err, req, res, next) => {
     if (err.statusCode === 401) {

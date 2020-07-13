@@ -10,7 +10,7 @@ The `auth()` middleware has a few configuration properties that are required for
 
 - **`secret`** - The secret used to derive various keys utilized by the library for signing, encryption, etc. It must be a string, buffer, or an array of strings or buffers. When an array is provided, the first member is used for current operations while the other array members are used for decrypting/verifying old cookies, this enables secret rotation. This can be set automatically with a `SECRET` variable in your environment.
 - **`baseURL`** - The root URL for the application router. This can be set automatically with a `BASE_URL` variable in your environment.
-- **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID`  variable in your environment.
+- **`clientID`** - The Client ID for your application. This can be set automatically with a `CLIENT_ID` variable in your environment.
 - **`issuerBaseURL`** - The root URL for the token issuer with no trailing slash. In Auth0, this is your Application's **Domain** prepended with `https://`. This can be set automatically with an `ISSUER_BASE_URL` variable in your environment.
 
 If you are using a response type that includes `code`, you will need an additional configuration property:
@@ -67,13 +67,15 @@ New values can be passed in to change what is returned from the authorization se
 For example, to receive an access token for an API, you could initialize like the sample below. Note that `response_mode` can be omitted because the OAuth2 default mode of `query` is fine:
 
 ```js
-app.use(auth({
-  authorizationParams: {
-    response_type: "code",
-    scope: "openid profile email read:reports",
-    audience: "https://your-api-identifier"
-  }
-}));
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code',
+      scope: 'openid profile email read:reports',
+      audience: 'https://your-api-identifier',
+    },
+  })
+);
 ```
 
 Additional custom parameters can be added as well:
@@ -99,8 +101,8 @@ The `requiresAuth()` function is an optional middleware that protects specific a
 
 ```js
 const { auth, requiresAuth } = require('express-openid-connect');
-app.use( auth( { authRequired: false } ) );
-app.use( '/admin', requiresAuth(), (req, res) => res.render('admin') );
+app.use(auth({ authRequired: false }));
+app.use('/admin', requiresAuth(), (req, res) => res.render('admin'));
 ```
 
 Using `requiresAuth()` on its own without initializing `auth()` will throw a `401 Unauthorized` error instead of triggering the login process:

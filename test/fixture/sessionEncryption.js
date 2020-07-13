@@ -1,7 +1,7 @@
 const { JWK, JWE } = require('jose');
 
 const { encryption: deriveKey } = require('../../lib/hkdf');
-const epoch = () => Date.now() / 1000 | 0;
+const epoch = () => (Date.now() / 1000) | 0;
 
 const key = JWK.asKey(deriveKey('__test_secret__'));
 const payload = JSON.stringify({ sub: '__test_sub__' });
@@ -13,13 +13,16 @@ const encryptOpts = {
   enc: 'A256GCM',
   uat: epochNow,
   iat: epochNow,
-  exp: epochNow + weekInSeconds
+  exp: epochNow + weekInSeconds,
 };
 
 const jwe = JWE.encrypt(payload, key, encryptOpts);
-const { cleartext } = JWE.decrypt(jwe, key, { complete: true, algorithms: [encryptOpts.enc] });
+const { cleartext } = JWE.decrypt(jwe, key, {
+  complete: true,
+  algorithms: [encryptOpts.enc],
+});
 
 module.exports = {
   encrypted: jwe,
-  decrypted: cleartext
+  decrypted: cleartext,
 };

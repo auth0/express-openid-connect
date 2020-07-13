@@ -20,7 +20,7 @@ describe('client initialization', function () {
       clientID: '__test_client_id__',
       clientSecret: '__test_client_secret__',
       issuerBaseURL: 'https://op.example.com',
-      baseURL: 'https://example.org'
+      baseURL: 'https://example.org',
     });
 
     let client;
@@ -34,28 +34,40 @@ describe('client initialization', function () {
     });
 
     it('should send the correct default headers', async function () {
-      const headers = await client.introspect('__test_token__', '__test_hint__');
+      const headers = await client.introspect(
+        '__test_token__',
+        '__test_hint__'
+      );
       const headerProps = Object.getOwnPropertyNames(headers);
 
       assert.include(headerProps, 'auth0-client');
 
-      const decodedTelemetry = JSON.parse(Buffer.from(headers['auth0-client'], 'base64').toString('ascii'));
+      const decodedTelemetry = JSON.parse(
+        Buffer.from(headers['auth0-client'], 'base64').toString('ascii')
+      );
 
       assert.equal('express-oidc', decodedTelemetry.name);
       assert.equal(pkg.version, decodedTelemetry.version);
       assert.equal(process.version, decodedTelemetry.env.node);
 
       assert.include(headerProps, 'user-agent');
-      assert.equal(`express-openid-connect/${pkg.version}`, headers['user-agent']);
+      assert.equal(
+        `express-openid-connect/${pkg.version}`,
+        headers['user-agent']
+      );
     });
 
     it('should not strip new headers', async function () {
-      const response = await client.requestResource('https://op.example.com/introspection', 'token', {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer foo'
+      const response = await client.requestResource(
+        'https://op.example.com/introspection',
+        'token',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer foo',
+          },
         }
-      });
+      );
       const headerProps = Object.getOwnPropertyNames(JSON.parse(response.body));
 
       assert.include(headerProps, 'authorization');
@@ -69,15 +81,18 @@ describe('client initialization', function () {
       clientSecret: '__test_client_secret__',
       issuerBaseURL: 'https://test-too.auth0.com',
       baseURL: 'https://example.org',
-      idTokenSigningAlg: 'RS256'
+      idTokenSigningAlg: 'RS256',
     });
 
     it('should prefer user configuration regardless of idP discovery', async function () {
       nock('https://test-too.auth0.com')
         .get('/.well-known/openid-configuration')
-        .reply(200, Object.assign({}, wellKnown, {
-          id_token_signing_alg_values_supported: ['none', 'RS256']
-        }));
+        .reply(
+          200,
+          Object.assign({}, wellKnown, {
+            id_token_signing_alg_values_supported: ['none', 'RS256'],
+          })
+        );
 
       const client = await getClient(config);
       assert.equal(client.id_token_signed_response_alg, 'RS256');
