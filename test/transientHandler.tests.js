@@ -14,10 +14,16 @@ describe('transientHandler', function () {
   let generateSignature;
 
   beforeEach(async function () {
-    transientHandler = new TransientCookieHandler({ secret, legacySameSiteCookie: true });
-    generateSignature = (cookie, value) => JWS.sign.flattened(
-      Buffer.from(`${cookie}=${value}`), transientHandler.keyStore, { alg: 'HS256', b64: false, crit: ['b64'] }
-    ).signature;
+    transientHandler = new TransientCookieHandler({
+      secret,
+      legacySameSiteCookie: true,
+    });
+    generateSignature = (cookie, value) =>
+      JWS.sign.flattened(
+        Buffer.from(`${cookie}=${value}`),
+        transientHandler.keyStore,
+        { alg: 'HS256', b64: false, crit: ['b64'] }
+      ).signature;
     res = { cookie: sinon.spy(), clearCookie: sinon.spy() };
   });
 
@@ -36,16 +42,20 @@ describe('transientHandler', function () {
     });
 
     it('should use the req.secure property to automatically set cookies secure when on https', function () {
-      transientHandler.store('test_key', { secure: true }, res, { sameSite: 'Lax' });
-      transientHandler.store('test_key', { secure: false }, res, { sameSite: 'Lax' });
+      transientHandler.store('test_key', { secure: true }, res, {
+        sameSite: 'Lax',
+      });
+      transientHandler.store('test_key', { secure: false }, res, {
+        sameSite: 'Lax',
+      });
 
       sinon.assert.calledWithMatch(res.cookie.firstCall, 'test_key', '', {
         sameSite: 'Lax',
-        secure: true
+        secure: true,
       });
       sinon.assert.calledWithMatch(res.cookie.secondCall, 'test_key', '', {
         sameSite: 'Lax',
-        secure: false
+        secure: false,
       });
     });
 
@@ -55,17 +65,20 @@ describe('transientHandler', function () {
       sinon.assert.calledWithMatch(res.cookie, 'test_key', '', {
         sameSite: 'None',
         secure: true,
-        httpOnly: true
+        httpOnly: true,
       });
       sinon.assert.calledWithMatch(res.cookie, '_test_key', '', {
         sameSite: undefined,
         secure: undefined,
-        httpOnly: true
+        httpOnly: true,
       });
     });
 
     it('should turn off fallback', function () {
-      transientHandler = new TransientCookieHandler({ secret, legacySameSiteCookie: false });
+      transientHandler = new TransientCookieHandler({
+        secret,
+        legacySameSiteCookie: false,
+      });
       transientHandler.store('test_key', {}, res);
 
       sinon.assert.calledWith(res.cookie, 'test_key');
@@ -76,13 +89,15 @@ describe('transientHandler', function () {
       transientHandler.store('test_key', {}, res, { sameSite: 'Lax' });
 
       sinon.assert.calledWithMatch(res.cookie, 'test_key', '', {
-        sameSite: 'Lax'
+        sameSite: 'Lax',
       });
       sinon.assert.calledOnce(res.cookie);
     });
 
     it('should use the passed-in value', function () {
-      const value = transientHandler.store('test_key', {}, res, { value: '__test_value__' });
+      const value = transientHandler.store('test_key', {}, res, {
+        value: '__test_value__',
+      });
       assert.equal('__test_value__', value);
       const re = /^__test_value__\./;
       sinon.assert.calledWithMatch(res.cookie, 'test_key', re);
@@ -92,14 +107,16 @@ describe('transientHandler', function () {
 
   describe('getOnce()', function () {
     it('should return undefined if there are no cookies', function () {
-      assert.isUndefined(transientHandler.getOnce('test_key', reqWithCookies(), res));
+      assert.isUndefined(
+        transientHandler.getOnce('test_key', reqWithCookies(), res)
+      );
     });
 
     it('should return main value and delete both cookies by default', function () {
       const signature = generateSignature('test_key', 'foo');
       const cookies = {
         test_key: `foo.${signature}`,
-        _test_key: `foo.${signature}`
+        _test_key: `foo.${signature}`,
       };
       const req = reqWithCookies(cookies);
       const value = transientHandler.getOnce('test_key', req, res);
@@ -111,7 +128,9 @@ describe('transientHandler', function () {
     });
 
     it('should return fallback value and delete both cookies if main value not present', function () {
-      const cookies = { _test_key: `foo.${generateSignature('_test_key', 'foo')}` };
+      const cookies = {
+        _test_key: `foo.${generateSignature('_test_key', 'foo')}`,
+      };
       const req = reqWithCookies(cookies);
       const value = transientHandler.getOnce('test_key', req, res);
 
@@ -125,10 +144,13 @@ describe('transientHandler', function () {
       const signature = generateSignature('test_key', 'foo');
       const cookies = {
         test_key: `foo.${signature}`,
-        _test_key: `foo.${signature}`
+        _test_key: `foo.${signature}`,
       };
       const req = reqWithCookies(cookies);
-      transientHandler = new TransientCookieHandler({ secret, legacySameSiteCookie: false });
+      transientHandler = new TransientCookieHandler({
+        secret,
+        legacySameSiteCookie: false,
+      });
       const value = transientHandler.getOnce('test_key', req, res);
 
       assert.equal(value, 'foo');
@@ -137,10 +159,10 @@ describe('transientHandler', function () {
       sinon.assert.calledOnce(res.clearCookie);
     });
 
-    it('should not throw when it can\'t verify the signature', function () {
+    it("should not throw when it can't verify the signature", function () {
       const cookies = {
         test_key: 'foo.bar',
-        _test_key: 'foo.bar'
+        _test_key: 'foo.bar',
       };
       const req = reqWithCookies(cookies);
       const value = transientHandler.getOnce('test_key', req, res);

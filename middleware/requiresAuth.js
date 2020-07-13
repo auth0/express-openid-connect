@@ -4,23 +4,31 @@ const debug = require('../lib/debug');
 const defaultRequiresLogin = (req) => !req.oidc.isAuthenticated();
 
 /**
-* Returns a middleware that checks whether an end-user is authenticated.
-* If end-user is not authenticated `res.oidc.login()` is triggered for an HTTP
-* request that can perform a redirect.
-*/
+ * Returns a middleware that checks whether an end-user is authenticated.
+ * If end-user is not authenticated `res.oidc.login()` is triggered for an HTTP
+ * request that can perform a redirect.
+ */
 async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   if (!req.oidc) {
-    next(new Error('req.oidc is not found, did you include the auth middleware?'));
+    next(
+      new Error('req.oidc is not found, did you include the auth middleware?')
+    );
     return;
   }
 
   if (requiresLoginCheck(req)) {
     if (!res.oidc.errorOnRequiredAuth) {
-      debug.trace('Authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()');
+      debug.trace(
+        'Authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
+      );
       return res.oidc.login();
     }
-    debug.trace('Authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error');
-    next(createError.Unauthorized('Authentication is required for this route.'));
+    debug.trace(
+      'Authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
+    );
+    next(
+      createError.Unauthorized('Authentication is required for this route.')
+    );
     return;
   }
 
@@ -29,18 +37,28 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   next();
 }
 
-module.exports = function requiresAuth(requiresLoginCheck = defaultRequiresLogin) {
+module.exports = function requiresAuth(
+  requiresLoginCheck = defaultRequiresLogin
+) {
   return requiresLoginMiddleware.bind(undefined, requiresLoginCheck);
 };
 
-function checkJSONprimitive (value) {
-  if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean' && value !== null) {
+function checkJSONprimitive(value) {
+  if (
+    typeof value !== 'string' &&
+    typeof value !== 'number' &&
+    typeof value !== 'boolean' &&
+    value !== null
+  ) {
     throw new TypeError('"expected" must be a string, number, boolean or null');
   }
 }
 
 // TODO: find a better name
-module.exports.withClaimEqualCheck = function withClaimEqualCheck (claim, expected) {
+module.exports.withClaimEqualCheck = function withClaimEqualCheck(
+  claim,
+  expected
+) {
   // check that claim is a string value
   if (typeof claims !== 'string') {
     throw new TypeError('"claim" must be a string');
@@ -67,7 +85,10 @@ module.exports.withClaimEqualCheck = function withClaimEqualCheck (claim, expect
 };
 
 // TODO: find a better name
-module.exports.withClaimIncluding = function withClaimIncluding (claim, ...expected) {
+module.exports.withClaimIncluding = function withClaimIncluding(
+  claim,
+  ...expected
+) {
   // check that claim is a string value
   if (typeof claims !== 'string') {
     throw new TypeError('"claim" must be a string');
@@ -100,7 +121,7 @@ module.exports.withClaimIncluding = function withClaimIncluding (claim, ...expec
 };
 
 // TODO: find a better name
-module.exports.custom = function custom (func) {
+module.exports.custom = function custom(func) {
   // check that func is a function
   if (typeof func !== 'function' || func.constructor.name !== 'Function') {
     throw new TypeError('"function" must be a function');

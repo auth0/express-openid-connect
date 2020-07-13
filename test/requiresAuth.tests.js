@@ -4,7 +4,7 @@ const { auth, requiresAuth } = require('./..');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
-  followRedirect: false
+  followRedirect: false,
 });
 
 const defaultConfig = {
@@ -15,7 +15,6 @@ const defaultConfig = {
 };
 
 describe('requiresAuth', () => {
-
   let server;
   const baseUrl = 'http://localhost:3000';
 
@@ -26,12 +25,15 @@ describe('requiresAuth', () => {
   });
 
   it('should ask anonymous user to login when visiting a protected route', async () => {
-    server = await createServer(auth({
-      ...defaultConfig,
-      authRequired: false
-    }), requiresAuth());
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      requiresAuth()
+    );
     const response = await request({ baseUrl, url: '/protected' });
-    const state = (new URL(response.headers.location)).searchParams.get('state');
+    const state = new URL(response.headers.location).searchParams.get('state');
     const decoded = Buffer.from(state, 'base64');
     const parsed = JSON.parse(decoded);
 
@@ -41,11 +43,14 @@ describe('requiresAuth', () => {
   });
 
   it('should return 401 when anonymous user visits a protected route', async () => {
-    server = await createServer(auth({
-      ...defaultConfig,
-      authRequired: false,
-      errorOnRequiredAuth: true
-    }), requiresAuth());
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+        errorOnRequiredAuth: true,
+      }),
+      requiresAuth()
+    );
     const response = await request({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
@@ -53,7 +58,12 @@ describe('requiresAuth', () => {
 
   it('should throw when no auth middleware', async () => {
     server = await createServer(null, requiresAuth());
-    const { body: { err } } = await request({ baseUrl, url: '/protected', json: true });
-    assert.equal(err.message, 'req.oidc is not found, did you include the auth middleware?');
+    const {
+      body: { err },
+    } = await request({ baseUrl, url: '/protected', json: true });
+    assert.equal(
+      err.message,
+      'req.oidc is not found, did you include the auth middleware?'
+    );
   });
 });

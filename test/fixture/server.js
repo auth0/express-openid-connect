@@ -33,7 +33,9 @@ module.exports.create = function (router, protect, path) {
       idToken: req.oidc.idToken,
       refreshToken: req.oidc.refreshToken,
       accessToken: req.oidc.accessToken,
-      accessTokenExpired: req.oidc.accessToken ? req.oidc.accessToken.isExpired() : undefined,
+      accessTokenExpired: req.oidc.accessToken
+        ? req.oidc.accessToken.isExpired()
+        : undefined,
       idTokenClaims: req.oidc.idTokenClaims,
     });
   });
@@ -46,8 +48,7 @@ module.exports.create = function (router, protect, path) {
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
-    res.status(err.status || 500)
-      .json({ err: { message: err.message } });
+    res.status(err.status || 500).json({ err: { message: err.message } });
   });
 
   let mainApp;

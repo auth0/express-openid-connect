@@ -16,15 +16,18 @@ const enforceLeadingSlash = (path) => {
 };
 
 /**
-* Returns a router with two routes /login and /callback
-*
-* @param {Object} [params] The parameters object; see index.d.ts for types and descriptions.
-*
-* @returns {express.Router} the router
-*/
+ * Returns a router with two routes /login and /callback
+ *
+ * @param {Object} [params] The parameters object; see index.d.ts for types and descriptions.
+ *
+ * @returns {express.Router} the router
+ */
 module.exports = function (params) {
   const config = getConfig(params);
-  debug.trace('configuration object processed, resulting configuration:', config);
+  debug.trace(
+    'configuration object processed, resulting configuration:',
+    config
+  );
   const router = new express.Router();
   const transient = new TransientCookieHandler(config);
 
@@ -41,10 +44,8 @@ module.exports = function (params) {
   if (config.routes.login) {
     const path = enforceLeadingSlash(config.routes.login);
     debug.trace(`adding GET ${path} route`);
-    router.get(
-      path,
-      express.urlencoded({ extended: false }),
-      (req, res) => res.oidc.login({ returnTo: config.baseURL })
+    router.get(path, express.urlencoded({ extended: false }), (req, res) =>
+      res.oidc.login({ returnTo: config.baseURL })
     );
   } else {
     debug.trace('login handling route not applied');
@@ -54,10 +55,7 @@ module.exports = function (params) {
   if (config.routes.logout) {
     const path = enforceLeadingSlash(config.routes.logout);
     debug.trace(`adding GET ${path} route`);
-    router.get(
-      path,
-      (req, res) => res.oidc.logout()
-    );
+    router.get(path, (req, res) => res.oidc.logout());
   } else {
     debug.trace('logout handling route not applied');
   }
@@ -74,9 +72,11 @@ module.exports = function (params) {
       async (req, res, next) => {
         next = cb(next).once();
 
-        client = client || await getClient(config).catch((err) => {
-          next(err);
-        });
+        client =
+          client ||
+          (await getClient(config).catch((err) => {
+            next(err);
+          }));
 
         if (!client) {
           return;
@@ -90,7 +90,10 @@ module.exports = function (params) {
           try {
             const callbackParams = client.callbackParams(req);
             expectedState = transient.getOnce('state', req, res);
-            const max_age = parseInt(transient.getOnce('max_age', req, res), 10);
+            const max_age = parseInt(
+              transient.getOnce('max_age', req, res),
+              10
+            );
             const code_verifier = transient.getOnce('code_verifier', req, res);
             const nonce = transient.getOnce('nonce', req, res);
 
@@ -98,7 +101,7 @@ module.exports = function (params) {
               max_age,
               code_verifier,
               nonce,
-              state: expectedState
+              state: expectedState,
             });
           } catch (err) {
             throw createError.BadRequest(err.message);
@@ -113,7 +116,7 @@ module.exports = function (params) {
             access_token: tokenSet.access_token,
             refresh_token: tokenSet.refresh_token,
             token_type: tokenSet.token_type,
-            expires_at: tokenSet.expires_at
+            expires_at: tokenSet.expires_at,
           });
 
           next();
@@ -121,22 +124,28 @@ module.exports = function (params) {
           next(err);
         }
       },
-      (req, res) => res.redirect(req.openidState.returnTo || config.baseURL)
+      (req, res) => res.redirect(req.openidState.returnTo || config.baseURL),
     ];
 
     debug.trace(`adding GET ${path} route`);
     router.get(path, ...callbackStack);
     debug.trace(`adding POST ${path} route`);
-    router.post(path, express.urlencoded({ extended: false }), ...callbackStack);
+    router.post(
+      path,
+      express.urlencoded({ extended: false }),
+      ...callbackStack
+    );
   }
 
   if (config.authRequired) {
-    debug.trace('authentication is required for all routes this middleware is applied to');
+    debug.trace(
+      'authentication is required for all routes this middleware is applied to'
+    );
     router.use(requiresAuth());
   } else {
     debug.trace(
       'authentication is not required for any of the routes this middleware is applied to ' +
-      'see and apply `requiresAuth` middlewares to your protected resources'
+        'see and apply `requiresAuth` middlewares to your protected resources'
     );
   }
 

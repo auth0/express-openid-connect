@@ -10,8 +10,8 @@ describe('with an unsupported response type', function () {
         baseURL: 'https://example.org',
         issuerBaseURL: 'https://op.example.com',
         authorizationParams: {
-          response_type: '__invalid_response_type__'
-        }
+          response_type: '__invalid_response_type__',
+        },
       });
     }, '"authorizationParams.response_type" must be one of [id_token, code id_token, code]');
   });

@@ -1,4 +1,3 @@
-
 # Examples
 
 ## 1. Basic setup
@@ -17,9 +16,11 @@ APP_SESSION_SECRET=LONG_RANDOM_STRING
 // app.js
 const { auth } = require('express-openid-connect');
 
-app.use(auth({
-  required: true
-}))
+app.use(
+  auth({
+    required: true,
+  })
+);
 
 app.use('/', (req, res) => {
   res.send(`hello ${req.openid.user.name}`);
@@ -39,16 +40,22 @@ If your application has routes accessible to anonymous users, you can enable aut
 ```js
 const { auth, requiresAuth } = require('express-openid-connect');
 
-app.use(auth({
-  required: false
-}));
+app.use(
+  auth({
+    required: false,
+  })
+);
 
 // Anyone can access the homepage
 app.get('/', (req, res) => res.render('home'));
 
 // Require routes under the /admin/ prefix to check authentication.
-app.get('/admin/users', requiresAuth(), (req, res) => res.render('admin-users'));
-app.get('/admin/posts', requiresAuth(), (req, res) => res.render('admin-posts'));
+app.get('/admin/users', requiresAuth(), (req, res) =>
+  res.render('admin-users')
+);
+app.get('/admin/posts', requiresAuth(), (req, res) =>
+  res.render('admin-posts')
+);
 ```
 
 Another way to configure this scenario:
@@ -56,9 +63,11 @@ Another way to configure this scenario:
 ```js
 const { auth } = require('express-openid-connect');
 
-app.use(auth({
-  required: req => req.originalUrl.startsWith('/admin/')
-}));
+app.use(
+  auth({
+    required: (req) => req.originalUrl.startsWith('/admin/'),
+  })
+);
 
 app.use('/', (req, res) => res.render('home'));
 app.use('/admin/users', (req, res) => res.render('admin-users'));
@@ -79,11 +88,13 @@ app.get('/account/logout', (req, res) => res.openid.logout());
 ... or you can define specific routes in configuration keys where the default handler will run:
 
 ```js
-app.use(auth({
-  redirectUriPath: '/custom-callback-path',
-  loginPath: '/custom-login-path',
-  logoutPath: '/custom-logout-path',
-}));
+app.use(
+  auth({
+    redirectUriPath: '/custom-callback-path',
+    loginPath: '/custom-login-path',
+    logoutPath: '/custom-logout-path',
+  })
+);
 ```
 
 Please note that the login and logout routes are not required. Trying to access any protected resource triggers a redirect directly to Auth0 to login. These are helpful if you need to provide user-facing links to login or logout.
@@ -96,26 +107,30 @@ If, for example, you want the user session to be stored on the server, you can u
 
 ```js
 const session = require('express-session');
-app.use(session({
-  secret: 'replace this with a long, random, static string',
-  cookie: {
-    // Sets the session cookie to expire after 7 days.
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
-}));
+app.use(
+  session({
+    secret: 'replace this with a long, random, static string',
+    cookie: {
+      // Sets the session cookie to expire after 7 days.
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  })
+);
 
-app.use(auth({
-  // Setting this configuration key to false will turn off internal session handling.
-  appSession: false,
-  handleCallback: async function (req, res, next) {
-    // This will store the user identity claims in the session.
-    req.session.userIdentity = req.openidTokens.claims();
-    next();
-  },
-  getUser: async function (req) {
-    return req.session.userIdentity;
-  }
-}));
+app.use(
+  auth({
+    // Setting this configuration key to false will turn off internal session handling.
+    appSession: false,
+    handleCallback: async function (req, res, next) {
+      // This will store the user identity claims in the session.
+      req.session.userIdentity = req.openidTokens.claims();
+      next();
+    },
+    getUser: async function (req) {
+      return req.session.userIdentity;
+    },
+  })
+);
 ```
 
 ## 5. Obtaining and storing access tokens to call external APIs
@@ -126,33 +141,36 @@ If the tokens only need to be used during the user's session, they can be stored
 
 ```js
 const session = require('express-session');
-app.use(session({
-  secret: 'replace this with a long, random, static string',
-  cookie: {
-    // Sets the session cookie to expire after 7 days.
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
-}));
+app.use(
+  session({
+    secret: 'replace this with a long, random, static string',
+    cookie: {
+      // Sets the session cookie to expire after 7 days.
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  })
+);
 
-app.use(auth({
-  authorizationParams: {
-    response_type: 'code',
-    audience: process.env.API_AUDIENCE,
-    scope: 'openid profile email read:reports'
-  },
-  handleCallback: async function (req, res, next) {
-    // Store recevied tokens (access and ID in this case) in server-side storage.
-    req.session.openidTokens = req.openidTokens;
-    next();
-  }
-}));
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code',
+      audience: process.env.API_AUDIENCE,
+      scope: 'openid profile email read:reports',
+    },
+    handleCallback: async function (req, res, next) {
+      // Store recevied tokens (access and ID in this case) in server-side storage.
+      req.session.openidTokens = req.openidTokens;
+      next();
+    },
+  })
+);
 ```
 
 On a route that needs to use the access token, pull the token data from the storage and initialize a new `TokenSet` using `makeTokenSet()` method exposed by this library:
 
 ```js
 app.get('/route-that-calls-an-api', async (req, res, next) => {
-
   const tokenSet = req.openid.makeTokenSet(req.session.openidTokens);
   let apiData = {};
 
@@ -165,27 +183,28 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 [Refresh tokens](https://auth0.com/docs/tokens/concepts/refresh-tokens) can be requested along with access tokens using the `offline_access` scope during login. Please see the section on access tokens above for information on token storage.
 
 ```js
-app.use(auth({
-  authorizationParams: {
-    response_type: 'code id_token',
-    response_mode: 'form_post',
-    // API identifier to indicate which API this application will be calling.
-    audience: process.env.API_AUDIENCE,
-    // Include the required scopes as well as offline_access to generate a refresh token.
-    scope: 'openid profile email read:reports offline_access'
-  },
-  handleCallback: async function (req, res, next) {
-    // See the "Using access tokens" section above for token handling.
-    next();
-  }
-}));
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code id_token',
+      response_mode: 'form_post',
+      // API identifier to indicate which API this application will be calling.
+      audience: process.env.API_AUDIENCE,
+      // Include the required scopes as well as offline_access to generate a refresh token.
+      scope: 'openid profile email read:reports offline_access',
+    },
+    handleCallback: async function (req, res, next) {
+      // See the "Using access tokens" section above for token handling.
+      next();
+    },
+  })
+);
 ```
 
 On a route that calls an API, check for an expired token and attempt a refresh:
 
 ```js
 app.get('/route-that-calls-an-api', async (req, res, next) => {
-
   let apiData = {};
 
   // How the tokenSet is created will depend on how the tokens are stored.
@@ -195,7 +214,7 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
   if (tokenSet && tokenSet.expired() && refreshToken) {
     try {
       tokenSet = await req.openid.client.refresh(tokenSet);
-    } catch(err) {
+    } catch (err) {
       next(err);
     }
 
@@ -220,22 +239,24 @@ app.get('/route-that-calls-an-api', async (req, res, next) => {
 If your application needs to call the userinfo endpoint for the user's identity instead of the ID token used by default, add a `handleCallback` function during initialization that will make this call. Save the claims retrieved from the userinfo endpoint to the `appSession.name` on the request object (default is `appSession`):
 
 ```js
-app.use(auth({
-  handleCallback: async function (req, res, next) {
-    const client = req.openid.client;
-    req.appSession = req.appSession || {};
-    try {
-      req.appSession.claims = await client.userinfo(req.openidTokens);
-      next();
-    } catch(e) {
-      next(e);
-    }
-  },
-  authorizationParams: {
-    response_type: 'code',
-    scope: 'openid profile email'
-  }
-}));
+app.use(
+  auth({
+    handleCallback: async function (req, res, next) {
+      const client = req.openid.client;
+      req.appSession = req.appSession || {};
+      try {
+        req.appSession.claims = await client.userinfo(req.openidTokens);
+        next();
+      } catch (e) {
+        next(e);
+      }
+    },
+    authorizationParams: {
+      response_type: 'code',
+      scope: 'openid profile email',
+    },
+  })
+);
 ```
 
 ## 8. Custom state handling
@@ -245,24 +266,26 @@ If your application needs to keep track of the request state before redirecting 
 You can define a `getLoginState` configuration key set to a function that takes an Express `RequestHandler` and an options object and returns a plain object:
 
 ```js
-app.use(auth({
-  getLoginState: function (req, options) {
-    // This object will be stringified and base64 URL-safe encoded.
-    return {
-      // Property used by the library for redirecting after logging in.
-      returnTo: '/custom-return-path',
-      // Additional properties as needed.
-      customProperty: req.someProperty,
-    };
-  },
-  handleCallback: function (req, res, next) {
-    // The req.openidState.customProperty is now available to use.
-    if ( req.openidState.customProperty ) {
-      // Do something ...
-    }
+app.use(
+  auth({
+    getLoginState: function (req, options) {
+      // This object will be stringified and base64 URL-safe encoded.
+      return {
+        // Property used by the library for redirecting after logging in.
+        returnTo: '/custom-return-path',
+        // Additional properties as needed.
+        customProperty: req.someProperty,
+      };
+    },
+    handleCallback: function (req, res, next) {
+      // The req.openidState.customProperty is now available to use.
+      if (req.openidState.customProperty) {
+        // Do something ...
+      }
 
-    // Call next() to redirect to req.openidState.returnTo.
-    next();
-  }
-}));
+      // Call next() to redirect to req.openidState.returnTo.
+      next();
+    },
+  })
+);
 ```
