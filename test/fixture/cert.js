@@ -1,6 +1,6 @@
-const jose = require('jose');
+const { JWK, JWKS, JWT } = require('jose');
 
-const key = jose.JWK.asKey({
+const key = JWK.asKey({
   e: 'AQAB',
   n:
     'wQrThQ9HKf8ksCQEzqOu0ofF8DtLJgexeFSQBNnMQetACzt4TbHPpjhTWUIlD8bFCkyx88d2_QV3TewMtfS649Pn5hV6adeYW2TxweAA8HVJxskcqTSa_ktojQ-cD43HIStsbqJhHoFv0UY6z5pwJrVPT-yt38ciKo9Oc9IhEl6TSw-zAnuNW0zPOhKjuiIqpAk1lT3e6cYv83ahx82vpx3ZnV83dT9uRbIbcgIpK4W64YnYb5uDH7hGI8-4GnalZDfdApTu-9Y8lg_1v5ul-eQDsLCkUCPkqBaNiCG3gfZUAKp9rrFRE_cJTv_MJn-y_XSTMWILvTY7vdSMRMo4kQ',
@@ -21,7 +21,27 @@ const key = jose.JWK.asKey({
   alg: 'RS256',
 });
 
-module.exports.jwks = new jose.JWKS.KeyStore(key).toJWKS(false);
+module.exports.jwks = new JWKS.KeyStore(key).toJWKS(false);
 
 module.exports.key = key.toPEM(true);
 module.exports.kid = key.kid;
+
+module.exports.makeIdToken = (payload) => {
+  payload = Object.assign(
+    {
+      nickname: '__test_nickname__',
+      sub: '__test_sub__',
+      iss: 'https://op.example.com/',
+      aud: '__test_client_id__',
+      iat: Math.round(Date.now() / 1000),
+      exp: Math.round(Date.now() / 1000) + 60000,
+      nonce: '__test_nonce__',
+    },
+    payload
+  );
+
+  return JWT.sign(payload, key.toPEM(true), {
+    algorithm: 'RS256',
+    header: { kid: key.kid },
+  });
+};

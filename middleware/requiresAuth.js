@@ -54,13 +54,9 @@ function checkJSONprimitive(value) {
   }
 }
 
-// TODO: find a better name
-module.exports.withClaimEqualCheck = function withClaimEqualCheck(
-  claim,
-  expected
-) {
+module.exports.claimEquals = function claimEquals(claim, expected) {
   // check that claim is a string value
-  if (typeof claims !== 'string') {
+  if (typeof claim !== 'string') {
     throw new TypeError('"claim" must be a string');
   }
   // check that expected is a JSON supported primitive
@@ -84,13 +80,9 @@ module.exports.withClaimEqualCheck = function withClaimEqualCheck(
   return requiresLoginMiddleware.bind(undefined, authenticationCheck);
 };
 
-// TODO: find a better name
-module.exports.withClaimIncluding = function withClaimIncluding(
-  claim,
-  ...expected
-) {
+module.exports.claimIncludes = function claimIncludes(claim, ...expected) {
   // check that claim is a string value
-  if (typeof claims !== 'string') {
+  if (typeof claim !== 'string') {
     throw new TypeError('"claim" must be a string');
   }
   // check that all expected are JSON supported primitives
@@ -109,7 +101,9 @@ module.exports.withClaimIncluding = function withClaimIncluding(
     if (typeof actual === 'string') {
       actual = actual.split(' ');
     } else if (!Array.isArray(actual)) {
-      // TODO: log unexpected type;
+      debug.trace(
+        `Unexpected claim type. Expected array or string, got ${typeof actual}`
+      );
       return true;
     }
 
@@ -120,11 +114,10 @@ module.exports.withClaimIncluding = function withClaimIncluding(
   return requiresLoginMiddleware.bind(undefined, authenticationCheck);
 };
 
-// TODO: find a better name
-module.exports.custom = function custom(func) {
+module.exports.claimCheck = function claimCheck(func) {
   // check that func is a function
   if (typeof func !== 'function' || func.constructor.name !== 'Function') {
-    throw new TypeError('"function" must be a function');
+    throw new TypeError('"claimCheck" expects a function');
   }
   const authenticationCheck = (req) => {
     if (defaultRequiresLogin(req)) {
@@ -133,7 +126,7 @@ module.exports.custom = function custom(func) {
 
     const { idTokenClaims } = req.oidc;
 
-    return func(req, idTokenClaims);
+    return !func(req, idTokenClaims);
   };
   return requiresLoginMiddleware.bind(undefined, authenticationCheck);
 };
