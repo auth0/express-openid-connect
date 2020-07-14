@@ -2,7 +2,7 @@ const nock = require('nock');
 const wellKnown = require('./fixture/well-known.json');
 const certs = require('./fixture/cert');
 
-beforeEach(function () {
+before(function () {
   nock('https://op.example.com', { allowUnmocked: true })
     .persist()
     .get('/.well-known/openid-configuration')
@@ -24,6 +24,6 @@ beforeEach(function () {
     .reply(200, certs.jwks);
 });
 
-afterEach(function () {
+after(function () {
   nock.cleanAll();
 });

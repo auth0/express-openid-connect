@@ -7,8 +7,7 @@ const request = require('request-promise-native').defaults({
 const sinon = require('sinon');
 
 const appSession = require('../lib/appSession');
-const { encrypted } = require('./fixture/sessionEncryption');
-const { makeIdToken } = require('./fixture/cert');
+const sessionEncryption = require('./fixture/sessionEncryption');
 const { get: getConfig } = require('../lib/config');
 const { create: createServer } = require('./fixture/server');
 
@@ -18,24 +17,9 @@ const defaultConfig = {
   issuerBaseURL: 'https://op.example.com',
   baseURL: 'https://example.org',
   secret: '__test_secret__',
-  errorOnRequiredAuth: true,
-};
-
-const login = async (claims) => {
-  const jar = request.jar();
-  await request.post('/session', {
-    baseUrl,
-    jar,
-    json: {
-      id_token: makeIdToken(claims),
-    },
-  });
-  return jar;
 };
 
 const baseUrl = 'http://localhost:3000';
-
-const HR_MS = 60 * 60 * 1000;
 
 describe('appSession', () => {
   let server;
@@ -78,7 +62,7 @@ describe('appSession', () => {
       baseUrl,
       json: true,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -91,7 +75,7 @@ describe('appSession', () => {
       baseUrl,
       json: true,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -174,7 +158,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -210,7 +194,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -236,7 +220,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `customName=${encrypted}`,
+        cookie: `customName=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -259,7 +243,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -281,7 +265,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -323,86 +307,5 @@ describe('appSession', () => {
     });
     const res = await request.get('/session', { baseUrl, json: true });
     assert.equal(res.statusCode, 200);
-  });
-
-  it('should expire after 24hrs of inactivity by default', async () => {
-    const clock = sinon.useFakeTimers({ toFake: ['Date'] });
-    server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = await login({ sub: '__test_sub__' });
-    let res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isNotEmpty(res.body);
-    clock.tick(23 * HR_MS);
-    res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isNotEmpty(res.body);
-    clock.tick(25 * HR_MS);
-    res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isEmpty(res.body);
-    clock.restore();
-  });
-
-  it('should expire after 7days regardless of activity by default', async () => {
-    const clock = sinon.useFakeTimers({ toFake: ['Date'] });
-    server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = await login({ sub: '__test_sub__' });
-    let days = 7;
-    while (days--) {
-      clock.tick(23 * HR_MS);
-      let res = await request.get('/session', { baseUrl, jar, json: true });
-      assert.isNotEmpty(res.body);
-    }
-    clock.tick(8 * HR_MS);
-    let res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isEmpty(res.body);
-    clock.restore();
-  });
-
-  it('should expire only after defined absoluteDuration', async () => {
-    const clock = sinon.useFakeTimers({ toFake: ['Date'] });
-    server = await createServer(
-      appSession(
-        getConfig({
-          ...defaultConfig,
-          session: {
-            rolling: false,
-            absoluteDuration: 10 * 60 * 60,
-          },
-        })
-      )
-    );
-    const jar = await login({ sub: '__test_sub__' });
-    clock.tick(9 * HR_MS);
-    let res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isNotEmpty(res.body);
-    clock.tick(2 * HR_MS);
-    res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isEmpty(res.body);
-    clock.restore();
-  });
-
-  it('should expire only after defined rollingDuration period of inactivty', async () => {
-    const clock = sinon.useFakeTimers({ toFake: ['Date'] });
-    server = await createServer(
-      appSession(
-        getConfig({
-          ...defaultConfig,
-          session: {
-            rolling: true,
-            rollingDuration: 24 * 60 * 60,
-            absoluteDuration: false,
-          },
-        })
-      )
-    );
-    const jar = await login({ sub: '__test_sub__' });
-    let days = 30;
-    while (days--) {
-      clock.tick(23 * HR_MS);
-      let res = await request.get('/session', { baseUrl, jar, json: true });
-      assert.isNotEmpty(res.body);
-    }
-    clock.tick(25 * HR_MS);
-    let res = await request.get('/session', { baseUrl, jar, json: true });
-    assert.isEmpty(res.body);
-    clock.restore();
   });
 });
