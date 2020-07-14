@@ -10,7 +10,7 @@ const TransientCookieHandler = require('../lib/transientHandler');
 const { encodeState } = require('../lib/hooks/getLoginState');
 const expressOpenid = require('..');
 const { create: createServer } = require('./fixture/server');
-const cert = require('./fixture/cert');
+const { makeIdToken } = require('./fixture/cert');
 const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
@@ -99,26 +99,6 @@ const setup = async (params) => {
     tokens,
   };
 };
-
-function makeIdToken(payload) {
-  payload = Object.assign(
-    {
-      nickname: '__test_nickname__',
-      sub: '__test_sub__',
-      iss: 'https://op.example.com/',
-      aud: clientID,
-      iat: Math.round(Date.now() / 1000),
-      exp: Math.round(Date.now() / 1000) + 60000,
-      nonce: '__test_nonce__',
-    },
-    payload
-  );
-
-  return jose.JWT.sign(payload, cert.key, {
-    algorithm: 'RS256',
-    header: { kid: cert.kid },
-  });
-}
 
 // For the purpose of this test the fake SERVER returns the error message in the body directly
 // production application should have an error middleware.
