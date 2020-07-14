@@ -217,12 +217,47 @@ describe('get config', () => {
     assert.throws(() => {
       getConfig({
         ...defaultConfig,
-        secret: '__test_session_secret__',
         session: {
           rollingDuration: 3.14159,
         },
       });
     }, '"session.rollingDuration" must be an integer');
+  });
+
+  it('should fail when rollingDuration is defined and rolling is false', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rolling: false,
+          rollingDuration: 100,
+        },
+      });
+    }, '"session.rollingDuration" must be false when "session.rolling" is disabled');
+  });
+
+  it('should fail when rollingDuration is not defined and rolling is true', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rolling: true,
+          rollingDuration: false,
+        },
+      });
+    }, '"session.rollingDuration" must be provided an integer value when "session.rolling" is true');
+  });
+
+  it('should fail when absoluteDuration is not defined and rolling is false', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rolling: false,
+          absoluteDuration: false,
+        },
+      });
+    }, '"session.absoluteDuration" must be provided an integer value when "session.rolling" is false');
   });
 
   it('should fail when app session secret is invalid', function () {
@@ -238,7 +273,6 @@ describe('get config', () => {
     assert.throws(() => {
       getConfig({
         ...defaultConfig,
-        secret: '__test_session_secret__',
         session: {
           cookie: {
             httpOnly: '__invalid_httponly__',
