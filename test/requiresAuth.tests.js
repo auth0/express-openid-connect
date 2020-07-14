@@ -274,7 +274,7 @@ describe('requiresAuth', () => {
     assert.throws(
       () => claimCheck(null),
       TypeError,
-      '"claimCheck" must receive a function'
+      '"claimCheck" expects a function'
     );
   });
 
