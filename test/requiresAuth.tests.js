@@ -2,7 +2,13 @@ const { assert } = require('chai');
 const sinon = require('sinon');
 const { create: createServer } = require('./fixture/server');
 const { makeIdToken } = require('./fixture/cert');
-const { auth, requiresAuth } = require('./..');
+const {
+  auth,
+  requiresAuth,
+  claimEquals,
+  claimIncludes,
+  claimCheck,
+} = require('./..');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -10,8 +16,6 @@ const request = require('request-promise-native').defaults({
 });
 
 const baseUrl = 'http://localhost:3000';
-
-const { claimEquals, claimIncludes, claimCheck } = requiresAuth;
 
 const defaultConfig = {
   secret: '__test_session_secret__',

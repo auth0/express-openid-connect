@@ -3,5 +3,5 @@ const requiresAuth = require('./middleware/requiresAuth');
 
 module.exports = {
   auth,
-  requiresAuth,
+  ...requiresAuth,
 };

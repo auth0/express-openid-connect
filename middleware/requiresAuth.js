@@ -37,7 +37,7 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   next();
 }
 
-module.exports = function requiresAuth(
+module.exports.requiresAuth = function requiresAuth(
   requiresLoginCheck = defaultRequiresLogin
 ) {
   return requiresLoginMiddleware.bind(undefined, requiresLoginCheck);
