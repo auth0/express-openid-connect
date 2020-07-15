@@ -14,7 +14,8 @@
   "scripts": {
     "lint": "eslint . --ignore-path .gitignore",
     "test": "mocha",
-    "test:ci": "nyc --reporter=lcov npm test"
+    "test:ci": "nyc --reporter=lcov npm test",
+    "docs": "typedoc --options typedoc.js index.d.ts"
   },
   "mocha": {
     "exit": true,
@@ -50,7 +51,9 @@
     "pretty-quick": "^2.0.1",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
-    "sinon": "^7.5.0"
+    "sinon": "^7.5.0",
+    "typedoc": "^0.17.8",
+    "typescript": "^3.9.6"
   },
   "peerDependencies": {
     "express": ">= 4.17.0"

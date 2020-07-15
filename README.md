@@ -21,7 +21,7 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 
 - Our [Express Quickstart](https://auth0.com/docs/quickstart/webapp/express) is the quickest way to get up and running from scratch.
 - Use the [Examples for common configurations](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) for use cases beyond the basics.
-- The [API documentation](https://github.com/auth0/express-openid-connect/blob/master/API.md) details all configuration options, methods, and data that this library provides.
+- The [API documentation](https://auth0.github.io/express-openid-connect) details all configuration options, methods, and data that this library provides.
 - You can [run the sample application](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master) to see how this SDK functions without writing your own integration.
 
 ## Install
@@ -36,7 +36,7 @@ npm install express-openid-connect
 
 Follow our [Secure Local Development guide](https://auth0.com/docs/libraries/secure-local-development) to ensure that applications using this library are running over secure channels (HTTPS URLs). Applications using this library without HTTPS may experience "invalid state" errors.
 
-The library needs [the following required configuration keys](https://github.com/auth0/express-openid-connect/blob/master/API.md#required-keys) to request and accept authentication. These can be configured with environmental variables:
+The library needs [issuerBaseURL](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#issuerbaseurl), [baseURL](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#baseurl), [clientID](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#clientid) and [secret](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#secret) to request and accept authentication. These can be configured with environmental variables:
 
 ```text
 ISSUER_BASE_URL=https://YOUR_DOMAIN
@@ -65,7 +65,7 @@ With this basic configuration, your application will require authentication for 
 
 See the [examples](EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
 
-See the [API documentation](API.md) for additional configuration possibilities and provided methods.
+See the [API documentation](https://auth0.github.io/express-openid-connect) for additional configuration possibilities and provided methods.
 
 ## A note on error handling
 
