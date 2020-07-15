@@ -77,6 +77,18 @@ describe('requiresAuth', () => {
     assert.equal(parsed.returnTo, '/protected');
   });
 
+  it("should 401 for anonymous users who don't accept html", async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      requiresAuth()
+    );
+    const response = await request({ baseUrl, url: '/protected', json: true });
+    assert.equal(response.statusCode, 401);
+  });
+
   it('should return 401 when anonymous user visits a protected route', async () => {
     server = await createServer(
       auth({
@@ -327,7 +339,7 @@ describe('requiresAuth', () => {
     assert.equal(response.statusCode, 200);
   });
 
-  it('should not allow anonymouse users to check custom claims', async () => {
+  it('should not allow anonymous users to check custom claims', async () => {
     const checkSpy = sinon.spy();
     server = await createServer(
       auth({

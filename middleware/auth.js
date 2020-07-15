@@ -6,6 +6,7 @@ const debug = require('../lib/debug');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const { requiresAuth } = require('./requiresAuth');
+const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
@@ -147,6 +148,10 @@ module.exports = function (params) {
       'authentication is not required for any of the routes this middleware is applied to ' +
         'see and apply `requiresAuth` middlewares to your protected resources'
     );
+  }
+  if (config.attemptSilentLogin) {
+    debug.trace("silent login will be attempted on user's initial request");
+    router.use(attemptSilentLogin());
   }
 
   return router;
