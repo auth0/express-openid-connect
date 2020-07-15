@@ -1,5 +1,6 @@
 const { assert } = require('chai');
 const { create: createServer } = require('./fixture/server');
+const { makeIdToken } = require('./fixture/cert');
 const { auth } = require('./..');
 
 const request = require('request-promise-native').defaults({
@@ -20,8 +21,7 @@ const login = async (baseUrl = 'http://localhost:3000') => {
   await request.post({
     uri: '/session',
     json: {
-      id_token:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+      id_token: makeIdToken(),
     },
     baseUrl,
     jar,
@@ -92,8 +92,7 @@ describe('logout route', async () => {
     assert.include(
       response.headers,
       {
-        location:
-          'https://op.example.com/session/end?post_logout_redirect_uri=https%3A%2F%2Fexample.org&id_token_hint=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+        location: `https://op.example.com/session/end?post_logout_redirect_uri=https%3A%2F%2Fexample.org&id_token_hint=${makeIdToken()}`,
       },
       'should redirect to the identity provider'
     );
@@ -143,6 +142,32 @@ describe('logout route', async () => {
         location: 'https://example.org/after-logout-in-auth-config',
       },
       'should redirect to postLogoutRedirectUri'
+    );
+  });
+
+  it('should redirect to the specified returnTo', async () => {
+    const router = auth({
+      ...defaultConfig,
+      routes: {
+        logout: false,
+        postLogoutRedirectUri: '/after-logout-in-auth-config',
+      },
+    });
+    server = await createServer(router);
+    router.get('/logout', (req, res) =>
+      res.oidc.logout({ returnTo: 'http://www.another-example.org/logout' })
+    );
+
+    const { jar } = await login();
+    const { response, session: loggedOutSession } = await logout(jar);
+    assert.notOk(loggedOutSession.id_token);
+    assert.equal(response.statusCode, 302);
+    assert.include(
+      response.headers,
+      {
+        location: 'http://www.another-example.org/logout',
+      },
+      'should redirect to params.returnTo'
     );
   });
 
