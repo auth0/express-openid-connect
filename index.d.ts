@@ -140,7 +140,7 @@ interface ResponseContext {
    * });
    * ```
    */
-  login: (LoginOptions) => Promise<void>;
+  login: (opts: LoginOptions) => Promise<void>;
 
   /**
    * Provided by default via the `/logout` route. Call this to override or have other
@@ -442,7 +442,7 @@ interface SessionConfigParams {
    */
   sameSite?: string;
 
-  // TODO path?
+  // TODO do we need a path option?
 }
 
 /**
