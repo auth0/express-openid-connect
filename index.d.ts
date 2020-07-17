@@ -223,6 +223,7 @@ interface ConfigParams {
    *   response_mode: 'form_post,
    *   scope: openid profile email'
    * }
+   * ```
    *
    * New values can be passed in to change what is returned from the authorization server depending on your specific scenario.
    *
