@@ -96,6 +96,20 @@ describe('auth', () => {
     assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
   });
 
+  it('should redirect to the authorize url for any route if authRequired', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: true,
+      })
+    );
+    const res = await request.get('/session', {
+      baseUrl,
+      followRedirect: false,
+    });
+    assert.equal(res.statusCode, 302);
+  });
+
   it('should redirect to the authorize url for /login in code flow', async () => {
     server = await createServer(
       auth({
