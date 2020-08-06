@@ -2,7 +2,7 @@ const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
 
-const debug = require('../lib/debug');
+const debug = require('../lib/debug')('auth');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const { requiresAuth } = require('./requiresAuth');
@@ -25,10 +25,7 @@ const enforceLeadingSlash = (path) => {
  */
 module.exports = function (params) {
   const config = getConfig(params);
-  debug.trace(
-    'configuration object processed, resulting configuration:',
-    config
-  );
+  debug('configuration object processed, resulting configuration: %O', config);
   const router = new express.Router();
   const transient = new TransientCookieHandler(config);
 
@@ -44,21 +41,21 @@ module.exports = function (params) {
   // Login route, configurable with routes.login
   if (config.routes.login) {
     const path = enforceLeadingSlash(config.routes.login);
-    debug.trace(`adding GET ${path} route`);
+    debug('adding GET %s route', path);
     router.get(path, express.urlencoded({ extended: false }), (req, res) =>
       res.oidc.login({ returnTo: config.baseURL })
     );
   } else {
-    debug.trace('login handling route not applied');
+    debug('login handling route not applied');
   }
 
   // Logout route, configurable with routes.logout
   if (config.routes.logout) {
     const path = enforceLeadingSlash(config.routes.logout);
-    debug.trace(`adding GET ${path} route`);
+    debug('adding GET %s route', path);
     router.get(path, (req, res) => res.oidc.logout());
   } else {
-    debug.trace('logout handling route not applied');
+    debug('logout handling route not applied');
   }
 
   // Callback route, configured with routes.callback.
@@ -67,7 +64,7 @@ module.exports = function (params) {
     const path = enforceLeadingSlash(config.routes.callback);
     const callbackStack = [
       (req, res, next) => {
-        debug.trace(`${req.method} ${path} called`);
+        debug('%s %s called', req.method, path);
         next();
       },
       async (req, res, next) => {
@@ -128,9 +125,9 @@ module.exports = function (params) {
       (req, res) => res.redirect(req.openidState.returnTo || config.baseURL),
     ];
 
-    debug.trace(`adding GET ${path} route`);
+    debug('adding GET %s route', path);
     router.get(path, ...callbackStack);
-    debug.trace(`adding POST ${path} route`);
+    debug('adding POST %s route', path);
     router.post(
       path,
       express.urlencoded({ extended: false }),
@@ -139,12 +136,12 @@ module.exports = function (params) {
   }
 
   if (config.authRequired) {
-    debug.trace(
+    debug(
       'authentication is required for all routes this middleware is applied to'
     );
     router.use(requiresAuth());
   } else {
-    debug.trace(
+    debug(
       'authentication is not required for any of the routes this middleware is applied to ' +
         'see and apply `requiresAuth` middlewares to your protected resources'
     );
