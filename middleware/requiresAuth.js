@@ -1,5 +1,5 @@
 const createError = require('http-errors');
-const debug = require('../lib/debug');
+const debug = require('../lib/debug')('requiresAuth');
 
 const defaultRequiresLogin = (req) => !req.oidc.isAuthenticated();
 
@@ -18,13 +18,13 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
 
   if (requiresLoginCheck(req)) {
     if (!res.oidc.errorOnRequiredAuth) {
-      debug.trace(
-        'Authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
+      debug(
+        'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
       );
       return res.oidc.login();
     }
-    debug.trace(
-      'Authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
+    debug(
+      'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
     );
     next(
       createError.Unauthorized('Authentication is required for this route.')
@@ -32,7 +32,7 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
     return;
   }
 
-  debug.trace('Authentication requirements met, calling next()');
+  debug('authentication requirements met, calling next()');
 
   next();
 }
@@ -101,8 +101,9 @@ module.exports.claimIncludes = function claimIncludes(claim, ...expected) {
     if (typeof actual === 'string') {
       actual = actual.split(' ');
     } else if (!Array.isArray(actual)) {
-      debug.trace(
-        `Unexpected claim type. Expected array or string, got ${typeof actual}`
+      debug(
+        'unexpected claim type. expected array or string, got %o',
+        typeof actual
       );
       return true;
     }
