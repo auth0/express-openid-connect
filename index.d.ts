@@ -140,7 +140,7 @@ interface ResponseContext {
    * });
    * ```
    */
-  login: (opts: LoginOptions) => Promise<void>;
+  login: (opts?: LoginOptions) => Promise<void>;
 
   /**
    * Provided by default via the `/logout` route. Call this to override or have other
@@ -152,7 +152,7 @@ interface ResponseContext {
    * });
    * ```
    */
-  logout: (opts: LogoutOptions) => Promise<void>;
+  logout: (opts?: LogoutOptions) => Promise<void>;
 }
 
 /**
@@ -295,6 +295,16 @@ interface ConfigParams {
    * Default is `false`
    */
   errorOnRequiredAuth?: boolean;
+
+  /**
+   * Attempt silent login (`prompt: 'none'`) on the first unauthenticated route the user visits.
+   * For protected routes this can be useful if your Identity Provider does not default to
+   * `prompt: 'none'` and you'd like to attempt this before requiring the user to interact with a login prompt.
+   * For unprotected routes this can be useful if you want to check the user's logged in state on their IDP, to
+   * show them a login/logout button for example.
+   * Default is `false`
+   */
+  attemptSilentLogin?: boolean;
 
   /**
    * Function that returns an object with URL-safe state values for `res.oidc.login()`.
@@ -558,3 +568,21 @@ export function claimIncludes(
 export function claimCheck(
   checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean
 ): RequestHandler;
+
+/**
+ * Use this MW to attempt silent login (`prompt=none`) but not require authentication.
+ *
+ * See {@link ConfigParams.attemptSilentLogin attemptSilentLogin}
+ *
+ * ```js
+ * const { attemptSilentLogin } = require('express-openid-connect');
+ *
+ * app.get('/', attemptSilentLogin(), (req, res) => {
+ *   res.render('homepage', {
+ *     isAuthenticated: req.isAuthenticated() // show a login or logout button
+ *   });
+ * });
+ *
+ * ```
+ */
+export function attemptSilentLogin(): RequestHandler;

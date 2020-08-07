@@ -17,7 +17,7 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   }
 
   if (requiresLoginCheck(req)) {
-    if (!res.oidc.errorOnRequiredAuth) {
+    if (!res.oidc.errorOnRequiredAuth && req.accepts('html')) {
       debug(
         'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
       );
