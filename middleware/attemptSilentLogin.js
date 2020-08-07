@@ -1,13 +1,38 @@
-const debug = require('../lib/debug');
+const debug = require('../lib/debug')('attemptSilentLogin');
 const COOKIES = require('../lib/cookies');
+const weakRef = require('../lib/weakCache');
 
-const COOKIE_NAME = 'silentLoginAttempted';
+const COOKIE_NAME = 'skipSilentLogin';
 
-const cancelSilentLoginAttempts = (req, res) =>
+const cancelSilentLogin = (req, res) => {
+  const {
+    config: {
+      session: { cookie: cookieConfig },
+    },
+  } = weakRef(req.oidc);
   res.cookie(COOKIE_NAME, true, {
     httpOnly: true,
-    secure: req.secure,
+    secure:
+      typeof cookieConfig.secure === 'boolean'
+        ? cookieConfig.secure
+        : req.secure,
   });
+};
+
+const resumeSilentLogin = (req, res) => {
+  const {
+    config: {
+      session: { cookie: cookieConfig },
+    },
+  } = weakRef(req.oidc);
+  res.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    secure:
+      typeof cookieConfig.secure === 'boolean'
+        ? cookieConfig.secure
+        : req.secure,
+  });
+};
 
 module.exports = function attemptSilentLogin() {
   return (req, res, next) => {
@@ -25,12 +50,13 @@ module.exports = function attemptSilentLogin() {
       !req.oidc.isAuthenticated() &&
       req.accepts('html')
     ) {
-      debug.trace('Attempting silent login');
-      cancelSilentLoginAttempts(req, res);
+      debug('Attempting silent login');
+      cancelSilentLogin(req, res);
       return res.oidc.silentLogin();
     }
     next();
   };
 };
 
-module.exports.cancelSilentLoginAttempts = cancelSilentLoginAttempts;
+module.exports.cancelSilentLogin = cancelSilentLogin;
+module.exports.resumeSilentLogin = resumeSilentLogin;

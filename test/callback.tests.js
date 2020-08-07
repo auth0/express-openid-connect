@@ -33,7 +33,7 @@ const setup = async (params) => {
   const router = expressOpenid.auth(authOpts);
   const transient = new TransientCookieHandler(authOpts);
 
-  const jar = request.jar();
+  const jar = params.jar || request.jar();
   server = await createServer(router);
   let tokenReqHeader;
   let tokenReqBody;
@@ -439,5 +439,25 @@ describe('callback response_mode: form_post', () => {
       tokenReqBody,
       /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/
     );
+  });
+
+  it('should resume silent logins when user successfully logs in', async () => {
+    const idToken = makeIdToken();
+    const jar = request.jar();
+    jar.setCookie('skipSilentLogin=true', baseUrl);
+    await setup({
+      cookies: {
+        _state: expectedDefaultState,
+        _nonce: '__test_nonce__',
+        skipSilentLogin: '1',
+      },
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+      },
+      jar,
+    });
+    const cookies = jar.getCookies(baseUrl);
+    assert.notOk(cookies.find(({ key }) => key === 'skipSilentLogin'));
   });
 });

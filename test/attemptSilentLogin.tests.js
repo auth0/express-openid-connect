@@ -51,7 +51,7 @@ describe('attemptSilentLogin', () => {
 
     assert.equal(response.statusCode, 302);
     assert.include(jar.getCookies(baseUrl)[0], {
-      key: 'silentLoginAttempted',
+      key: 'skipSilentLogin',
       value: 'true',
       httpOnly: true,
     });

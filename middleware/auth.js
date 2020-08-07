@@ -117,6 +117,8 @@ module.exports = function (params) {
             expires_at: tokenSet.expires_at,
           });
 
+          attemptSilentLogin.resumeSilentLogin(req, res);
+
           next();
         } catch (err) {
           next(err);
@@ -147,7 +149,7 @@ module.exports = function (params) {
     );
   }
   if (config.attemptSilentLogin) {
-    debug.trace("silent login will be attempted on user's initial request");
+    debug("silent login will be attempted on end-user's initial HTML request");
     router.use(attemptSilentLogin());
   }
 
