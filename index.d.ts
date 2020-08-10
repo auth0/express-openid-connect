@@ -3,7 +3,6 @@
 import {
   AuthorizationParameters,
   IdTokenClaims,
-  RefreshExtras,
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
@@ -108,14 +107,8 @@ interface RequestContext {
    * })
    * ```
    *
-   * @param options Options for the UserInfo request.
    */
-  fetchUserInfo(options?: {
-    verb?: 'GET' | 'POST';
-    via?: 'header' | 'body' | 'query';
-    tokenType?: string;
-    params?: object;
-  }): Promise<UserinfoResponse>;
+  fetchUserInfo(): Promise<UserinfoResponse>;
 }
 
 /**
@@ -490,10 +483,8 @@ interface AccessToken {
    *   accessToken = await accessToken.refresh();
    * }
    * ```
-   *
-   * @param opts Add extra parameters to the Token Endpoint Request and/or Client Authentication JWT Assertion
    */
-  refresh(opts?: RefreshExtras): Promise<AccessToken>;
+  refresh(): Promise<AccessToken>;
 }
 
 /**
