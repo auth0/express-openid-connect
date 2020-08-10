@@ -1,6 +1,10 @@
 // Type definitions for express-openid-connect
 
-import { AuthorizationParameters, IdTokenClaims } from 'openid-client';
+import {
+  AuthorizationParameters,
+  IdTokenClaims,
+  RefreshExtras,
+} from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
 
 /**
@@ -71,27 +75,7 @@ interface RequestContext {
    *
    * See: https://auth0.com/docs/protocols/oidc#access-tokens
    */
-  accessToken?: {
-    /**
-     * The access token itself, can be an opaque string, JWT, or non-JWT token.
-     */
-    access_token: string;
-
-    /**
-     * The type of access token, Usually "Bearer".
-     */
-    token_type: string;
-
-    /**
-     * Number of seconds until the access token expires.
-     */
-    expires_in: number;
-
-    /**
-     * Returns `true` if the access_token has expired.
-     */
-    isExpired: () => boolean;
-  };
+  accessToken?: AccessToken;
 
   /**
    * Credentials that can be used to refresh an access token.
@@ -452,6 +436,34 @@ interface SessionConfigParams {
    * Defaults to "Lax" but will be adjusted based on {@link AuthorizationParameters.response_type}.
    */
   sameSite?: string;
+}
+
+interface AccessToken {
+  /**
+   * The access token itself, can be an opaque string, JWT, or non-JWT token.
+   */
+  access_token: string;
+
+  /**
+   * The type of access token, Usually "Bearer".
+   */
+  token_type: string;
+
+  /**
+   * Number of seconds until the access token expires.
+   */
+  expires_in: number;
+
+  /**
+   * Returns `true` if the access_token has expired.
+   */
+  isExpired: () => boolean;
+
+  /**
+   * Performs refresh_token grant type exchange and updates the session's access token.
+   * @param opts Add extra parameters to the Token Endpoint Request and/or Client Authentication JWT Assertion
+   */
+  refresh(opts?: RefreshExtras): Promise<AccessToken>;
 }
 
 /**

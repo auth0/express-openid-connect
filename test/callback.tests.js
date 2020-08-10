@@ -8,7 +8,7 @@ const request = require('request-promise-native').defaults({
 
 const TransientCookieHandler = require('../lib/transientHandler');
 const { encodeState } = require('../lib/hooks/getLoginState');
-const expressOpenid = require('..');
+const { auth } = require('..');
 const { create: createServer } = require('./fixture/server');
 const { makeIdToken } = require('./fixture/cert');
 const clientID = '__test_client_id__';
@@ -16,21 +16,18 @@ const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
 
 const baseUrl = 'http://localhost:3000';
+const defaultConfig = {
+  secret: '__test_session_secret__',
+  clientID: clientID,
+  baseURL: 'https://example.org',
+  issuerBaseURL: 'https://op.example.com',
+  authRequired: false,
+};
 let server;
 
 const setup = async (params) => {
-  const authOpts = Object.assign(
-    {},
-    {
-      secret: '__test_session_secret__',
-      clientID: clientID,
-      baseURL: 'https://example.org',
-      issuerBaseURL: 'https://op.example.com',
-      authRequired: false,
-    },
-    params.authOpts || {}
-  );
-  const router = expressOpenid.auth(authOpts);
+  const authOpts = Object.assign({}, defaultConfig, params.authOpts || {});
+  const router = params.router || auth(authOpts);
   const transient = new TransientCookieHandler(authOpts);
 
   const jar = params.jar || request.jar();
@@ -403,6 +400,74 @@ describe('callback response_mode: form_post', () => {
       .then((r) => r.body);
     assert.isTrue(tokens3.accessTokenExpired);
     clock.restore();
+  });
+
+  it('should refresh an access token', async () => {
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+
+    const authOpts = {
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code id_token',
+        audience: 'https://api.example.com/',
+        scope: 'openid profile email read:reports offline_access',
+      },
+    };
+    const router = auth(authOpts);
+    router.get('/refresh', async (req, res) => {
+      res.json(await req.oidc.accessToken.refresh());
+    });
+
+    const { tokens, jar } = await setup({
+      router,
+      authOpts: {
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email read:reports offline_access',
+        },
+      },
+      cookies: {
+        _state: expectedDefaultState,
+        _nonce: '__test_nonce__',
+      },
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      },
+    });
+
+    const reply = sinon.spy(() => ({
+      access_token: '__new_access_token__',
+      refresh_token: '__test_refresh_token__',
+      id_token: tokens.id_token,
+      token_type: 'Bearer',
+      expires_in: 86400,
+    }));
+    const {
+      interceptors: [interceptor],
+    } = nock('https://op.example.com', { allowUnmocked: true })
+      .post('/oauth/token')
+      .reply(200, reply);
+
+    const newTokens = await request
+      .get('/refresh', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+    nock.removeInterceptor(interceptor);
+
+    sinon.assert.calledWith(
+      reply,
+      '/oauth/token',
+      'grant_type=refresh_token&refresh_token=__test_refresh_token__'
+    );
+
+    assert.equal(tokens.accessToken.access_token, '__test_access_token__');
+    assert.equal(newTokens.access_token, '__new_access_token__');
   });
 
   it('should use basic auth on token endpoint when using code flow', async () => {
