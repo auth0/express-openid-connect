@@ -483,6 +483,14 @@ interface AccessToken {
 
   /**
    * Performs refresh_token grant type exchange and updates the session's access token.
+   *
+   * ```js
+   * let accessToken = req.oidc.accessToken;
+   * if (accessToken.isExpired()) {
+   *   accessToken = await accessToken.refresh();
+   * }
+   * ```
+   *
    * @param opts Add extra parameters to the Token Endpoint Request and/or Client Authentication JWT Assertion
    */
   refresh(opts?: RefreshExtras): Promise<AccessToken>;
