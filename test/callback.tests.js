@@ -470,6 +470,64 @@ describe('callback response_mode: form_post', () => {
     assert.equal(newTokens.access_token, '__new_access_token__');
   });
 
+  it('should fetch userinfo', async () => {
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+
+    const authOpts = {
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code id_token',
+        audience: 'https://api.example.com/',
+        scope: 'openid profile email',
+      },
+    };
+    const router = auth(authOpts);
+    router.get('/user-info', async (req, res) => {
+      res.json(await req.oidc.fetchUserInfo());
+    });
+
+    const { jar } = await setup({
+      router,
+      authOpts: {
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email read:reports offline_access',
+        },
+      },
+      cookies: {
+        _state: expectedDefaultState,
+        _nonce: '__test_nonce__',
+      },
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      },
+    });
+
+    const {
+      interceptors: [interceptor],
+    } = nock('https://op.example.com', { allowUnmocked: true })
+      .get('/userinfo')
+      .reply(200, () => ({
+        userInfo: true,
+        sub: '__test_sub__',
+      }));
+
+    const userInfo = await request
+      .get('/user-info', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+
+    nock.removeInterceptor(interceptor);
+
+    assert.deepEqual(userInfo, { userInfo: true, sub: '__test_sub__' });
+  });
+
   it('should use basic auth on token endpoint when using code flow', async () => {
     const idToken = makeIdToken({
       c_hash: '77QmUPtjPfzWtF2AnpK9RQ',

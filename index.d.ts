@@ -4,6 +4,7 @@ import {
   AuthorizationParameters,
   IdTokenClaims,
   RefreshExtras,
+  UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
 
@@ -94,6 +95,27 @@ interface RequestContext {
    * specified in {@link ConfigParams.identityClaimFilter identityClaimFilter} removed.
    */
   user?: object;
+
+  /**
+   * Fetches the OIDC userinfo response.
+   *
+   * ```js
+   * app.use(auth());
+   *
+   * app.get('/user-info', async (req, res) => {
+   *   const userInfo = await req.oidc.fetchUserInfo();
+   *   res.json(userInfo);
+   * })
+   * ```
+   *
+   * @param options Options for the UserInfo request.
+   */
+  fetchUserInfo(options?: {
+    verb?: 'GET' | 'POST';
+    via?: 'header' | 'body' | 'query';
+    tokenType?: string;
+    params?: object;
+  }): Promise<UserinfoResponse>;
 }
 
 /**
