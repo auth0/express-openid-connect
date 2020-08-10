@@ -289,6 +289,31 @@ describe('auth', () => {
     assert.equal(res.body.err.message, 'scope should contain "openid"');
   });
 
+  it('should not allow an invalid response_type', async function () {
+    const router = auth({ ...defaultConfig, routes: { login: false } });
+    router.get('/login', (req, res) => {
+      res.oidc.login({
+        authorizationParams: {
+          response_type: 'invalid',
+        },
+      });
+    });
+    server = await createServer(router);
+
+    const cookieJar = request.jar();
+    const res = await request.get('/login', {
+      cookieJar,
+      baseUrl,
+      json: true,
+      followRedirect: false,
+    });
+    assert.equal(res.statusCode, 500);
+    assert.equal(
+      res.body.err.message,
+      'response_type should be one of id_token, code id_token, code'
+    );
+  });
+
   it('should use a custom state builder', async () => {
     server = await createServer(
       auth({

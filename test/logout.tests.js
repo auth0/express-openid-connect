@@ -124,12 +124,12 @@ describe('logout route', async () => {
     );
   });
 
-  it('should redirect to postLogoutRedirectUri', async () => {
+  it('should redirect to postLogoutRedirect', async () => {
     server = await createServer(
       auth({
         ...defaultConfig,
         routes: {
-          postLogoutRedirectUri: '/after-logout-in-auth-config',
+          postLogoutRedirect: '/after-logout-in-auth-config',
         },
       })
     );
@@ -143,7 +143,7 @@ describe('logout route', async () => {
       {
         location: 'https://example.org/after-logout-in-auth-config',
       },
-      'should redirect to postLogoutRedirectUri'
+      'should redirect to postLogoutRedirect'
     );
   });
 
@@ -152,7 +152,7 @@ describe('logout route', async () => {
       ...defaultConfig,
       routes: {
         logout: false,
-        postLogoutRedirectUri: '/after-logout-in-auth-config',
+        postLogoutRedirect: '/after-logout-in-auth-config',
       },
     });
     server = await createServer(router);

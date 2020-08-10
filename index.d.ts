@@ -175,7 +175,7 @@ interface LoginOptions {
  */
 interface LogoutOptions {
   /**
-   *  URL to returnTo after logout, overrides the Default in {@link ConfigParams.routes.postLogoutRedirectUri routes.postLogoutRedirectUri}
+   *  URL to returnTo after logout, overrides the Default in {@link ConfigParams.routes.postLogoutRedirect routes.postLogoutRedirect}
    */
   returnTo?: string;
 }
@@ -376,7 +376,7 @@ interface ConfigParams {
      * This value must be registered on the authorization server.
      * The user will be redirected to this after a logout has been performed.
      */
-    postLogoutRedirectUri?: string;
+    postLogoutRedirect?: string;
 
     /**
      * Relative path to the application callback to process the response from the authorization server.
@@ -452,8 +452,6 @@ interface SessionConfigParams {
    * Defaults to "Lax" but will be adjusted based on {@link AuthorizationParameters.response_type}.
    */
   sameSite?: string;
-
-  // TODO do we need a path option?
 }
 
 /**
