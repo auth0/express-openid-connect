@@ -7,30 +7,31 @@ const COOKIE_NAME = 'skipSilentLogin';
 const cancelSilentLogin = (req, res) => {
   const {
     config: {
-      session: { cookie: cookieConfig },
+      session: {
+        cookie: { secure, domain, path },
+      },
     },
   } = weakRef(req.oidc);
   res.cookie(COOKIE_NAME, true, {
     httpOnly: true,
-    secure:
-      typeof cookieConfig.secure === 'boolean'
-        ? cookieConfig.secure
-        : req.secure,
+    secure: typeof secure === 'boolean' ? secure : req.secure,
+    domain,
+    path,
   });
 };
 
 const resumeSilentLogin = (req, res) => {
   const {
     config: {
-      session: { cookie: cookieConfig },
+      session: {
+        cookie: { domain, path },
+      },
     },
   } = weakRef(req.oidc);
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
-    secure:
-      typeof cookieConfig.secure === 'boolean'
-        ? cookieConfig.secure
-        : req.secure,
+    domain,
+    path,
   });
 };
 

@@ -426,6 +426,12 @@ interface SessionConfigParams {
   domain?: string;
 
   /**
+   * Path for the cookie.
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`
+   */
+  path?: string;
+
+  /**
    * Set to true to use a transient cookie (cookie without an explicit expiration).
    * Default is `false`
    */
