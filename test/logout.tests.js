@@ -16,9 +16,7 @@ const defaultConfig = {
   authRequired: false,
 };
 
-const baseUrl = 'http://localhost:3000';
-
-const login = async () => {
+const login = async (baseUrl = 'http://localhost:3000') => {
   const jar = request.jar();
   await request.post({
     uri: '/session',
@@ -35,7 +33,7 @@ const login = async () => {
   return { jar, session };
 };
 
-const logout = async (jar) => {
+const logout = async (jar, baseUrl = 'http://localhost:3000') => {
   const response = await request.get({
     uri: '/logout',
     baseUrl,
@@ -173,10 +171,36 @@ describe('logout route', async () => {
     );
   });
 
+  it('should logout when scoped to a sub path', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        session: {
+          cookie: {
+            path: '/foo',
+          },
+        },
+      }),
+      null,
+      '/foo'
+    );
+    const baseUrl = 'http://localhost:3000/foo';
+
+    const { jar, session: loggedInSession } = await login(baseUrl);
+    assert.ok(loggedInSession.id_token);
+    const sessionCookie = jar
+      .getCookies('http://localhost:3000/foo')
+      .find(({ key }) => key === 'appSession');
+    assert.equal(sessionCookie.path, '/foo');
+    const { session: loggedOutSession } = await logout(jar, baseUrl);
+    assert.notOk(loggedOutSession.id_token);
+  });
+
   it('should cancel silent logins when user logs out', async () => {
     server = await createServer(auth(defaultConfig));
 
     const { jar } = await login();
+    const baseUrl = 'http://localhost:3000';
     assert.notOk(
       jar.getCookies(baseUrl).find(({ key }) => key === 'skipSilentLogin')
     );
