@@ -1,6 +1,6 @@
 # Architecture
 
-## login flow
+## Protect a route
 
 With default config - Implicit Flow with Form Post https://auth0.com/docs/flows/concepts/implicit
 
