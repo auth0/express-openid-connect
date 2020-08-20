@@ -11,6 +11,7 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 - [Documentation](#documentation)
 - [Install](#install)
 - [Getting Started](#getting-started)
+- [Architecture](./ARCHITECTURE.md)
 - [Contributing](#contributing)
 - [Troubleshooting](./TROUBLESHOOTING.md)
 - [Support + Feedback](#support--feedback)
