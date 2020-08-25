@@ -90,7 +90,7 @@ describe('client initialization', function () {
         .reply(
           200,
           Object.assign({}, wellKnown, {
-            id_token_signing_alg_values_supported: ['none', 'RS256'],
+            id_token_signing_alg_values_supported: ['none'],
           })
         );
 
