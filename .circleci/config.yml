@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:10-browsers
     environment:
       LANG: en_US.UTF-8
     steps:
@@ -26,6 +26,9 @@ jobs:
       - run:
           name: Run Tests
           command: npm run test:ci
+      - run:
+          name: Run End to End Tests
+          command: npm run test:end-to-end
       - run:
           name: Run Lint
           command: npm run lint
