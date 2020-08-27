@@ -370,6 +370,18 @@ describe('get config', () => {
     );
   });
 
+  it('should not allow "none" for idTokenSigningAlg', () => {
+    const config = {
+      ...defaultConfig,
+      idTokenSigningAlg: 'none',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"idTokenSigningAlg" contains an invalid value'
+    );
+  });
+
   it('should require clientSecret for ID tokens with HMAC based algorithms', () => {
     const config = {
       ...defaultConfig,
