@@ -1,6 +1,7 @@
 # V2 Migration Guide
 
 `v2.x` brings a number of breaking changes in the library behaviour, configuration options as well as its cookie format. As a result, `v1.x` session will not be accepted by the library after upgrading to `v2.x`, they will in fact be silently ignored and cleaned up.
+
 ## Configuration
 
 ### Required Configuration Properties
@@ -112,10 +113,9 @@ app.use(
 
 ### Configuration items renamed/removed
 
-- **`required` is now `authRequired`** - to enable or disable all routes to require authentication, use the `authRequired` configuration (default `true`)
 - **`idTokenAlg` is now `idTokenSigningAlg`** - to specify an id token signing algorithm, use `idTokenSigningAlg`
 - **`httpOptions`** was removed - it is no longer possible to pass custom http request options to the underlying library. It will be again in the future in a more curated and comprehensive feature we have in mind for this library.
-- **`handleCallback`** and **`getUser`** were removed - These "hooks" will be made available in the future in a more curated and comprehensive feature we have in mind for this library. ```
+- **`handleCallback`** and **`getUser`** were removed - These "hooks" will be made available in the future in a more curated and comprehensive feature we have in mind for this library.
 
 ```js
 // Before
@@ -181,4 +181,4 @@ app.get('/', async (req, res) => {
 
 ## Custom Session Handling
 
-The ability to add custom session stores to the SDK using `appSession: false` has been removed and will be added back in a later release.
+The ability to add custom session stores to the SDK using `appSession: false` has been removed but could be added back in a later release.
