@@ -1,10 +1,11 @@
 # V2 Migration Guide
 
+`v2.x` brings a number of breaking changes in the library behaviour, configuration options as well as its cookie format. As a result, `v1.x` session will not be accepted by the library after upgrading to `v2.x`, they will in fact be silently ignored and cleaned up.
 ## Configuration
 
-### Required Keys
+### Required Configuration Properties
 
-- `appSession.secret` is now just `secret` (because it is now used to sign the transient cookies as well as the `appSession` cookie). The environmental variable has changed from `APP_SESSION_SECRET` to `SECRET`.
+- `appSession.secret` is now just `secret` (because it is now used to sign the transient cookies as well as the `appSession` cookie). The environment variable has changed from `APP_SESSION_SECRET` to `SECRET`.
 
 ```dotenv
 # Before
@@ -65,7 +66,7 @@ app.use(
 
 ### Session Lifecycle configuration
 
-Session duration was rolling only and configured using `appSession.duration` (default 24hrs). Now it can be configured to rolling or absolute (default rolling 24hrs and absolute 7 days).
+Session duration was being refreshed (e.g. it was "rolling") for another 24 hours (default value unchanged) with every page visit and configured using `appSession.duration`. In addition to that being optional behaviour now (`appSession.rolling`) every session may also have a an absolute duration it will be "rolled" for, when that duration is passed the session is not accepted as valid anymore. The default for this "absolute" duration is 7 days.
 
 ```js
 // Before
@@ -113,8 +114,8 @@ app.use(
 
 - **`required` is now `authRequired`** - to enable or disable all routes to require authentication, use the `authRequired` configuration (default `true`)
 - **`idTokenAlg` is now `idTokenSigningAlg`** - to specify an id token signing algorithm, use `idTokenSigningAlg`
-- **`httpOptions`** - it is no longer possible to pass custom http options to the underlying library
-- **`handleCallback`** and **`getUser`** - The hooks have been removed and will be replaced by a collection of hooks in a later release.
+- **`httpOptions`** was removed - it is no longer possible to pass custom http request options to the underlying library. It will be again in the future in a more curated and comprehensive feature we have in mind for this library.
+- **`handleCallback`** and **`getUser`** were removed - These "hooks" will be made available in the future in a more curated and comprehensive feature we have in mind for this library. ```
 
 ```js
 // Before
