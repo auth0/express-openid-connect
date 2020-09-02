@@ -12,7 +12,7 @@
     "index.d.ts"
   ],
   "scripts": {
-    "lint": "eslint . --ignore-path .gitignore",
+    "lint": "eslint .",
     "start:example": "node ./examples/run_example.js",
     "test": "mocha",
     "test:ci": "nyc --reporter=lcov npm test",
