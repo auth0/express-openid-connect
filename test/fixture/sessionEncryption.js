@@ -19,7 +19,8 @@ const encryptOpts = {
 const jwe = JWE.encrypt(payload, key, encryptOpts);
 const { cleartext } = JWE.decrypt(jwe, key, {
   complete: true,
-  algorithms: [encryptOpts.enc],
+  contentEncryptionAlgorithms: [encryptOpts.enc],
+  keyManagementAlgorithms: [encryptOpts.alg],
 });
 
 module.exports = {

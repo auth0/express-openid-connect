@@ -28,7 +28,7 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 
 ## Install
 
-Node.js version **>=12.0.0** is recommended, but **^10.13.0** lts/dubnium is also supported.
+Node.js version **>=12.0.0** is recommended, but **^10.19.0** lts/dubnium is also supported.
 
 ```bash
 npm install express-openid-connect
