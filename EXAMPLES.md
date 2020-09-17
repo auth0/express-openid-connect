@@ -88,7 +88,7 @@ Please note that the login and logout routes are not required. Trying to access 
 
 Full example at [custom-routes.js](./examples/custom-routes.js), to run it: `npm run start:example -- custom-routes`
 
-## 3. Obtaining access tokens to call external APIs
+## 4. Obtaining access tokens to call external APIs
 
 If your application needs an [access token](https://auth0.com/docs/tokens/access-tokens) for external APIs you can request one by adding `code` to your `response_type`. The Access Token will be available on the request context:
 
@@ -116,7 +116,7 @@ app.get('/', async (req, res) => {
 
 Full example at [access-an-api.js](./examples/access-an-api.js), to run it: `npm run start:example -- access-an-api`
 
-## 4. Obtaining and using refresh tokens
+## 5. Obtaining and using refresh tokens
 
 [Refresh tokens](https://auth0.com/docs/tokens/concepts/refresh-tokens) can be requested along with access tokens using the `offline_access` scope during login. On a route that calls an API, check for an expired token and attempt a refresh:
 
@@ -147,7 +147,7 @@ app.get('/', async (req, res) => {
 
 Full example at [access-an-api.js](./examples/access-an-api.js), to run it: `npm run start:example -- access-an-api`
 
-## 5. Calling userinfo
+## 6. Calling userinfo
 
 If your application needs to call the `/userinfo` endpoint you can use the `fetchUserInfo` method on the request context:
 
