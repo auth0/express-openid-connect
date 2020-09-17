@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [2.0.0-beta.0](https://github.com/auth0/express-openid-connect/tree/v2.0.0-beta.0) (2020-08-31)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.2...v2.0.0-beta.0)
+
+For a full list of breaking changes and migration guide, checkout https://github.com/auth0/express-openid-connect/blob/master/V2_MIGRATION_GUIDE.md
+
+**Breaking Changes**
+- postLogoutRedirect and response_type check [#123](https://github.com/auth0/express-openid-connect/pull/123) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Logout returnTo param [#115](https://github.com/auth0/express-openid-connect/pull/115) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Session duration behaviour [#114](https://github.com/auth0/express-openid-connect/pull/114) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Update Session cookie [#111](https://github.com/auth0/express-openid-connect/pull/111) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Configuration and API updates [#109](https://github.com/auth0/express-openid-connect/pull/109) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Update token set [#108](https://github.com/auth0/express-openid-connect/pull/108) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Added**
+- attemptSilentLogin feature [#121](https://github.com/auth0/express-openid-connect/pull/121) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Add refresh method to access token [#124](https://github.com/auth0/express-openid-connect/pull/124) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Architecture [#128](https://github.com/auth0/express-openid-connect/pull/128) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v1.0.2](https://github.com/auth0/express-openid-connect/tree/v1.0.2) (2020-05-12)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.1...v1.0.2)
 

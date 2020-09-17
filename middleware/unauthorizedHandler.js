@@ -4,11 +4,11 @@
  *
  * This middleware needs to be included after your application
  * routes.
-*/
-module.exports = function() {
+ */
+module.exports = function () {
   return (err, req, res, next) => {
     if (err.statusCode === 401) {
-      return res.openid.login();
+      return res.oidc.login();
     }
     next(err);
   };

@@ -1,230 +1,577 @@
 const { assert } = require('chai');
+const sinon = require('sinon');
 const { get: getConfig } = require('../lib/config');
 
 const defaultConfig = {
-  appSession: {secret: '__test_session_secret__'},
+  secret: '__test_session_secret__',
   clientID: '__test_client_id__',
-  issuerBaseURL: 'https://test.auth0.com',
-  baseURL: 'https://example.org'
+  issuerBaseURL: 'https://op.example.com',
+  baseURL: 'https://example.org',
 };
 
-describe('config', function() {
-  describe('simple case', function() {
+const validateAuthorizationParams = (authorizationParams) =>
+  getConfig({ ...defaultConfig, authorizationParams });
+
+describe('get config', () => {
+  afterEach(() => sinon.restore());
+
+  it('should get config for default config', () => {
     const config = getConfig(defaultConfig);
-
-    it('should default to response_type=id_token', function() {
-      assert.equal(config.authorizationParams.response_type, 'id_token');
-    });
-
-    it('should default to response_mode=form_post', function() {
-      assert.equal(config.authorizationParams.response_mode, 'form_post');
-    });
-
-    it('should default to scope=openid profile email', function() {
-      assert.equal(config.authorizationParams.scope, 'openid profile email');
-    });
-
-    it('should default to required true', function() {
-      assert.ok(config.required);
+    assert.deepInclude(config, {
+      authorizationParams: {
+        response_type: 'id_token',
+        response_mode: 'form_post',
+        scope: 'openid profile email',
+      },
+      authRequired: true,
     });
   });
 
-  describe('simple case with environment variables', function() {
-    let config;
-    let env;
-
-    beforeEach(function() {
-      env = process.env;
-      process.env = Object.assign({}, process.env, {
-        ISSUER_BASE_URL: defaultConfig.issuerBaseURL,
-        CLIENT_ID: defaultConfig.clientID,
-        APP_SESSION_SECRET: defaultConfig.appSession.secret,
-        BASE_URL: defaultConfig.baseURL
-      });
-      config = getConfig();
+  it('should get config for default config with environment variables', () => {
+    sinon.stub(process, 'env').value({
+      ...process.env,
+      ISSUER_BASE_URL: defaultConfig.issuerBaseURL,
+      CLIENT_ID: defaultConfig.clientID,
+      SECRET: defaultConfig.secret,
+      BASE_URL: defaultConfig.baseURL,
     });
-
-    afterEach(function() {
-      process.env = env;
-    });
-
-    it('should default to response_type=id_token', function() {
-      assert.equal(config.authorizationParams.response_type, 'id_token');
-    });
-
-    it('should default to response_mode=form_post', function() {
-      assert.equal(config.authorizationParams.response_mode, 'form_post');
-    });
-
-    it('should default to scope=openid profile email', function() {
-      assert.equal(config.authorizationParams.scope, 'openid profile email');
-    });
-
-    it('should default to required true', function() {
-      assert.ok(config.required);
+    const config = getConfig();
+    assert.deepInclude(config, {
+      authorizationParams: {
+        response_type: 'id_token',
+        response_mode: 'form_post',
+        scope: 'openid profile email',
+      },
+      authRequired: true,
     });
   });
 
-  describe('when authorizationParams is response_type=code', function() {
-    const customConfig = Object.assign({}, defaultConfig, {
+  it('should get config for response_type=code', () => {
+    const config = getConfig({
+      ...defaultConfig,
       clientSecret: '__test_client_secret__',
       authorizationParams: {
-        response_type: 'code'
-      }
+        response_type: 'code',
+      },
     });
-    const config = getConfig(customConfig);
-
-    it('should set new response_type', function() {
-      assert.equal(config.authorizationParams.response_type, 'code');
-    });
-
-    it('should allow undefined response_mode', function() {
-      assert.equal(config.authorizationParams.response_mode, undefined);
-    });
-
-    it('should keep default scope', function() {
-      assert.equal(config.authorizationParams.scope, 'openid profile email');
-    });
-  });
-
-  describe('when authorizationParams response_type fuzzy matches issuer', function() {
-    const customConfig = Object.assign({}, defaultConfig, {
-      clientSecret: '__test_client_secret__',
+    assert.deepInclude(config, {
       authorizationParams: {
-        response_type: 'token id_token code'
-      }
-    });
-    const config = getConfig(customConfig);
-
-    it('should keep token code', function() {
-      assert.equal(config.authorizationParams.response_type, 'token id_token code');
+        response_type: 'code',
+        scope: 'openid profile email',
+      },
+      authRequired: true,
     });
   });
 
-  describe('with auth0Logout', function() {
-    const config = getConfig(Object.assign({}, defaultConfig, {auth0Logout: true}));
+  it('should require a fully qualified URL for issuer', () => {
+    const config = {
+      ...defaultConfig,
+      issuerBaseURL: 'www.example.com',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"issuerBaseURL" must be a valid uri'
+    );
+  });
 
-    it('should set idpLogout to true', function() {
-      assert.equal(config.auth0Logout, true);
-      assert.equal(config.idpLogout, true);
+  it('should set idpLogout to true when auth0Logout is true', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      auth0Logout: true,
+    });
+    assert.include(config, {
+      auth0Logout: true,
+      idpLogout: true,
     });
   });
 
-  describe('without auth0Logout nor idpLogout', function() {
+  it('auth0Logout and idpLogout should default to false', () => {
     const config = getConfig(defaultConfig);
-
-    it('should set both to false', function() {
-      assert.equal(config.auth0Logout, false);
-      assert.equal(config.idpLogout, false);
+    assert.include(config, {
+      auth0Logout: false,
+      idpLogout: false,
     });
   });
 
-  describe('with idpLogout', function() {
-    const config = getConfig(Object.assign({}, defaultConfig, {idpLogout: true}));
-
-    it('should set both to false', function() {
-      assert.equal(config.auth0Logout, false);
-      assert.equal(config.idpLogout, true);
+  it('should not set auth0Logout to true when idpLogout is true', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      idpLogout: true,
+    });
+    assert.include(config, {
+      auth0Logout: false,
+      idpLogout: true,
     });
   });
 
-  describe('default auth paths', function() {
+  it('should set default route paths', () => {
     const config = getConfig(defaultConfig);
-
-    it('should set the default callback path', function() {
-      assert.equal(config.redirectUriPath, '/callback');
-    });
-
-    it('should set the default login path', function() {
-      assert.equal(config.loginPath, '/login');
-    });
-
-    it('should set the default logout path', function() {
-      assert.equal(config.logoutPath, '/logout');
+    assert.include(config.routes, {
+      callback: '/callback',
+      login: '/login',
+      logout: '/logout',
     });
   });
 
-  describe('custom auth paths', function() {
-    const customConfig = Object.assign({}, defaultConfig, {
-      redirectUriPath: '/custom-callback',
-      loginPath: '/custom-login',
-      logoutPath: '/custom-logout',
+  it('should set custom route paths', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      routes: {
+        callback: '/custom-callback',
+        login: '/custom-login',
+        logout: '/custom-logout',
+      },
     });
-    const config = getConfig(customConfig);
-
-    it('should accept the custom callback path', function() {
-      assert.equal(config.redirectUriPath, '/custom-callback');
-    });
-
-    it('should accept the login path', function() {
-      assert.equal(config.loginPath, '/custom-login');
-    });
-
-    it('should accept the logout path', function() {
-      assert.equal(config.logoutPath, '/custom-logout');
+    assert.include(config.routes, {
+      callback: '/custom-callback',
+      login: '/custom-login',
+      logout: '/custom-logout',
     });
   });
 
-  describe('app session default configuration', function() {
+  it('should set default app session configuration', () => {
     const config = getConfig(defaultConfig);
-
-    it('should set the app session secret', function() {
-      assert.equal(config.appSession.secret, '__test_session_secret__');
-    });
-
-    it('should set the session length to 1 day by default', function() {
-      assert.equal(config.appSession.duration, 86400);
-    });
-
-    it('should set the session name to "appSession" by default', function() {
-      assert.equal(config.appSession.name, 'appSession');
-    });
-
-    it('should set the session cookie attributes to correct defaults', function() {
-      assert.notExists(config.appSession.cookieDomain);
-      assert.notExists(config.appSession.cookiePath);
-      assert.notExists(config.appSession.cookieSecure);
-      assert.equal(config.appSession.cookieSameSite, 'Lax');
-      assert.equal(config.appSession.cookieHttpOnly, true);
+    assert.deepInclude(config.session, {
+      rollingDuration: 86400,
+      name: 'appSession',
+      cookie: {
+        sameSite: 'Lax',
+        httpOnly: true,
+        transient: false,
+      },
     });
   });
 
-  describe('app session cookie configuration', function() {
-    const customConfig = Object.assign({}, defaultConfig, {
-      appSession: {
-        secret: [ '__test_session_secret_1__', '__test_session_secret_2__' ],
+  it('should set custom cookie configuration', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      session: {
         name: '__test_custom_session_name__',
-        duration: 1234567890,
-        cookieDomain: '__test_custom_domain__',
-        cookiePath: '__test_custom_path__',
-        cookieTransient: true,
-        cookieHttpOnly: false,
-        cookieSecure: true,
-        cookieSameSite: 'Strict',
-      }
+        rollingDuration: 1234567890,
+        cookie: {
+          domain: '__test_custom_domain__',
+          transient: true,
+          httpOnly: false,
+          secure: true,
+          sameSite: 'Strict',
+        },
+      },
     });
+    assert.deepInclude(config, {
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      session: {
+        name: '__test_custom_session_name__',
+        rollingDuration: 1234567890,
+        absoluteDuration: 604800,
+        rolling: true,
+        cookie: {
+          domain: '__test_custom_domain__',
+          transient: true,
+          httpOnly: false,
+          secure: true,
+          sameSite: 'Strict',
+        },
+      },
+    });
+  });
 
-    it('should set an array of secrets', function() {
-      const config = getConfig(customConfig);
-      assert.equal(config.appSession.secret.length, 2);
-      assert.equal(config.appSession.secret[0], '__test_session_secret_1__');
-      assert.equal(config.appSession.secret[1], '__test_session_secret_2__');
-    });
+  it('should fail when the baseURL is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        baseURL: '__invalid_url__',
+      });
+    }, '"baseURL" must be a valid uri');
+  });
 
-    it('should set the custom session values', function() {
-      const config = getConfig(customConfig);
-      assert.equal(config.appSession.duration, 1234567890);
-      assert.equal(config.appSession.name, '__test_custom_session_name__');
-    });
+  it('should fail when the clientID is not provided', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        clientID: undefined,
+      });
+    }, '"clientID" is required');
+  });
 
-    it('should set the session cookie attributes to custom values', function() {
-      const config = getConfig(customConfig);
-      assert.equal(config.appSession.cookieDomain, '__test_custom_domain__');
-      assert.equal(config.appSession.cookiePath, '__test_custom_path__');
-      assert.equal(config.appSession.cookieTransient, true);
-      assert.equal(config.appSession.cookieHttpOnly, false);
-      assert.equal(config.appSession.cookieSecure, true);
-      assert.equal(config.appSession.cookieSameSite, 'Strict');
+  it('should fail when the baseURL is not provided', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        baseURL: undefined,
+      });
+    }, '"baseURL" is required');
+  });
+
+  it('should fail when the secret is not provided', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: undefined,
+      });
+    }, '"secret" is required');
+  });
+
+  it('should fail when app session length is not an integer', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rollingDuration: 3.14159,
+        },
+      });
+    }, '"session.rollingDuration" must be an integer');
+  });
+
+  it('should fail when rollingDuration is defined and rolling is false', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rolling: false,
+          rollingDuration: 100,
+        },
+      });
+    }, '"session.rollingDuration" must be false when "session.rolling" is disabled');
+  });
+
+  it('should fail when rollingDuration is not defined and rolling is true', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rolling: true,
+          rollingDuration: false,
+        },
+      });
+    }, '"session.rollingDuration" must be provided an integer value when "session.rolling" is true');
+  });
+
+  it('should fail when absoluteDuration is not defined and rolling is false', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          rolling: false,
+          absoluteDuration: false,
+        },
+      });
+    }, '"session.absoluteDuration" must be provided an integer value when "session.rolling" is false');
+  });
+
+  it('should fail when app session secret is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: { key: '__test_session_secret__' },
+      });
+    }, '"secret" must be one of [string, binary, array]');
+  });
+
+  it('should fail when app session cookie httpOnly is not a boolean', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        session: {
+          cookie: {
+            httpOnly: '__invalid_httponly__',
+          },
+        },
+      });
+    }, '"session.cookie.httpOnly" must be a boolean');
+  });
+
+  it('should fail when app session cookie secure is not a boolean', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            secure: '__invalid_secure__',
+          },
+        },
+      });
+    }, '"session.cookie.secure" must be a boolean');
+  });
+
+  it('should fail when app session cookie sameSite is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            sameSite: '__invalid_samesite__',
+          },
+        },
+      });
+    }, '"session.cookie.sameSite" must be one of [Lax, Strict, None]');
+  });
+
+  it('should fail when app session cookie domain is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        secret: '__test_session_secret__',
+        session: {
+          cookie: {
+            domain: false,
+          },
+        },
+      });
+    }, '"session.cookie.domain" must be a string');
+  });
+
+  it("shouldn't allow a secret of less than 8 chars", () => {
+    assert.throws(
+      () => getConfig({ ...defaultConfig, secret: 'short' }),
+      TypeError,
+      '"secret" does not match any of the allowed types'
+    );
+    assert.throws(
+      () => getConfig({ ...defaultConfig, secret: ['short', 'too'] }),
+      TypeError,
+      '"secret[0]" does not match any of the allowed types'
+    );
+    assert.throws(
+      () => getConfig({ ...defaultConfig, secret: Buffer.from('short') }),
+      TypeError,
+      '"secret" must be at least 8 bytes'
+    );
+  });
+
+  it("shouldn't allow code flow without clientSecret", () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for a response_type that includes code'
+    );
+  });
+
+  it("shouldn't allow hybrid flow without clientSecret", () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code id_token',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for a response_type that includes code'
+    );
+  });
+
+  it('should not allow "none" for idTokenSigningAlg', () => {
+    let config = (idTokenSigningAlg) =>
+      getConfig({
+        ...defaultConfig,
+        idTokenSigningAlg,
+      });
+    let expected = '"idTokenSigningAlg" contains an invalid value';
+    assert.throws(() => config('none'), TypeError, expected);
+    assert.throws(() => config('NONE'), TypeError, expected);
+    assert.throws(() => config('noNE'), TypeError, expected);
+  });
+
+  it('should require clientSecret for ID tokens with HMAC based algorithms', () => {
+    const config = {
+      ...defaultConfig,
+      idTokenSigningAlg: 'HS256',
+      authorizationParams: {
+        response_type: 'id_token',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+    );
+  });
+
+  it('should require clientSecret for ID tokens in hybrid flow with HMAC based algorithms', () => {
+    const config = {
+      ...defaultConfig,
+      idTokenSigningAlg: 'HS256',
+      authorizationParams: {
+        response_type: 'code id_token',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+    );
+  });
+
+  it('should require clientSecret for ID tokens in code flow with HMAC based algorithms', () => {
+    const config = {
+      ...defaultConfig,
+      idTokenSigningAlg: 'HS256',
+      authorizationParams: {
+        response_type: 'code',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+    );
+  });
+
+  it('should allow empty auth params', () => {
+    assert.doesNotThrow(validateAuthorizationParams);
+    assert.doesNotThrow(() => validateAuthorizationParams({}));
+  });
+
+  it('should not allow empty scope', () => {
+    assert.throws(
+      () => validateAuthorizationParams({ scope: null }),
+      TypeError,
+      '"authorizationParams.scope" must be a string'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ scope: '' }),
+      TypeError,
+      '"authorizationParams.scope" is not allowed to be empty'
+    );
+  });
+
+  it('should not allow scope without openid', () => {
+    assert.throws(
+      () => validateAuthorizationParams({ scope: 'profile email' }),
+      TypeError,
+      '"authorizationParams.scope" with value "profile email" fails to match the contains openid pattern'
+    );
+  });
+
+  it('should allow scope with openid', () => {
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ scope: 'openid read:users' })
+    );
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ scope: 'read:users openid' })
+    );
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ scope: 'read:users openid profile email' })
+    );
+  });
+
+  it('should not allow empty response_type', () => {
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: null }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: '' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+  });
+
+  it('should not allow invalid response_types', () => {
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: 'foo' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: 'foo id_token' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_type: 'id_token code' }),
+      TypeError,
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+    );
+  });
+
+  it('should allow valid response_types', () => {
+    const config = (authorizationParams) => ({
+      ...defaultConfig,
+      clientSecret: 'foo',
+      authorizationParams,
     });
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ response_type: 'id_token' })
+    );
+    assert.doesNotThrow(() => config({ response_type: 'code id_token' }));
+    assert.doesNotThrow(() => config({ response_type: 'code' }));
+  });
+
+  it('should not allow empty response_mode', () => {
+    assert.throws(
+      () => validateAuthorizationParams({ response_mode: null }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+    assert.throws(
+      () => validateAuthorizationParams({ response_mode: '' }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'code',
+          response_mode: '',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be one of [query, form_post]'
+    );
+  });
+
+  it('should not allow response_type id_token and response_mode query', () => {
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'id_token',
+          response_mode: 'query',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'code id_token',
+          response_mode: 'query',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]'
+    );
+  });
+
+  it('should allow valid response_type response_mode combinations', () => {
+    const config = (authorizationParams) => ({
+      ...defaultConfig,
+      clientSecret: 'foo',
+      authorizationParams,
+    });
+    assert.doesNotThrow(() =>
+      config({ response_type: 'code', response_mode: 'query' })
+    );
+    assert.doesNotThrow(() =>
+      config({ response_type: 'code', response_mode: 'form_post' })
+    );
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({
+        response_type: 'id_token',
+        response_mode: 'form_post',
+      })
+    );
+    assert.doesNotThrow(() =>
+      config({ response_type: 'code id_token', response_mode: 'form_post' })
+    );
   });
 });
