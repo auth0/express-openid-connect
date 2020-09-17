@@ -5,6 +5,7 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 [![CircleCI](https://img.shields.io/circleci/build/github/auth0/express-openid-connect/master?style=flat-square)](https://circleci.com/gh/auth0/express-openid-connect/tree/master)
 [![codecov](https://img.shields.io/codecov/c/github/auth0/express-openid-connect?style=flat-square)](https://codecov.io/gh/auth0/express-openid-connect)
 [![NPM version](https://img.shields.io/npm/v/express-openid-connect.svg?style=flat-square)](https://npmjs.org/package/express-openid-connect)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2Fexpress-openid-connect.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2Fexpress-openid-connect?ref=badge_shield)
 
 ## Table of Contents
 
@@ -121,3 +122,5 @@ Auth0 helps you to easily:
 ## License
 
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2Fexpress-openid-connect.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2Fexpress-openid-connect?ref=badge_large)
