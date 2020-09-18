@@ -161,3 +161,43 @@ app.get('/', async (req, res) => {
 ```
 
 Full example at [userinfo.js](./examples/userinfo.js), to run it: `npm run start:example -- userinfo`
+
+## 6. Protect a route based on specific claims
+
+You can check a user's specific claims to determine if they can access a route:
+
+```js
+const {
+  auth,
+  claimEquals,
+  claimIncludes,
+  claimCheck,
+} = require('express-openid-connect');
+
+app.use(
+  auth({
+    authRequired: false,
+  })
+);
+
+// claimEquals checks if a claim equals the given value
+app.get('/admin', claimEquals('isAdmin', true), (req, res) =>
+  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
+);
+
+// claimIncludes checks if a claim includes all the given values
+app.get(
+  '/sales-managers',
+  claimIncludes('roles', 'sales', 'manager'),
+  (req, res) =>
+    res.send(`Hello ${req.oidc.user.sub}, this is the sales managers section.`)
+);
+
+// claimCheck takes a function that checks the claims and returns true to allow access
+app.get(
+  '/payroll',
+  claimCheck(({ isAdmin, roles }) => isAdmin || roles.includes('payroll')),
+  (req, res) =>
+    res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`)
+);
+```
