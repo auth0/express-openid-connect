@@ -368,7 +368,7 @@ interface ConfigParams {
     /**
      * Relative path to application logout.
      */
-    logoutPath?: string | false;
+    logout?: string | false;
 
     /**
      * Either a relative path to the application or a valid URI to an external domain.
