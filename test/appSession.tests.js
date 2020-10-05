@@ -297,7 +297,7 @@ describe('appSession', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'req[appSession] is already set, did you run this middleware twice?'
+      'sessionStore[appSession] is already set, did you run this middleware twice?'
     );
   });
 
