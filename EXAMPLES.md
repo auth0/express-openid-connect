@@ -68,10 +68,10 @@ If you need to customize the provided login and logout routes, you can disable t
 app.use(
   auth({
     routes: {
-      // Override the default login route
+      // Override the default login route to use your own login route as shown below
       login: false,
       // Pass a custom path to redirect users to a different
-      // path after login.
+      // path after logout.
       postLogoutRedirect: '/custom-logout',
     },
   })
