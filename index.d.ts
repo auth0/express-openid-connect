@@ -6,6 +6,7 @@ import {
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
+import { IncomingMessage } from 'http';
 
 /**
  * The Express.js Request with `oidc` context added by the `auth` middleware.
@@ -522,7 +523,30 @@ interface AccessToken {
  *  app.listen(3000, () => console.log('listening at http://localhost:3000'))
  * ```
  */
-export function auth(params?: ConfigParams): RequestHandler;
+export function auth(params?: ConfigParamsWithoutWebSocket): RequestHandler;
+export function auth(params: ConfigParamWithWebSocket): Authenticators;
+
+interface ConfigParamsWithoutWebSocket extends ConfigParams {
+  webSocket?: false;
+}
+
+interface ConfigParamWithWebSocket extends ConfigParams {
+  webSocket: true;
+}
+
+type WebSocketAuthenticatorCallback = (
+  err: unknown,
+  oidc: RequestContext
+) => void;
+type WebSocketAuthenticator = (
+  req: IncomingMessage,
+  next: WebSocketAuthenticatorCallback
+) => void;
+
+interface Authenticators {
+  expressAuthRouter: RequestHandler;
+  webSocketAuthenticate: WebsocketAuthenticator;
+}
 
 /**
  * Set {@link ConfigParams.authRequired authRequired} to `false` then require authentication

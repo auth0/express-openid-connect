@@ -28,8 +28,12 @@ module.exports = function (params) {
   debug('configuration object processed, resulting configuration: %O', config);
   const router = new express.Router();
   const transient = new TransientCookieHandler(config);
+  const {
+    appSessionMiddleware,
+    attachSessionToHttpRequestIfExists,
+  } = appSession(config);
 
-  router.use(appSession(config));
+  router.use(appSessionMiddleware);
 
   // Express context and OpenID Issuer discovery.
   router.use(async (req, res, next) => {
@@ -153,5 +157,29 @@ module.exports = function (params) {
     router.use(attemptSilentLogin());
   }
 
-  return router;
+  function webSocketAuthenticate(req, next) {
+    if (attachSessionToHttpRequestIfExists(req, next)) {
+      const unhandledNext = () =>
+        next(
+          new Error(
+            'unexpected call to next when creating request context for WebSocket authentication'
+          )
+        );
+      const oidc = new RequestContext(config, req, null, unhandledNext);
+      next(null, oidc);
+    } else {
+      next(
+        new Error(
+          'no existing session, ensure client is authenticated before opening a websocket connection.'
+        ),
+        null
+      );
+    }
+  }
+
+  if (config.webSocket) {
+    return { expressAuthRouter: router, webSocketAuthenticate };
+  } else {
+    return router;
+  }
 };

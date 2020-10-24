@@ -6,11 +6,13 @@ const request = require('request-promise-native').defaults({
 });
 const sinon = require('sinon');
 
-const appSession = require('../lib/appSession');
+const appSessionOriginal = require('../lib/appSession');
 const { encrypted } = require('./fixture/sessionEncryption');
 const { makeIdToken } = require('./fixture/cert');
 const { get: getConfig } = require('../lib/config');
 const { create: createServer } = require('./fixture/server');
+
+const appSession = (config) => appSessionOriginal(config).appSessionMiddleware;
 
 const defaultConfig = {
   clientID: '__test_client_id__',
