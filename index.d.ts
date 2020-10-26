@@ -524,20 +524,28 @@ interface AccessToken {
  * ```
  */
 export function auth(params?: ConfigParamsWithoutWebSocket): RequestHandler;
-export function auth(params: ConfigParamWithWebSocket): Authenticators;
+export function auth(params: ConfigParamsWithWebSocket): Authenticators;
+export function auth(
+  params: ConfigParamsUnknownWebSocket
+): Authenticators | RequestHandler;
 
 interface ConfigParamsWithoutWebSocket extends ConfigParams {
   webSocket?: false;
 }
 
-interface ConfigParamWithWebSocket extends ConfigParams {
+interface ConfigParamsWithWebSocket extends ConfigParams {
   webSocket: true;
+}
+
+interface ConfigParamsUnknownWebSocket extends ConfigParams {
+  webSocket: boolean;
 }
 
 type WebSocketAuthenticatorCallback = (
   err: unknown,
   oidc: RequestContext
 ) => void;
+
 type WebSocketAuthenticator = (
   req: IncomingMessage,
   next: WebSocketAuthenticatorCallback
@@ -545,7 +553,7 @@ type WebSocketAuthenticator = (
 
 interface Authenticators {
   expressAuthRouter: RequestHandler;
-  webSocketAuthenticate: WebsocketAuthenticator;
+  authenticateWebSocket: WebSocketAuthenticator;
 }
 
 /**

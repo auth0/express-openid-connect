@@ -157,7 +157,7 @@ module.exports = function (params) {
     router.use(attemptSilentLogin());
   }
 
-  function webSocketAuthenticate(req, next) {
+  function authenticateWebSocket(req, next) {
     if (attachSessionToHttpRequestIfExists(req, next)) {
       const unhandledNext = () =>
         next(
@@ -178,7 +178,7 @@ module.exports = function (params) {
   }
 
   if (config.webSocket) {
-    return { expressAuthRouter: router, webSocketAuthenticate };
+    return { expressAuthRouter: router, authenticateWebSocket };
   } else {
     return router;
   }
