@@ -384,41 +384,7 @@ interface ConfigParams {
   };
 }
 
-/**
- * Configuration parameters used for the application session.
- */
-interface SessionConfigParams {
-  /**
-   * String value for the cookie name used for the internal session.
-   * This value must only include letters, numbers, and underscores.
-   * Default is `appSession`.
-   */
-  name?: string;
-
-  /**
-   * If you want your session duration to be rolling, eg reset everytime the
-   * user is active on your site, set this to a `true`. If you want the session
-   * duration to be absolute, where the user is logged out a fixed time after login,
-   * regardless of activity, set this to `false`
-   * Default is `true`.
-   */
-  rolling?: boolean;
-
-  /**
-   * Integer value, in seconds, for application session rolling duration.
-   * The amount of time for which the user must be idle for then to be logged out.
-   * Default is 86400 seconds (1 day).
-   */
-  rollingDuration?: number;
-
-  /**
-   * Integer value, in seconds, for application absolute rolling duration.
-   * The amount of time after the user has logged in that they will be logged out.
-   * Set this to `false` if you don't want an absolute duration on your session.
-   * Default is 604800 seconds (7 days).
-   */
-  absoluteDuration?: boolean | number;
-
+interface CookieConfigParams {
   /**
    * Domain name for the cookie.
    * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`
@@ -457,6 +423,47 @@ interface SessionConfigParams {
    * Defaults to "Lax" but will be adjusted based on {@link AuthorizationParameters.response_type}.
    */
   sameSite?: string;
+}
+
+/**
+ * Configuration parameters used for the application session.
+ */
+interface SessionConfigParams {
+  /**
+   * String value for the cookie name used for the internal session.
+   * This value must only include letters, numbers, and underscores.
+   * Default is `appSession`.
+   */
+  name?: string;
+
+  /**
+   * If you want your session duration to be rolling, eg reset everytime the
+   * user is active on your site, set this to a `true`. If you want the session
+   * duration to be absolute, where the user is logged out a fixed time after login,
+   * regardless of activity, set this to `false`
+   * Default is `true`.
+   */
+  rolling?: boolean;
+
+  /**
+   * Integer value, in seconds, for application session rolling duration.
+   * The amount of time for which the user must be idle for then to be logged out.
+   * Default is 86400 seconds (1 day).
+   */
+  rollingDuration?: number;
+
+  /**
+   * Integer value, in seconds, for application absolute rolling duration.
+   * The amount of time after the user has logged in that they will be logged out.
+   * Set this to `false` if you don't want an absolute duration on your session.
+   * Default is 604800 seconds (7 days).
+   */
+  absoluteDuration?: boolean | number;
+
+  /**
+   * Properties for the session cookie and transient cookies.
+   */
+  cookie?: CookieConfigParams;
 }
 
 interface AccessToken {
