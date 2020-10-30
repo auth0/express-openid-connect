@@ -384,47 +384,6 @@ interface ConfigParams {
   };
 }
 
-interface CookieConfigParams {
-  /**
-   * Domain name for the cookie.
-   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`
-   */
-  domain?: string;
-
-  /**
-   * Path for the cookie.
-   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`
-   */
-  path?: string;
-
-  /**
-   * Set to true to use a transient cookie (cookie without an explicit expiration).
-   * Default is `false`
-   */
-  transient?: boolean;
-
-  /**
-   * Flags the cookie to be accessible only by the web server.
-   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `httponly`.
-   * Defaults to `true`.
-   */
-  httpOnly?: boolean;
-
-  /**
-   * Marks the cookie to be used over secure channels only.
-   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `secure`.
-   * Defaults to {@link Request.secure}.
-   */
-  secure?: boolean;
-
-  /**
-   * Value of the SameSite Set-Cookie attribute.
-   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `samesite`.
-   * Defaults to "Lax" but will be adjusted based on {@link AuthorizationParameters.response_type}.
-   */
-  sameSite?: string;
-}
-
 /**
  * Configuration parameters used for the application session.
  */
@@ -464,6 +423,50 @@ interface SessionConfigParams {
    * Properties for the session cookie and transient cookies.
    */
   cookie?: CookieConfigParams;
+}
+
+/**
+ * Configuration parameters used for the session cookie and transient cookies.
+ */
+interface CookieConfigParams {
+  /**
+   * Domain name for the cookie.
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`
+   */
+  domain?: string;
+
+  /**
+   * Path for the cookie.
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`
+   */
+  path?: string;
+
+  /**
+   * Set to true to use a transient cookie (cookie without an explicit expiration).
+   * Default is `false`
+   */
+  transient?: boolean;
+
+  /**
+   * Flags the cookie to be accessible only by the web server.
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `httponly`.
+   * Defaults to `true`.
+   */
+  httpOnly?: boolean;
+
+  /**
+   * Marks the cookie to be used over secure channels only.
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `secure`.
+   * Defaults to {@link Request.secure}.
+   */
+  secure?: boolean;
+
+  /**
+   * Value of the SameSite Set-Cookie attribute.
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `samesite`.
+   * Defaults to "Lax" but will be adjusted based on {@link AuthorizationParameters.response_type}.
+   */
+  sameSite?: string;
 }
 
 interface AccessToken {
