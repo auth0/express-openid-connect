@@ -420,14 +420,11 @@ interface SessionConfigParams {
   absoluteDuration?: boolean | number;
 
   /**
-   * Properties for the session cookie and transient cookies.
+   * Configuration parameters used for the session cookie and transient cookies.
    */
   cookie?: CookieConfigParams;
 }
 
-/**
- * Configuration parameters used for the session cookie and transient cookies.
- */
 interface CookieConfigParams {
   /**
    * Domain name for the cookie.
