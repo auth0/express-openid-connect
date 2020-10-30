@@ -119,7 +119,7 @@ interface RequestContext {
  * app.use(auth());
  *
  * app.get('/admin-login', (req, res) => {
- *   res.openid.login({ returnTo: '/admin' })
+ *   res.oidc.login({ returnTo: '/admin' })
  * })
  * ```
  */
