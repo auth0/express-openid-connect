@@ -420,6 +420,13 @@ interface SessionConfigParams {
   absoluteDuration?: boolean | number;
 
   /**
+   * Configuration parameters used for the session cookie and transient cookies.
+   */
+  cookie?: CookieConfigParams;
+}
+
+interface CookieConfigParams {
+  /**
    * Domain name for the cookie.
    * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `domain`
    */
