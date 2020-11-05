@@ -382,6 +382,11 @@ interface ConfigParams {
      */
     callback?: string;
   };
+
+  /**
+   * String value for the token endpoint authentication method. Default is `client_secret_basic`.
+   */
+  tokenAuthMethod?: string;
 }
 
 /**
