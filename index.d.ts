@@ -382,6 +382,11 @@ interface ConfigParams {
      */
     callback?: string;
   };
+
+  /**
+   * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
+   */
+  clientAuthMethod?: string;
 }
 
 /**

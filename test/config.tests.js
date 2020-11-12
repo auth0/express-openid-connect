@@ -629,4 +629,46 @@ describe('get config', () => {
       config({ response_type: 'code id_token', response_mode: 'form_post' })
     );
   });
+
+  it('should default clientAuthMethod to none for id_token response type', () => {
+    {
+      const config = getConfig(defaultConfig);
+      assert.deepInclude(config, {
+        clientAuthMethod: 'none',
+      });
+    }
+    {
+      const config = getConfig({
+        ...defaultConfig,
+        authorizationParams: { response_type: 'id_token' },
+      });
+      assert.deepInclude(config, {
+        clientAuthMethod: 'none',
+      });
+    }
+  });
+
+  it('should default clientAuthMethod to client_secret_basic for other response types', () => {
+    {
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.deepInclude(config, {
+        clientAuthMethod: 'client_secret_basic',
+      });
+    }
+
+    {
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: { response_type: 'code id_token' },
+      });
+      assert.deepInclude(config, {
+        clientAuthMethod: 'client_secret_basic',
+      });
+    }
+  });
 });
