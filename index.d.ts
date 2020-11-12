@@ -384,9 +384,9 @@ interface ConfigParams {
   };
 
   /**
-   * String value for the token endpoint authentication method. Default is `client_secret_basic`.
+   * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
    */
-  tokenAuthMethod?: string;
+  clientAuthMethod?: string;
 }
 
 /**
