@@ -41,11 +41,21 @@ describe('transientHandler', function () {
       sinon.assert.calledWithMatch(res.cookie, '_test_key', re);
     });
 
-    it('should use the req.secure property to automatically set cookies secure when on https', function () {
-      transientHandler.store('test_key', { secure: true }, res, {
+    it('should use the config.secure property to automatically set cookies secure', function () {
+      const transientHandlerHttps = new TransientCookieHandler({
+        secret,
+        session: { cookie: { secure: true } },
+        legacySameSiteCookie: true,
+      });
+      const transientHandlerHttp = new TransientCookieHandler({
+        secret,
+        session: { cookie: { secure: false } },
+        legacySameSiteCookie: true,
+      });
+      transientHandlerHttps.store('test_key', {}, res, {
         sameSite: 'Lax',
       });
-      transientHandler.store('test_key', { secure: false }, res, {
+      transientHandlerHttp.store('test_key', {}, res, {
         sameSite: 'Lax',
       });
 

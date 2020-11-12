@@ -130,8 +130,11 @@ describe('get config', () => {
     });
   });
 
-  it('should set default app session configuration', () => {
-    const config = getConfig(defaultConfig);
+  it('should set default app session configuration for http', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'http://example.com',
+    });
     assert.deepInclude(config.session, {
       rollingDuration: 86400,
       name: 'appSession',
@@ -139,6 +142,24 @@ describe('get config', () => {
         sameSite: 'Lax',
         httpOnly: true,
         transient: false,
+        secure: false,
+      },
+    });
+  });
+
+  it('should set default app session configuration for https', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com',
+    });
+    assert.deepInclude(config.session, {
+      rollingDuration: 86400,
+      name: 'appSession',
+      cookie: {
+        sameSite: 'Lax',
+        httpOnly: true,
+        transient: false,
+        secure: true,
       },
     });
   });
@@ -175,6 +196,40 @@ describe('get config', () => {
         },
       },
     });
+  });
+
+  it('should fail when the baseURL is http and cookie is secure', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        baseURL: 'http://example.com',
+        session: { cookie: { secure: true } },
+      });
+    }, 'Cookies set with the `Secure` property wont be read over http');
+  });
+
+  it('should warn when the baseURL is https and cookie is not secure', function () {
+    getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com',
+      session: { cookie: { secure: false } },
+    });
+    sinon.assert.calledWith(
+      console.warn,
+      "Setting your cookie to insecure when over https is not recommended, I hope you know what you're doing."
+    );
+  });
+
+  it('should warn when the baseURL is http and response_mode is form_post', function () {
+    getConfig({
+      ...defaultConfig,
+      baseURL: 'http://example.com',
+      authorizationParams: { response_mode: 'form_post' },
+    });
+    sinon.assert.calledWith(
+      console.warn,
+      "Using 'form_post' for response_mode may cause issues for you logging in over http, see https://github.com/auth0/express-openid-connect/blob/master/FAQ.md"
+    );
   });
 
   it('should fail when the baseURL is invalid', function () {
