@@ -205,7 +205,7 @@ describe('get config', () => {
         baseURL: 'http://example.com',
         session: { cookie: { secure: true } },
       });
-    }, 'Cookies set with the `Secure` property wont be read over http');
+    }, 'Cookies set with the `Secure` property wont be attached to http requests');
   });
 
   it('should warn when the baseURL is https and cookie is not secure', function () {
