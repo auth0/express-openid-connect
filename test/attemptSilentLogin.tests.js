@@ -13,7 +13,7 @@ const baseUrl = 'http://localhost:3000';
 const defaultConfig = {
   secret: '__test_session_secret__',
   clientID: '__test_client_id__',
-  baseURL: 'https://example.org',
+  baseURL: 'http://example.org',
   issuerBaseURL: 'https://op.example.com',
 };
 

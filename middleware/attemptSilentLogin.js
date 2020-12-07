@@ -14,7 +14,7 @@ const cancelSilentLogin = (req, res) => {
   } = weakRef(req.oidc);
   res.cookie(COOKIE_NAME, true, {
     httpOnly: true,
-    secure: typeof secure === 'boolean' ? secure : req.secure,
+    secure,
     domain,
     path,
   });

@@ -10,7 +10,7 @@ const request = require('request-promise-native').defaults({
 
 const defaultConfig = {
   clientID: '__test_client_id__',
-  baseURL: 'https://example.org',
+  baseURL: 'http://example.org',
   issuerBaseURL: 'https://op.example.com',
   secret: '__test_session_secret__',
   authRequired: false,
@@ -71,7 +71,7 @@ describe('logout route', async () => {
     assert.include(
       response.headers,
       {
-        location: 'https://example.org',
+        location: 'http://example.org',
       },
       'should redirect to the base url'
     );
@@ -92,7 +92,7 @@ describe('logout route', async () => {
     assert.include(
       response.headers,
       {
-        location: `https://op.example.com/session/end?post_logout_redirect_uri=https%3A%2F%2Fexample.org&id_token_hint=${makeIdToken()}`,
+        location: `https://op.example.com/session/end?post_logout_redirect_uri=http%3A%2F%2Fexample.org&id_token_hint=${makeIdToken()}`,
       },
       'should redirect to the identity provider'
     );
@@ -116,7 +116,7 @@ describe('logout route', async () => {
       response.headers,
       {
         location:
-          'https://op.example.com/v2/logout?returnTo=https%3A%2F%2Fexample.org&client_id=__test_client_id__',
+          'https://op.example.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
       },
       'should redirect to the identity provider'
     );
@@ -139,7 +139,7 @@ describe('logout route', async () => {
     assert.include(
       response.headers,
       {
-        location: 'https://example.org/after-logout-in-auth-config',
+        location: 'http://example.org/after-logout-in-auth-config',
       },
       'should redirect to postLogoutRedirect'
     );

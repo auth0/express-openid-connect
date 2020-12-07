@@ -16,7 +16,7 @@ const defaultConfig = {
   clientID: '__test_client_id__',
   clientSecret: '__test_client_secret__',
   issuerBaseURL: 'https://op.example.com',
-  baseURL: 'https://example.org',
+  baseURL: 'http://example.org',
   secret: '__test_secret__',
   errorOnRequiredAuth: true,
 };
@@ -166,8 +166,10 @@ describe('appSession', () => {
     assert.equal(res.statusCode, 200);
   });
 
-  it('should set the default cookie options', async () => {
-    server = await createServer(appSession(getConfig(defaultConfig)));
+  it('should set the default cookie options over http', async () => {
+    server = await createServer(
+      appSession(getConfig({ ...defaultConfig, baseURL: 'http://example.org' }))
+    );
     const jar = request.jar();
     await request.get('/session', {
       baseUrl,
@@ -188,6 +190,25 @@ describe('appSession', () => {
     const expDate = new Date(cookie.expires);
     const now = Date.now();
     assert.approximately(Math.floor((expDate - now) / 1000), 86400, 5);
+  });
+
+  it('should set the default cookie options over https', async () => {
+    server = await createServer(
+      appSession(
+        getConfig({ ...defaultConfig, baseURL: 'https://example.org' })
+      )
+    );
+    const jar = request.jar();
+    await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `appSession=${encrypted}`,
+      },
+    });
+    // Secure cookies not set over http
+    assert.isEmpty(jar.getCookies(baseUrl));
   });
 
   it('should set the custom cookie options', async () => {
