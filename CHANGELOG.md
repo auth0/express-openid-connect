@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [2.1.0](https://github.com/auth0/express-openid-connect/tree/v2.1.0) (2020-12-15)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.0.0...v2.1.0)
+
+**Changed**
+- Default cookie.secure config to the protocol of baseURL [#159](https://github.com/auth0/express-openid-connect/pull/159) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fix session.cookie TS definitions [#157](https://github.com/auth0/express-openid-connect/pull/157) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [2.0.0-beta.0](https://github.com/auth0/express-openid-connect/tree/v2.0.0-beta.0) (2020-08-31)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v1.0.2...v2.0.0-beta.0)
 
