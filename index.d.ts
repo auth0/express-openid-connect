@@ -324,6 +324,25 @@ interface ConfigParams {
   getLoginState?: (req: OpenidRequest, options: LoginOptions) => object;
 
   /**
+   * Function for custom callback handling after receiving tokens and before redirecting
+   * This can be used for handling token storage, making userinfo calls, claim validation, etc.
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   afterCallback(req, res, session, decodedState) {
+   *     ...
+   *     return {
+   *       ...session,
+   *       ...additionalUserClaims
+   *     };
+   *   }
+   * }))
+   * ``
+   */
+  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: object, decodedState: object) => object;
+
+  /**
    * Array value of claims to remove from the ID token before storing the cookie session.
    * Default is `['aud', 'iss', 'iat', 'exp', 'nbf', 'nonce', 'azp', 'auth_time', 's_hash', 'at_hash', 'c_hash' ]`
    */
