@@ -741,10 +741,10 @@ describe('callback response_mode: form_post', () => {
             scope: 'openid profile email',
           },
         },
-        cookies: {
-          _state: expectedDefaultState,
-          _nonce: '__test_nonce__',
-        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
         body: {
           state: expectedDefaultState,
           id_token: idToken,
@@ -781,10 +781,10 @@ describe('callback response_mode: form_post', () => {
       const { response: { statusCode } } = await setup({
         router: auth(authOpts),
         authOpts, 
-        cookies: {
-          _state: expectedDefaultState,
-          _nonce: '__test_nonce__',
-        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
         body: {
           state: expectedDefaultState,
           id_token: idToken,
