@@ -273,6 +273,26 @@ describe('callback response_mode: form_post', () => {
     assert.equal(err.message, 'checks.state argument is missing');
   });
 
+  it('should use legacy samesite fallback', async () => {
+    const { currentUser } = await setup({
+      authOpts: {
+        identityClaimFilter: [],
+      },
+      cookies: {
+        _auth_verification: JSON.stringify({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+      },
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken(),
+      },
+    });
+
+    assert.exists(currentUser);
+  });
+
   it('should not strip claims when using custom claim filtering', async () => {
     const { currentUser } = await setup({
       authOpts: {
