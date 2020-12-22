@@ -110,7 +110,7 @@ module.exports = function (params) {
           req.openidState = decodeState(expectedState);
 
           if (config.afterCallback) {
-            session = await config.afterCallback(req, res, session); 
+            session = await config.afterCallback(req, res, session, req.openidState); 
           }
 
           Object.assign(req[config.session.name], session);
