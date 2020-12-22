@@ -672,4 +672,103 @@ describe('callback response_mode: form_post', () => {
     const cookies = jar.getCookies(baseUrl);
     assert.notOk(cookies.find(({ key }) => key === 'skipSilentLogin'));
   });
+
+  context('when afterCallack is configured', async () => {
+    it('should allow modification of the session', async () => {
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+      });
+  
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email',
+        },
+        afterCallback: async (req, res, session) => {
+          const userInfo = await req.oidc.fetchUserInfo();
+          return { ...session, ...userInfo};
+        }
+      };
+
+      // userinfo endpoint will be returned to req.oidc.fetchUserInfo
+      const {
+        interceptors: [interceptor],
+      } = nock('https://op.example.com', { allowUnmocked: true })
+        .get('/userinfo')
+        .reply(200, () => ({
+          org_id: 'auth_org_123',
+        }));
+
+      const router = auth(authOpts);
+      router.get('/session', async (req, res) => {
+        res.json({ session: req['appSession'] });
+      });
+
+      const { jar } = await setup({
+        router,
+        authOpts: {
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            audience: 'https://api.example.com/',
+            scope: 'openid profile email',
+          },
+        },
+        cookies: {
+          _state: expectedDefaultState,
+          _nonce: '__test_nonce__',
+        },
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      nock.removeInterceptor(interceptor);
+
+      const body = await request
+      .get('/session', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+  
+      assert.deepEqual(body.session.org_id, 'auth_org_123');
+    });
+
+    it('should allow thrown error to fail the request', async () => {
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+      });
+  
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email',
+        },
+        afterCallback: async () => {
+          throw {status: 999};
+        }
+      };
+      const { response: { statusCode } } = await setup({
+        router: auth(authOpts),
+        authOpts, 
+        cookies: {
+          _state: expectedDefaultState,
+          _nonce: '__test_nonce__',
+        },
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      assert.equal(statusCode, 999);
+    });
+  });
 });
