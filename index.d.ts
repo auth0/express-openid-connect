@@ -8,6 +8,21 @@ import {
 import { Request, Response, RequestHandler } from 'express';
 
 /**
+ * Session object
+ */
+interface Session {
+  /**
+   * Values stored in an authentication session
+   */
+  id_token: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_at: string;
+  [key: string]: any;
+}
+
+/**
  * The Express.js Request with `oidc` context added by the `auth` middleware.
  *
  * ```js
@@ -330,8 +345,8 @@ interface ConfigParams {
    * ```js
    * app.use(auth({
    *   ...
-   *   afterCallback(req, res, session, decodedState) {
-   *     ...
+   *   afterCallback: async (req, res, session, decodedState) => {
+   *     const additionalUserClaims = await req.oidc.fetchUserInfo();
    *     return {
    *       ...session,
    *       ...additionalUserClaims
@@ -340,7 +355,7 @@ interface ConfigParams {
    * }))
    * ``
    */
-  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: object, decodedState: object) => object;
+  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: Session, decodedState: {[key: string]: any}) => Promise<Session> | Session;
 
   /**
    * Array value of claims to remove from the ID token before storing the cookie session.
