@@ -1,5 +1,6 @@
 const assert = require('chai').assert;
 const url = require('url');
+const querystring = require('querystring');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -15,22 +16,21 @@ const filterRoute = (method, path) => {
     r.route && r.route.path === path && r.route.methods[method.toLowerCase()];
 };
 
-const getCookieFromResponse = (res, cookieName) => {
+const fetchFromAuthCookie = (res, cookieName) => {
   const cookieHeaders = res.headers['set-cookie'];
-
-  const foundHeader = cookieHeaders.filter(
-    (header) => header.substring(0, 6) === cookieName + '='
+  const authCookie = cookieHeaders.filter(
+    (header) => header.split('=')[0] === 'auth_verification'
   )[0];
-  if (!foundHeader) {
-    return false;
+
+  if (!authCookie) {
+    return false
   }
 
-  const cookieValuePart = foundHeader.split('; ')[0];
-  if (!cookieValuePart) {
-    return false;
-  }
+  const decodedAuthCookie = querystring.decode(authCookie);
+  const cookieValuePart = decodedAuthCookie.auth_verification.split('; ')[0].split('.')[0];
+  const authCookieParsed = JSON.parse(cookieValuePart);
 
-  return cookieValuePart.split('=')[1].split('.')[0];
+  return authCookieParsed[cookieName];
 };
 
 const defaultConfig = {
@@ -92,8 +92,8 @@ describe('auth', () => {
     assert.property(parsed.query, 'nonce');
     assert.property(parsed.query, 'state');
 
-    assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
-    assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
+    assert.equal(fetchFromAuthCookie(res, 'nonce'), parsed.query.nonce);
+    assert.equal(fetchFromAuthCookie(res, 'state'), parsed.query.state);
   });
 
   it('should redirect to the authorize url for any route if authRequired', async () => {
@@ -151,8 +151,8 @@ describe('auth', () => {
     assert.property(parsed.query, 'state');
     assert.property(res.headers, 'set-cookie');
 
-    assert.equal(getCookieFromResponse(res, 'nonce'), parsed.query.nonce);
-    assert.equal(getCookieFromResponse(res, 'state'), parsed.query.state);
+    assert.equal(fetchFromAuthCookie(res, 'nonce'), parsed.query.nonce);
+    assert.equal(fetchFromAuthCookie(res, 'state'), parsed.query.state);
   });
 
   it('should redirect to the authorize url for /login in id_token flow', async () => {
@@ -354,6 +354,6 @@ describe('auth', () => {
     assert.isDefined(parsed.query.code_challenge);
     assert.equal(parsed.query.code_challenge_method, 'S256');
 
-    assert.isDefined(getCookieFromResponse(res, 'code_verifier'));
+    assert.isDefined(fetchFromAuthCookie(res, 'code_verifier'));
   });
 });
