@@ -222,7 +222,7 @@ interface ConfigParams {
   session?: boolean | SessionConfigParams;
 
   /**
-   * Boolean value to enable Auth0's logout feature.
+   * Boolean value to enable idpLogout with an Auth0 custom domain
    */
   auth0Logout?: boolean;
 
