@@ -61,6 +61,7 @@ app.use(
     baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
     clientID: 'YOUR_CLIENT_ID',
     secret: 'LONG_RANDOM_STRING',
+    idpLogout: true,
   })
 );
 ```
