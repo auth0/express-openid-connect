@@ -1,8 +1,12 @@
 const nock = require('nock');
+const sinon = require('sinon');
 const wellKnown = require('./fixture/well-known.json');
 const certs = require('./fixture/cert');
 
+let warn;
+
 beforeEach(function () {
+  warn = sinon.stub(global.console, 'warn');
   nock('https://op.example.com', { allowUnmocked: true })
     .persist()
     .get('/.well-known/openid-configuration')
@@ -26,4 +30,5 @@ beforeEach(function () {
 
 afterEach(function () {
   nock.cleanAll();
+  warn.restore();
 });

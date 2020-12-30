@@ -19,11 +19,15 @@ const baseUrl = 'http://localhost:3000';
 const defaultConfig = {
   secret: '__test_session_secret__',
   clientID: clientID,
-  baseURL: 'https://example.org',
+  baseURL: 'http://example.org',
   issuerBaseURL: 'https://op.example.com',
   authRequired: false,
 };
 let server;
+
+const generateCookies = (values) => ({
+  auth_verification: JSON.stringify(values),
+});
 
 const setup = async (params) => {
   const authOpts = Object.assign({}, defaultConfig, params.authOpts || {});
@@ -37,6 +41,7 @@ const setup = async (params) => {
 
   Object.keys(params.cookies).forEach(function (cookieName) {
     let value;
+
     transient.store(
       cookieName,
       {},
@@ -115,10 +120,10 @@ describe('callback response_mode: form_post', () => {
         body: { err },
       },
     } = await setup({
-      cookies: {
+      cookies: generateCookies({
         nonce: '__test_nonce__',
         state: '__test_state__',
-      },
+      }),
       body: true,
     });
     assert.equal(statusCode, 400);
@@ -149,10 +154,10 @@ describe('callback response_mode: form_post', () => {
         body: { err },
       },
     } = await setup({
-      cookies: {
+      cookies: generateCookies({
         nonce: '__test_nonce__',
         state: '__valid_state__',
-      },
+      }),
       body: {
         state: '__invalid_state__',
       },
@@ -168,10 +173,10 @@ describe('callback response_mode: form_post', () => {
         body: { err },
       },
     } = await setup({
-      cookies: {
+      cookies: generateCookies({
         nonce: '__test_nonce__',
         state: '__test_state__',
-      },
+      }),
       body: {
         state: '__test_state__',
         id_token: '__invalid_token__',
@@ -191,10 +196,10 @@ describe('callback response_mode: form_post', () => {
         body: { err },
       },
     } = await setup({
-      cookies: {
+      cookies: generateCookies({
         nonce: '__test_nonce__',
         state: '__test_state__',
-      },
+      }),
       body: {
         state: '__test_state__',
         id_token: jose.JWT.sign({ sub: '__test_sub__' }, 'secret', {
@@ -213,10 +218,10 @@ describe('callback response_mode: form_post', () => {
         body: { err },
       },
     } = await setup({
-      cookies: {
+      cookies: generateCookies({
         nonce: '__test_nonce__',
         state: '__test_state__',
-      },
+      }),
       body: {
         state: '__test_state__',
         id_token: makeIdToken({ iss: undefined }),
@@ -233,9 +238,9 @@ describe('callback response_mode: form_post', () => {
         body: { err },
       },
     } = await setup({
-      cookies: {
+      cookies: generateCookies({
         state: '__test_state__',
-      },
+      }),
       body: {
         state: '__test_state__',
         id_token: makeIdToken(),
@@ -257,8 +262,7 @@ describe('callback response_mode: form_post', () => {
         legacySameSiteCookie: false,
       },
       cookies: {
-        // Only set the fallback cookie value.
-        _state: '__test_state__',
+        _auth_verification: JSON.stringify({ state: '__test_state__', }),
       },
       body: {
         state: '__test_state__',
@@ -269,15 +273,35 @@ describe('callback response_mode: form_post', () => {
     assert.equal(err.message, 'checks.state argument is missing');
   });
 
-  it('should not strip claims when using custom claim filtering', async () => {
+  it('should use legacy samesite fallback', async () => {
     const { currentUser } = await setup({
       authOpts: {
         identityClaimFilter: [],
       },
       cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
+        _auth_verification: JSON.stringify({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
       },
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken(),
+      },
+    });
+
+    assert.exists(currentUser);
+  });
+
+  it('should not strip claims when using custom claim filtering', async () => {
+    const { currentUser } = await setup({
+      authOpts: {
+        identityClaimFilter: [],
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: makeIdToken(),
@@ -297,10 +321,10 @@ describe('callback response_mode: form_post', () => {
       currentUser,
       tokens,
     } = await setup({
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -339,10 +363,10 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email read:reports offline_access',
         },
       },
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -377,10 +401,10 @@ describe('callback response_mode: form_post', () => {
           response_type: 'code',
         },
       },
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -435,10 +459,10 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email read:reports offline_access',
         },
       },
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -519,10 +543,10 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email read:reports offline_access',
         },
       },
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -588,10 +612,10 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email read:reports offline_access',
         },
       },
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -631,10 +655,10 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email read:reports offline_access',
         },
       },
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
-      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -658,11 +682,11 @@ describe('callback response_mode: form_post', () => {
     const jar = request.jar();
     jar.setCookie('skipSilentLogin=true', baseUrl);
     await setup({
-      cookies: {
-        _state: expectedDefaultState,
-        _nonce: '__test_nonce__',
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
         skipSilentLogin: '1',
-      },
+      }),
       body: {
         state: expectedDefaultState,
         id_token: idToken,
@@ -671,5 +695,104 @@ describe('callback response_mode: form_post', () => {
     });
     const cookies = jar.getCookies(baseUrl);
     assert.notOk(cookies.find(({ key }) => key === 'skipSilentLogin'));
+  });
+
+  context('when afterCallack is configured', async () => {
+    it('should allow modification of the session', async () => {
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+      });
+  
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email',
+        },
+        afterCallback: async (req, res, session) => {
+          const userInfo = await req.oidc.fetchUserInfo();
+          return { ...session, ...userInfo};
+        }
+      };
+
+      // userinfo endpoint will be returned to req.oidc.fetchUserInfo
+      const {
+        interceptors: [interceptor],
+      } = nock('https://op.example.com', { allowUnmocked: true })
+        .get('/userinfo')
+        .reply(200, () => ({
+          org_id: 'auth_org_123',
+        }));
+
+      const router = auth(authOpts);
+      router.get('/session', async (req, res) => {
+        res.json({ session: req['appSession'] });
+      });
+
+      const { jar } = await setup({
+        router,
+        authOpts: {
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            audience: 'https://api.example.com/',
+            scope: 'openid profile email',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      nock.removeInterceptor(interceptor);
+
+      const body = await request
+      .get('/session', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+  
+      assert.deepEqual(body.session.org_id, 'auth_org_123');
+    });
+
+    it('should allow thrown error to fail the request', async () => {
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+      });
+  
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email',
+        },
+        afterCallback: async () => {
+          throw {status: 999};
+        }
+      };
+      const { response: { statusCode } } = await setup({
+        router: auth(authOpts),
+        authOpts, 
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      assert.equal(statusCode, 999);
+    });
   });
 });

@@ -15,6 +15,7 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 - [Architecture](./ARCHITECTURE.md)
 - [Contributing](#contributing)
 - [Troubleshooting](./TROUBLESHOOTING.md)
+- [FAQs](./FAQ.md)
 - [Support + Feedback](#support--feedback)
 - [Vulnerability Reporting](#vulnerability-reporting)
 - [What is Auth0](#what-is-auth0)
@@ -60,6 +61,7 @@ app.use(
     baseURL: 'https://YOUR_APPLICATION_ROOT_URL',
     clientID: 'YOUR_CLIENT_ID',
     secret: 'LONG_RANDOM_STRING',
+    idpLogout: true,
   })
 );
 ```

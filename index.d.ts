@@ -8,6 +8,21 @@ import {
 import { Request, Response, RequestHandler } from 'express';
 
 /**
+ * Session object
+ */
+interface Session {
+  /**
+   * Values stored in an authentication session
+   */
+  id_token: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_at: string;
+  [key: string]: any;
+}
+
+/**
  * The Express.js Request with `oidc` context added by the `auth` middleware.
  *
  * ```js
@@ -207,7 +222,7 @@ interface ConfigParams {
   session?: boolean | SessionConfigParams;
 
   /**
-   * Boolean value to enable Auth0's logout feature.
+   * Boolean value to enable idpLogout with an Auth0 custom domain
    */
   auth0Logout?: boolean;
 
@@ -322,6 +337,25 @@ interface ConfigParams {
    * ``
    */
   getLoginState?: (req: OpenidRequest, options: LoginOptions) => object;
+
+  /**
+   * Function for custom callback handling after receiving tokens and before redirecting
+   * This can be used for handling token storage, making userinfo calls, claim validation, etc.
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   afterCallback: async (req, res, session, decodedState) => {
+   *     const additionalUserClaims = await req.oidc.fetchUserInfo();
+   *     return {
+   *       ...session,
+   *       ...additionalUserClaims
+   *     };
+   *   }
+   * }))
+   * ``
+   */
+  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: Session, decodedState: {[key: string]: any}) => Promise<Session> | Session;
 
   /**
    * Array value of claims to remove from the ID token before storing the cookie session.
@@ -459,7 +493,7 @@ interface CookieConfigParams {
   /**
    * Marks the cookie to be used over secure channels only.
    * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `secure`.
-   * Defaults to {@link Request.secure}.
+   * Defaults to the protocol of {@link ConfigParams.baseURL}.
    */
   secure?: boolean;
 

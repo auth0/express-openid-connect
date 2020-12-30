@@ -2727,6 +2727,9 @@ img {
 			<a href="configparams.html" class="tsd-kind-icon">Config<wbr>Params</a>
 		</li>
 		<li class=" tsd-kind-interface">
+			<a href="cookieconfigparams.html" class="tsd-kind-icon">Cookie<wbr>Config<wbr>Params</a>
+		</li>
+		<li class=" tsd-kind-interface">
 			<a href="loginoptions.html" class="tsd-kind-icon">Login<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2786,7 +2789,7 @@ img {
 				<pre><code class="language-js">app.use(auth());
 
 app.get(<span class="hljs-string">&#x27;/admin-login&#x27;</span>, <span class="hljs-function">(<span class="hljs-params">req, res</span>) =&gt;</span> {
-  res.openid.login({ <span class="hljs-attr">returnTo</span>: <span class="hljs-string">&#x27;/admin&#x27;</span> })
+  res.oidc.login({ <span class="hljs-attr">returnTo</span>: <span class="hljs-string">&#x27;/admin&#x27;</span> })
 })</code></pre>
 			</div>
 		</section>
@@ -2820,7 +2823,7 @@ app.get(<span class="hljs-string">&#x27;/admin-login&#x27;</span>, <span class="
 				<div class="tsd-signature tsd-kind-icon">login<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="loginoptions.html" class="tsd-signature-type">LoginOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/c13cfd2/index.d.ts#L142">index.d.ts:142</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/df1d82b/index.d.ts#L142">index.d.ts:142</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2865,7 +2868,7 @@ app.get(<span class="hljs-string">&#x27;/admin-login&#x27;</span>, <span class="
 				<div class="tsd-signature tsd-kind-icon">logout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="logoutoptions.html" class="tsd-signature-type">LogoutOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/c13cfd2/index.d.ts#L154">index.d.ts:154</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/df1d82b/index.d.ts#L154">index.d.ts:154</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
