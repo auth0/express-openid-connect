@@ -104,6 +104,7 @@ module.exports = function (params) {
           }
 
           if (config.afterCallback) {
+            session = Object.assign({}, session); // serializes session
             session = await config.afterCallback(req, res, session, req.openidState); 
           }
 
