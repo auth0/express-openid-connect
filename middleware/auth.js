@@ -87,9 +87,15 @@ module.exports = function (params) {
 
           try {
             const callbackParams = client.callbackParams(req);
-            const authVerification = transient.getOnce('auth_verification', req, res);
+            const authVerification = transient.getOnce(
+              'auth_verification',
+              req,
+              res
+            );
 
-            const { max_age, code_verifier, nonce, state } = authVerification ? JSON.parse(authVerification) : {} ;
+            const { max_age, code_verifier, nonce, state } = authVerification
+              ? JSON.parse(authVerification)
+              : {};
 
             session = await client.callback(redirectUri, callbackParams, {
               max_age,
@@ -104,8 +110,12 @@ module.exports = function (params) {
           }
 
           if (config.afterCallback) {
-            session = Object.assign({}, session); // serializes session
-            session = await config.afterCallback(req, res, session, req.openidState); 
+            session = await config.afterCallback(
+              req,
+              res,
+              Object.assign({}, session), // Remove non-enumerable methods from the TokenSet
+              req.openidState
+            );
           }
 
           Object.assign(req[config.session.name], session);
