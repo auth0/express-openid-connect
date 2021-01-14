@@ -3020,6 +3020,9 @@ img {
 			<a href="responsecontext.html" class="tsd-kind-icon">Response<wbr>Context</a>
 		</li>
 		<li class=" tsd-kind-interface">
+			<a href="session.html" class="tsd-kind-icon">Session</a>
+		</li>
+		<li class=" tsd-kind-interface">
 			<a href="sessionconfigparams.html" class="tsd-kind-icon">Session<wbr>Config<wbr>Params</a>
 		</li>
 		<li class=" tsd-kind-function">
@@ -3369,7 +3372,7 @@ app.get(<span class="hljs-string">&#x27;/login&#x27;</span>, <span class="hljs-f
 				<div class="tsd-signature tsd-kind-icon">oidc<span class="tsd-signature-symbol">:</span> <a href="responsecontext.html" class="tsd-signature-type">ResponseContext</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/df1d82b/index.d.ts#L44">index.d.ts:44</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/75a7982/index.d.ts#L59">index.d.ts:59</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -6754,11 +6757,11 @@ app.get(<span class="hljs-string">&#x27;/login&#x27;</span>, <span class="hljs-f
 								be used as an alternative for the <code>static()</code> middleware for
 								dynamic situations. The code backing <code>res.sendFile()</code> is actually
 							the same code, so HTTP cache support etc is identical.</p>
-							<pre><code>app.get(<span class="hljs-string">&#x27;/user/:uid/photos/:file&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(req, res)</span></span>{
+							<pre><code>app.get(<span class="hljs-string">&#x27;/user/:uid/photos/:file&#x27;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">req, res</span>)</span>{
   <span class="hljs-keyword">var</span> uid = req.params.uid
     , file = req.params.file;
 
-  req.user.mayViewFilesFrom(uid, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(yes)</span></span>{
+  req.user.mayViewFilesFrom(uid, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">yes</span>)</span>{
     <span class="hljs-keyword">if</span> (yes) {
       res.sendFile(<span class="hljs-string">&#x27;/uploads/&#x27;</span> + uid + <span class="hljs-string">&#x27;/&#x27;</span> + file);
     } <span class="hljs-keyword">else</span> {

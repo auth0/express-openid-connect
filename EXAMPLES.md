@@ -216,3 +216,22 @@ app.use(
   })
 );
 ```
+
+## 8. Validate Claims from an ID token before logging a user in
+
+The `afterCallback` hook can be used to do validation checks on claims after the ID token has been received in the callback phase.
+
+```js
+app.use(
+  auth({
+    afterCallback: (req, res, session) => {
+      const claims = jose.JWT.decode(session.id_token); // using jose library to decode JWT
+      if (claims.org_id !== 'Required Organization') {
+        throw new Error('User is not a part of the Required Organization');
+      }
+      return session;
+    }
+  })
+);
+
+```

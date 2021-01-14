@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [2.2.0](https://github.com/auth0/express-openid-connect/tree/v2.2.0) (2021-01-14)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.1.0...v2.2.0)
+
+**Added**
+- afterCallback Hook [#168](https://github.com/auth0/express-openid-connect/pull/168) ([davidpatrick](https://github.com/davidpatrick))
+
+**Changed**
+- Move transient cookies into single cookie [#171](https://github.com/auth0/express-openid-connect/pull/171) ([davidpatrick](https://github.com/davidpatrick))
+- Use native node hkdf when available (Node >=15) [#177](https://github.com/auth0/express-openid-connect/pull/177) ([panva](https://github.com/panva))
+
 ## [2.1.0](https://github.com/auth0/express-openid-connect/tree/v2.1.0) (2020-12-15)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.0.0...v2.1.0)
 
