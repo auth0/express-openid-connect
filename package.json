@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@hapi/joi": "^17.1.1",
+    "base64url": "^3.0.1",
     "cb": "^0.1.0",
     "clone": "^2.1.2",
     "cookie": "^0.4.1",
