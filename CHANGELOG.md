@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [2.2.1](https://github.com/auth0/express-openid-connect/tree/v2.2.1) (2021-01-25)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.2.0...v2.2.1)
+
+**Fixed**
+- missing base64url dependency [#180](https://github.com/auth0/express-openid-connect/pull/180) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [2.2.0](https://github.com/auth0/express-openid-connect/tree/v2.2.0) (2021-01-14)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.1.0...v2.2.0)
 
