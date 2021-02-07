@@ -16,18 +16,24 @@ const filterRoute = (method, path) => {
     r.route && r.route.path === path && r.route.methods[method.toLowerCase()];
 };
 
-const fetchFromAuthCookie = (res, cookieName) => {
+const fetchAuthCookie = (res) => {
   const cookieHeaders = res.headers['set-cookie'];
-  const authCookie = cookieHeaders.filter(
+  return cookieHeaders.filter(
     (header) => header.split('=')[0] === 'auth_verification'
   )[0];
+};
+
+const fetchFromAuthCookie = (res, cookieName) => {
+  const authCookie = fetchAuthCookie(res);
 
   if (!authCookie) {
-    return false
+    return false;
   }
 
   const decodedAuthCookie = querystring.decode(authCookie);
-  const cookieValuePart = decodedAuthCookie.auth_verification.split('; ')[0].split('.')[0];
+  const cookieValuePart = decodedAuthCookie.auth_verification
+    .split('; ')[0]
+    .split('.')[0];
   const authCookieParsed = JSON.parse(cookieValuePart);
 
   return authCookieParsed[cookieName];
@@ -355,5 +361,44 @@ describe('auth', () => {
     assert.equal(parsed.query.code_challenge_method, 'S256');
 
     assert.isDefined(fetchFromAuthCookie(res, 'code_verifier'));
+  });
+
+  it('should respect sameSite when response_mode is not form_post', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        session: {
+          cookie: {
+            sameSite: 'Strict',
+          },
+        },
+        authorizationParams: {
+          response_mode: 'query',
+          response_type: 'code',
+        },
+      })
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    assert.include(fetchAuthCookie(res), 'SameSite=Strict');
+  });
+
+  it('should overwrite SameSite to None when response_mode is form_post', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        session: {
+          cookie: {
+            sameSite: 'Strict',
+          },
+        },
+      })
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    assert.include(fetchAuthCookie(res), 'SameSite=None');
   });
 });
