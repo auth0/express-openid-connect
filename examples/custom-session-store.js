@@ -1,24 +1,25 @@
 const express = require('express');
-const { EventEmitter } = require('events');
 const { auth } = require('../');
 
 const app = express();
-const IN_MEMORY_SESSION = {};
 
-class Store extends EventEmitter {
-  get (id, cb) {
-    const val = IN_MEMORY_SESSION[id];
+class Store {
+  constructor() {
+    this.sessions = {};
+  }
+  get(id, cb) {
+    const val = this.sessions[id];
     console.log('sessionStoreget', id, val);
     process.nextTick(() => cb(null, val));
   }
-  set (id, data, cb) {
+  set(id, data, cb) {
     console.log('sessionstoreSave', id, data);
-    IN_MEMORY_SESSION[id] = data;
+    this.sessions[id] = data;
     process.nextTick(() => cb());
   }
-  destroy (id, cb) {
+  destroy(id, cb) {
     console.log('sessionstoreDestroy', id);
-    delete IN_MEMORY_SESSION[id];
+    delete this.sessions[id];
     process.nextTick(() => cb());
   }
 }
@@ -26,7 +27,7 @@ class Store extends EventEmitter {
 app.use(
   auth({
     idpLogout: true,
-    sessionStore: Store
+    sessionStore: new Store(),
   })
 );
 
