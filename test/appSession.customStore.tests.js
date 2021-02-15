@@ -55,7 +55,7 @@ describe('appSession custom store', () => {
     redisClient = redis.createClient();
     const store = new RedisStore({ client: redisClient, prefix: '' });
     redisClient.asyncSet = promisify(redisClient.set).bind(redisClient);
-    redisClient.asyncGet = promisify(redisClient.set).bind(redisClient);
+    redisClient.asyncGet = promisify(redisClient.get).bind(redisClient);
 
     const conf = getConfig({
       ...defaultConfig,
