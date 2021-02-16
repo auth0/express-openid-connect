@@ -153,4 +153,36 @@ describe('appSession custom store', () => {
     assert.isEmpty(loggedOutRes.body);
     assert.isEmpty(jar.getCookies(baseUrl));
   });
+
+  it('should handle storage errors', async () => {
+    const store = {
+      get(id, cb) {
+        process.nextTick(() => cb(null, JSON.parse(sessionData())));
+      },
+      async set(id, val, cb) {
+        process.nextTick(() => cb(new Error('storage error')));
+      },
+      async destroy(id, cb) {
+        process.nextTick(() => cb());
+      },
+    };
+
+    const conf = getConfig({
+      ...defaultConfig,
+      sessionStore: store,
+    });
+
+    server = await createServer(appSession(conf));
+
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: `appSession=foo`,
+      },
+    });
+    assert.equal(res.statusCode, 500);
+  });
 });
