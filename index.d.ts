@@ -234,8 +234,8 @@ interface ConfigParams {
    * ```js
    * {
    *   response_type: 'id_token',
-   *   response_mode: 'form_post,
-   *   scope: openid profile email'
+   *   response_mode: 'form_post',
+   *   scope: 'openid profile email'
    * }
    * ```
    *
@@ -355,7 +355,12 @@ interface ConfigParams {
    * }))
    * ``
    */
-  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: Session, decodedState: {[key: string]: any}) => Promise<Session> | Session;
+  afterCallback?: (
+    req: OpenidRequest,
+    res: OpenidResponse,
+    session: Session,
+    decodedState: { [key: string]: any }
+  ) => Promise<Session> | Session;
 
   /**
    * Array value of claims to remove from the ID token before storing the cookie session.
