@@ -184,5 +184,6 @@ describe('appSession custom store', () => {
       },
     });
     assert.equal(res.statusCode, 500);
+    assert.equal(res.body.err.message, 'storage error');
   });
 });
