@@ -197,13 +197,14 @@ interface LogoutOptions {
 /**
  * Configuration parameters passed to the `auth()` middleware.
  *
- * {@link ConfigParams.issuerBaseURL issuerBaseURL}, {@link ConfigParams.baseURL baseURL}, {@link ConfigParams.clientID clientID}
+ * {@link ConfigParams.issuerBaseURL issuerBaseURL}, {@link ConfigParams.baseURL baseURL}, {@link ConfigParams.clientID clientID}, {@link ConfigParams.clientSecret clientSecret}
  * and {@link ConfigParams.secret secret} are required but can be configured with environmental variables:
  *
  * ```js
  * ISSUER_BASE_URL=https://YOUR_DOMAIN
- * CLIENT_ID=YOUR_CLIENT_ID
  * BASE_URL=https://YOUR_APPLICATION_ROOT_URL
+ * CLIENT_ID=YOUR_CLIENT_ID
+ * CLIENT_SECRET=YOUR_CLIENT_SECRET
  * SECRET=LONG_RANDOM_VALUE
  * ```
  */
