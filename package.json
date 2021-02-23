@@ -49,6 +49,7 @@
     "express-oauth2-bearer": "^0.4.0",
     "husky": "^4.2.5",
     "lodash": "^4.17.15",
+    "memorystore": "^1.6.4",
     "mocha": "^7.2.0",
     "nock": "^11.9.1",
     "nyc": "^15.1.0",
