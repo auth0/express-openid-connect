@@ -70,7 +70,7 @@ With this basic configuration, your application will require authentication for 
 
 See the [examples](EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
 
-See the [API documentation](https://auth0.github.io/express-openid-connect) for additional configuration possibilities and provided methods.
+See the [API documentation](https://auth0.github.io/express-openid-connect) for [additional configuration possibilities](https://auth0.github.io/express-openid-connect/interfaces/configparams.html) and [provided methods](https://auth0.github.io/express-openid-connect/globals.html#attemptsilentlogin).
 
 ## A note on error handling
 
