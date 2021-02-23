@@ -7,9 +7,11 @@ const app = express();
 app.use(
   auth({
     idpLogout: true,
-    sessionStore: new MemoryStore({
-      checkPeriod: 24 * 60 * 1000,
-    }),
+    session: {
+      store: new MemoryStore({
+        checkPeriod: 24 * 60 * 1000,
+      }),
+    },
   })
 );
 

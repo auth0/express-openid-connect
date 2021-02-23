@@ -59,7 +59,7 @@ describe('appSession custom store', () => {
 
     const conf = getConfig({
       ...defaultConfig,
-      sessionStore: store,
+      session: { store, ...(config && config.session) },
       ...config,
     });
 
@@ -169,7 +169,7 @@ describe('appSession custom store', () => {
 
     const conf = getConfig({
       ...defaultConfig,
-      sessionStore: store,
+      session: { store },
     });
 
     server = await createServer(appSession(conf));
