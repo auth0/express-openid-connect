@@ -23,7 +23,7 @@ const enforceLeadingSlash = (path) => {
  *
  * @returns {express.Router} the router
  */
-module.exports = function (params) {
+const auth = function (params) {
   const config = getConfig(params);
   debug('configuration object processed, resulting configuration: %O', config);
   const router = new express.Router();
@@ -157,3 +157,17 @@ module.exports = function (params) {
 
   return router;
 };
+
+/**
+ * Used for instantiating a custom session store. eg
+ *
+ * ```js
+ * const { auth } = require('express-openid-connect');
+ * const MemoryStore = require('memorystore')(auth);
+ * ```
+ *
+ * @constructor
+ */
+auth.Store = function () {};
+
+module.exports = auth;

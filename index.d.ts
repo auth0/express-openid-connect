@@ -219,7 +219,7 @@ interface ConfigParams {
   /**
    * Object defining application session cookie attributes.
    */
-  session?: boolean | SessionConfigParams;
+  session?: SessionConfigParams;
 
   /**
    * Boolean value to enable idpLogout with an Auth0 custom domain
@@ -355,7 +355,12 @@ interface ConfigParams {
    * }))
    * ``
    */
-  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: Session, decodedState: {[key: string]: any}) => Promise<Session> | Session;
+  afterCallback?: (
+    req: OpenidRequest,
+    res: OpenidResponse,
+    session: Session,
+    decodedState: { [key: string]: any }
+  ) => Promise<Session> | Session;
 
   /**
    * Array value of claims to remove from the ID token before storing the cookie session.
@@ -423,6 +428,54 @@ interface ConfigParams {
   clientAuthMethod?: string;
 }
 
+interface SessionStorePayload {
+  header: {
+    /**
+     * timestamp (in secs) when the session was created.
+     */
+    iat: number;
+    /**
+     * timestamp (in secs) when the session was last touched.
+     */
+    uat: number;
+    /**
+     * timestamp (in secs) when the session expires.
+     */
+    exp: number;
+  };
+
+  /**
+   * The session data.
+   */
+  data: Session;
+}
+
+interface SessionStore {
+  /**
+   * Gets the session from the store given a session ID and passes it to `callback`.
+   */
+  get(
+    sid: string,
+    callback: (err: any, session?: SessionStorePayload | null) => void
+  ): void;
+
+  /**
+   * Upsert a session in the store given a session ID and `SessionData`
+   */
+  set(
+    sid: string,
+    session: SessionStorePayload,
+    callback?: (err?: any) => void
+  ): void;
+
+  /**
+   * Destroys the session with the given session ID.
+   */
+  destroy(sid: string, callback?: (err?: any) => void): void;
+
+  [key: string]: any;
+}
+
 /**
  * Configuration parameters used for the application session.
  */
@@ -433,6 +486,15 @@ interface SessionConfigParams {
    * Default is `appSession`.
    */
   name?: string;
+
+  /**
+   * By default the session is stored in an encrypted cookie. But when the session
+   * gets too large it can bump up against the limits of cookie storage.
+   * In these instances you can use a custom session store. The store should
+   * have `get`, `set` and `destroy` methods, making it compatible
+   * with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
+   */
+  store?: SessionStore;
 
   /**
    * If you want your session duration to be rolling, eg reset everytime the

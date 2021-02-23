@@ -325,8 +325,12 @@ describe('appSession', () => {
   it('should throw for reassigning session', async () => {
     server = await createServer((req, res, next) => {
       appSession(getConfig(defaultConfig))(req, res, () => {
-        req.appSession = {};
-        next();
+        try {
+          req.appSession = {};
+          next();
+        } catch (e) {
+          next(e);
+        }
       });
     });
     const res = await request.get('/session', { baseUrl, json: true });
