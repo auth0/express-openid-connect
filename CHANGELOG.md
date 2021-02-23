@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [2.3.0-beta.0](https://github.com/auth0/express-openid-connect/tree/v2.3.0-beta.0) (2021-02-23)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.2.1...v2.3.0-beta.0)
+
+To install: `npm install express-openid-connect@beta`
+
+**Added**
+- Custom session stores [#190](https://github.com/auth0/express-openid-connect/pull/190) ([davidpatrick](https://github.com/davidpatrick))
+
 ## [2.2.1](https://github.com/auth0/express-openid-connect/tree/v2.2.1) (2021-01-25)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.2.0...v2.2.1)
 
