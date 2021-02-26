@@ -346,16 +346,21 @@ interface ConfigParams {
    * app.use(auth({
    *   ...
    *   afterCallback: async (req, res, session, decodedState) => {
-   *     const additionalUserClaims = await req.oidc.fetchUserInfo();
+   *     const userProfile = await request(`${issuerBaseURL}/userinfo`);
    *     return {
    *       ...session,
-   *       ...additionalUserClaims
+   *       userProfile // access using `req.appSession.userProfile`
    *     };
    *   }
    * }))
    * ``
    */
-  afterCallback?: (req: OpenidRequest, res: OpenidResponse, session: Session, decodedState: {[key: string]: any}) => Promise<Session> | Session;
+  afterCallback?: (
+    req: OpenidRequest,
+    res: OpenidResponse,
+    session: Session,
+    decodedState: { [key: string]: any }
+  ) => Promise<Session> | Session;
 
   /**
    * Array value of claims to remove from the ID token before storing the cookie session.
