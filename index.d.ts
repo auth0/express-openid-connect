@@ -198,13 +198,17 @@ interface LogoutOptions {
  * Configuration parameters passed to the `auth()` middleware.
  *
  * {@link ConfigParams.issuerBaseURL issuerBaseURL}, {@link ConfigParams.baseURL baseURL}, {@link ConfigParams.clientID clientID}
- * and {@link ConfigParams.secret secret} are required but can be configured with environmental variables:
+ * and {@link ConfigParams.secret secret} are required but can be configured with environmental variables. {@link ConfigParams.clientSecret clientSecret} is not required but can also be configured this way.
  *
  * ```js
+ * # Required
  * ISSUER_BASE_URL=https://YOUR_DOMAIN
- * CLIENT_ID=YOUR_CLIENT_ID
  * BASE_URL=https://YOUR_APPLICATION_ROOT_URL
+ * CLIENT_ID=YOUR_CLIENT_ID
  * SECRET=LONG_RANDOM_VALUE
+ *
+ * # Not required
+ * CLIENT_SECRET=YOUR_CLIENT_SECRET
  * ```
  */
 interface ConfigParams {
@@ -234,8 +238,8 @@ interface ConfigParams {
    * ```js
    * {
    *   response_type: 'id_token',
-   *   response_mode: 'form_post,
-   *   scope: openid profile email'
+   *   response_mode: 'form_post',
+   *   scope: 'openid profile email'
    * }
    * ```
    *
