@@ -350,10 +350,10 @@ interface ConfigParams {
    * app.use(auth({
    *   ...
    *   afterCallback: async (req, res, session, decodedState) => {
-   *     const additionalUserClaims = await req.oidc.fetchUserInfo();
+   *     const userProfile = await request(`${issuerBaseURL}/userinfo`);
    *     return {
    *       ...session,
-   *       ...additionalUserClaims
+   *       userProfile // access using `req.appSession.userProfile`
    *     };
    *   }
    * }))
