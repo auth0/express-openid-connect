@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [2.3.0](https://github.com/auth0/express-openid-connect/tree/v2.3.0) (2021-03-10)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.2.1...v2.3.0)
+
+**Added**
+- Custom session stores [#190](https://github.com/auth0/express-openid-connect/pull/190) ([davidpatrick](https://github.com/davidpatrick))
+
 ## [2.3.0-beta.0](https://github.com/auth0/express-openid-connect/tree/v2.3.0-beta.0) (2021-02-23)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.2.1...v2.3.0-beta.0)
 
