@@ -1,5 +1,16 @@
 # Examples
 
+1. [Basic setup](#1-basic-setup)
+2. [Require authentication for specific routes](#2-require-authentication-for-specific-routes)
+3. [Route customization](#3-route-customization)
+4. [Obtaining access tokens to call external APIs](#4-obtaining-access-tokens-to-call-external-apis)
+5. [Obtaining and using refresh tokens](#5-obtaining-and-using-refresh-tokens)
+6. [Calling userinfo](#6-calling-userinfo)
+7. [Protect a route based on specific claims](#6-protect-a-route-based-on-specific-claims)
+8. [Logout from Identity Provider](#7-logout-from-identity-provider)
+9. [Validate Claims from an ID token before logging a user in](#8-validate-claims-from-an-id-token-before-logging-a-user-in)
+10. [Use a custom session store](#9-use-a-custom-session-store)
+
 ## 1. Basic setup
 
 The simplest use case for this middleware. By default all routes are protected. The middleware uses the [Implicit Flow with Form Post](https://auth0.com/docs/flows/concepts/implicit) to acquire an ID Token from the authorization server and an encrypted cookie session to persist it.
@@ -204,7 +215,7 @@ app.get(
 
 ## 7. Logout from Identity Provider
 
-When using an IDP, such as Auth0, the default configuration will only log the user out of your application session.  When the user logs in again, they will be automatically logged back in to the IDP session.  To have the user additionally logged out of the IDP session you will need to add `idpLogout: true` to the middleware configuration.
+When using an IDP, such as Auth0, the default configuration will only log the user out of your application session. When the user logs in again, they will be automatically logged back in to the IDP session. To have the user additionally logged out of the IDP session you will need to add `idpLogout: true` to the middleware configuration.
 
 ```js
 const { auth } = require('express-openid-connect');
@@ -230,8 +241,29 @@ app.use(
         throw new Error('User is not a part of the Required Organization');
       }
       return session;
-    }
+    },
   })
 );
-
 ```
+
+## 9. Use a custom session store
+
+By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of cookie storage. In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
+
+```js
+const { auth } = require('express-openid-connect');
+const redis = require('redis');
+const RedisStore = require('connect-redis')(auth);
+
+const redisClient = redis.createClient();
+
+app.use(
+  auth({
+    session: {
+      store: new RedisStore({ client: redisClient }),
+    },
+  })
+);
+```
+
+Full example at [custom-session-store.js](./examples/custom-session-store.js), to run it: `npm run start:example -- custom-session-store`
