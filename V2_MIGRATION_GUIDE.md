@@ -115,7 +115,7 @@ app.use(
 
 - **`idTokenAlg` is now `idTokenSigningAlg`** - to specify an id token signing algorithm, use `idTokenSigningAlg`
 - **`httpOptions`** was removed - it is no longer possible to pass custom http request options to the underlying library. It will be again in the future in a more curated and comprehensive feature we have in mind for this library.
-- **`handleCallback`** and **`getUser`** were removed - These "hooks" will be made available in the future in a more curated and comprehensive feature we have in mind for this library.
+- **`handleCallback`** and **`getUser`** were removed - These "hooks" will be made available in the future in a more curated and comprehensive feature we have in mind for this library. (**Note** These were added back in [v2.2.0](https://github.com/auth0/express-openid-connect/releases/tag/v2.2.0))
 
 ```js
 // Before
@@ -181,4 +181,4 @@ app.get('/', async (req, res) => {
 
 ## Custom Session Handling
 
-The ability to add custom session stores to the SDK using `appSession: false` has been removed but could be added back in a later release.
+The ability to add custom session stores to the SDK using `appSession: false` has been removed but could be added back in a later release (**Note:** Custom session stores have been added to [v2.3.0](https://github.com/auth0/express-openid-connect/releases/tag/v2.3.0). See [the docs](https://auth0.github.io/express-openid-connect/interfaces/sessionconfigparams.html#store) or [an example](./EXAMPLES.md#9-use-a-custom-session-store)).
