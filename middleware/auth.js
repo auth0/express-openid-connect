@@ -1,16 +1,12 @@
 const express = require('express');
-const cb = require('cb');
-const createError = require('http-errors');
 
 const debug = require('../lib/debug')('auth');
 const { get: getConfig } = require('../lib/config');
-const { get: getClient } = require('../lib/client');
 const { requiresAuth } = require('./requiresAuth');
 const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
-const { decodeState } = require('../lib/hooks/getLoginState');
 
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
@@ -59,84 +55,14 @@ const auth = function (params) {
   }
 
   // Callback route, configured with routes.callback.
-  {
-    let client;
+  if (config.routes.callback) {
     const path = enforceLeadingSlash(config.routes.callback);
-    const callbackStack = [
-      (req, res, next) => {
-        debug('%s %s called', req.method, path);
-        next();
-      },
-      async (req, res, next) => {
-        next = cb(next).once();
-
-        client =
-          client ||
-          (await getClient(config).catch((err) => {
-            next(err);
-          }));
-
-        if (!client) {
-          return;
-        }
-
-        try {
-          const redirectUri = res.oidc.getRedirectUri();
-
-          let session;
-
-          try {
-            const callbackParams = client.callbackParams(req);
-            const authVerification = transient.getOnce(
-              'auth_verification',
-              req,
-              res
-            );
-
-            const { max_age, code_verifier, nonce, state } = authVerification
-              ? JSON.parse(authVerification)
-              : {};
-
-            session = await client.callback(redirectUri, callbackParams, {
-              max_age,
-              code_verifier,
-              nonce,
-              state,
-            });
-
-            req.openidState = decodeState(state);
-          } catch (err) {
-            throw createError.BadRequest(err.message);
-          }
-
-          if (config.afterCallback) {
-            session = await config.afterCallback(
-              req,
-              res,
-              Object.assign({}, session), // Remove non-enumerable methods from the TokenSet
-              req.openidState
-            );
-          }
-
-          Object.assign(req[config.session.name], session);
-          attemptSilentLogin.resumeSilentLogin(req, res);
-
-          next();
-        } catch (err) {
-          next(err);
-        }
-      },
-      (req, res) => res.redirect(req.openidState.returnTo || config.baseURL),
-    ];
+    const callback = (req, res) => res.oidc.callback();
 
     debug('adding GET %s route', path);
-    router.get(path, ...callbackStack);
+    router.get(path, callback);
     debug('adding POST %s route', path);
-    router.post(
-      path,
-      express.urlencoded({ extended: false }),
-      ...callbackStack
-    );
+    router.post(path, express.urlencoded({ extended: false }), callback);
   }
 
   if (config.authRequired) {
