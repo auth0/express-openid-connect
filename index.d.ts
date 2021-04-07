@@ -343,7 +343,7 @@ interface ConfigParams {
   getLoginState?: (req: OpenidRequest, options: LoginOptions) => object;
 
   /**
-   * Function for custom callback handling after receiving tokens and before redirecting
+   * Function for custom callback handling after receiving and validating the ID Token and before redirecting.
    * This can be used for handling token storage, making userinfo calls, claim validation, etc.
    *
    * ```js
