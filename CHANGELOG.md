@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [2.3.1](https://github.com/auth0/express-openid-connect/tree/v2.3.1) (2021-04-09)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.3.0...v2.3.1)
+
+**Fixed**
+- Set cookie headers on header write (before res.end) [#214](https://github.com/auth0/express-openid-connect/pull/214) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Prompt should be passed as an auth param  [#217](https://github.com/auth0/express-openid-connect/pull/217) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [2.3.0](https://github.com/auth0/express-openid-connect/tree/v2.3.0) (2021-03-10)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.2.1...v2.3.0)
 
