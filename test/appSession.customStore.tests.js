@@ -1,5 +1,6 @@
 const { promisify } = require('util');
-const assert = require('chai').assert;
+const express = require('express');
+const { assert } = require('chai').use(require('chai-as-promised'));
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -185,5 +186,50 @@ describe('appSession custom store', () => {
     });
     assert.equal(res.statusCode, 500);
     assert.equal(res.body.err.message, 'storage error');
+  });
+
+  it('should not throw if another mw writes the header', async () => {
+    const app = express();
+
+    redisClient = redis.createClient();
+    const store = new RedisStore({ client: redisClient, prefix: '' });
+    await promisify(redisClient.set).bind(redisClient)('foo', sessionData());
+
+    app.use(
+      appSession(
+        getConfig({
+          ...defaultConfig,
+          session: { store },
+        })
+      )
+    );
+
+    app.get('/', (req, res, next) => {
+      res.json(req.appSession);
+      next();
+    });
+
+    app.use((req, res, next) => {
+      if (!res.headersSent) {
+        res.writeHead(200);
+      }
+      next();
+    });
+
+    server = await new Promise((resolve) => {
+      const server = app.listen(3000, () => resolve(server));
+    });
+
+    await assert.becomes(
+      request.get('/', {
+        baseUrl,
+        json: true,
+        headers: {
+          cookie: `appSession=foo`,
+        },
+        resolveWithFullResponse: false,
+      }),
+      { sub: '__test_sub__' }
+    );
   });
 });
