@@ -1,3 +1,4 @@
+const { URL } = require('url');
 const { assert } = require('chai');
 const { create: createServer } = require('./fixture/server');
 const { makeIdToken } = require('./fixture/cert');
@@ -50,6 +51,8 @@ describe('attemptSilentLogin', () => {
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 302);
+    const uri = new URL(response.headers.location);
+    assert.equal(uri.searchParams.get('prompt'), 'none');
     assert.include(jar.getCookies(baseUrl)[0], {
       key: 'skipSilentLogin',
       value: 'true',
