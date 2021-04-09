@@ -246,6 +246,10 @@ app.use(
 );
 ```
 
+In this example, the application is validating the `org_id` to verify that the ID Token was issued to the correct Organization. [Organizations](https://auth0.com/docs/organizations) is a set of features of Auth0 that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
+
+If you don't know the Organization upfront, then your application should validate the claim to ensure that the value received is expected or known and that it corresponds to an entity your application trusts, such as a paying customer. If the claim cannot be validated, then the application should deem the token invalid. See https://auth0.com/docs/organizations/using-tokens for more info.
+
 ## 9. Use a custom session store
 
 By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of cookie storage. In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
