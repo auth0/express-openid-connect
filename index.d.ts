@@ -33,6 +33,9 @@ interface Session {
  *   ...
  * })
  * ```
+ *
+ * @deprecated use the native the `Request` interface of `express` instead; it has
+ * been extended and now includes a built in `oidc` param.
  */
 interface OpenidRequest extends Request {
   /**
@@ -51,6 +54,9 @@ interface OpenidRequest extends Request {
  *   res.oidc.login();
  * })
  * ```
+ *
+ * @deprecated use the native the `Response` interface of `express` instead; it has
+ * been extended and now includes a built in `oidc` param.
  */
 interface OpenidResponse extends Response {
   /**
@@ -167,6 +173,21 @@ interface ResponseContext {
    * ```
    */
   logout: (opts?: LogoutOptions) => Promise<void>;
+}
+
+/**
+ * Extend express interfaces (Response/Request) to support oidc param
+ */
+declare global {
+  namespace Express {
+    interface Request {
+      oidc: RequestContext;
+    }
+
+    interface Response {
+      oidc: ResponseContext;
+    }
+  }
 }
 
 /**
