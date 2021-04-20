@@ -114,7 +114,7 @@ interface RequestContext {
    * An object containing all the claims of the ID Token with the claims
    * specified in {@link ConfigParams.identityClaimFilter identityClaimFilter} removed.
    */
-  user?: object;
+  user?: Record<string, any>;
 
   /**
    * Fetches the OIDC userinfo response.
