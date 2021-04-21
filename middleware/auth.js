@@ -97,14 +97,13 @@ const auth = function (params) {
               ? JSON.parse(authVerification)
               : {};
 
+            req.openidState = decodeState(state);
             session = await client.callback(redirectUri, callbackParams, {
               max_age,
               code_verifier,
               nonce,
               state,
             });
-
-            req.openidState = decodeState(state);
           } catch (err) {
             throw createError.BadRequest(err.message);
           }
@@ -123,7 +122,12 @@ const auth = function (params) {
 
           next();
         } catch (err) {
-          next(err);
+          // Swallow errors if this is a silentLogin
+          if (req.openidState && req.openidState.attemptingSilentLogin) {
+            next();
+          } else {
+            next(err);
+          }
         }
       },
       (req, res) => res.redirect(req.openidState.returnTo || config.baseURL),

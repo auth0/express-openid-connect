@@ -203,6 +203,11 @@ interface LoginOptions {
    *  URL to return to after login, overrides the Default is {@link Request.originalUrl}
    */
   returnTo?: string;
+
+  /**
+   *  Used by {@link ConfigParams.attemptSilentLogin} to swallow callback errors on silent login.
+   */
+  silent?: boolean;
 }
 
 /**
