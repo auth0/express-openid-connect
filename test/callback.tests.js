@@ -595,21 +595,21 @@ describe('callback response_mode: form_post', () => {
         response_type: 'code id_token',
         audience: 'https://api.example.com/',
         scope: 'openid profile email read:reports offline_access',
-        tokenEndpointParams: {
-          longeLiveToken: true
-        }
+      },
+      tokenEndpointParams: {
+        longeLiveToken: true,
       },
     };
     const router = auth(authOpts);
     router.get('/refresh', async (req, res) => {
-      const accessToken = await req.oidc.accessToken.refresh({ force: true });
+      const accessToken = await req.oidc.accessToken.refresh({ tokenEndpointParams: { force: true }});
       res.json({
         accessToken,
         refreshToken: req.oidc.refreshToken,
       });
     });
 
-    const { tokens, jar } = await setup({
+    const { tokens, jar, tokenReqBody } = await setup({
       router,
       authOpts: {
         clientSecret: '__test_client_secret__',
@@ -651,13 +651,14 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'longeLiveToken=true&force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__'
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
     assert.equal(tokens.refreshToken, '__test_refresh_token__');
     assert.equal(newTokens.accessToken.access_token, '__new_access_token__');
     assert.equal(newTokens.refreshToken, '__new_refresh_token__');
+    assert.match(tokenReqBody, /longeLiveToken=true/);
 
     const newerTokens = await request
       .get('/tokens', { baseUrl, jar, json: true })
