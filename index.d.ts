@@ -455,9 +455,7 @@ interface ConfigParams {
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
-  tokenParameters?: {
-    [key: string]: unknown;
-  }
+  tokenParameters?: TokenParameters
 }
 
 interface SessionStorePayload {
@@ -630,7 +628,11 @@ interface AccessToken {
    * }
    * ```
    */
-  refresh(): Promise<AccessToken>;
+  refresh(params?: TokenParameters): Promise<AccessToken>;
+}
+
+interface TokenParameters {
+  [key: string]: unknown;
 }
 
 /**
