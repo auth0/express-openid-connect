@@ -583,6 +583,93 @@ describe('callback response_mode: form_post', () => {
     assert.equal(newTokens.refreshToken, '__test_refresh_token__');
   });
 
+  it('should refresh an access token and pass tokenEndpointParams and refresh argument params to the request', async () => {
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+
+    const authOpts = {
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code id_token',
+        audience: 'https://api.example.com/',
+        scope: 'openid profile email read:reports offline_access',
+        tokenEndpointParams: {
+          longeLiveToken: true
+        }
+      },
+    };
+    const router = auth(authOpts);
+    router.get('/refresh', async (req, res) => {
+      const accessToken = await req.oidc.accessToken.refresh({ force: true });
+      res.json({
+        accessToken,
+        refreshToken: req.oidc.refreshToken,
+      });
+    });
+
+    const { tokens, jar } = await setup({
+      router,
+      authOpts: {
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email read:reports offline_access',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      },
+    });
+
+    const reply = sinon.spy(() => ({
+      access_token: '__new_access_token__',
+      refresh_token: '__new_refresh_token__',
+      id_token: tokens.idToken,
+      token_type: 'Bearer',
+      expires_in: 86400,
+    }));
+    const {
+      interceptors: [interceptor],
+    } = nock('https://op.example.com', { allowUnmocked: true })
+      .post('/oauth/token')
+      .reply(200, reply);
+
+    const newTokens = await request
+      .get('/refresh', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+    nock.removeInterceptor(interceptor);
+
+    sinon.assert.calledWith(
+      reply,
+      '/oauth/token',
+      'force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__'
+    );
+
+    assert.equal(tokens.accessToken.access_token, '__test_access_token__');
+    assert.equal(tokens.refreshToken, '__test_refresh_token__');
+    assert.equal(newTokens.accessToken.access_token, '__new_access_token__');
+    assert.equal(newTokens.refreshToken, '__new_refresh_token__');
+
+    const newerTokens = await request
+      .get('/tokens', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+
+    assert.equal(
+      newerTokens.accessToken.access_token,
+      '__new_access_token__',
+      'the new access token should be persisted in the session'
+    );
+  });
+
   it('should fetch userinfo', async () => {
     const idToken = makeIdToken({
       c_hash: '77QmUPtjPfzWtF2AnpK9RQ',

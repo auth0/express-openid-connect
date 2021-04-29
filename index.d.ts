@@ -451,6 +451,13 @@ interface ConfigParams {
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
    */
   clientAuthMethod?: string;
+
+  /**
+   * Additional extra request body properties to be sent to the AS during code or refresh token exchange
+   */
+  tokenParameters?: {
+    [key: string]: unknown;
+  }
 }
 
 interface SessionStorePayload {
