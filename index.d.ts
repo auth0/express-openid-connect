@@ -453,7 +453,7 @@ interface ConfigParams {
   clientAuthMethod?: string;
 
   /**
-   * Additional request body properties to be sent to the `oauth/token` endpoint during code exchange or token refresh.
+   * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
   tokenParameters?: {
     [key: string]: unknown;
