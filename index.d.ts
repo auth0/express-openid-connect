@@ -455,7 +455,7 @@ interface ConfigParams {
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
-  tokenParameters?: TokenParameters
+  tokenEndpointParams?: TokenParameters
 }
 
 interface SessionStorePayload {
