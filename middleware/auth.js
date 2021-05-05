@@ -98,12 +98,24 @@ const auth = function (params) {
               : {};
 
             req.openidState = decodeState(state);
-            session = await client.callback(redirectUri, callbackParams, {
+            const checks = {
               max_age,
               code_verifier,
               nonce,
               state,
-            });
+            };
+
+            let extras;
+            if (config.tokenEndpointParams) {
+              extras = { exchangeBody: config.tokenEndpointParams };
+            }
+
+            session = await client.callback(
+              redirectUri,
+              callbackParams,
+              checks,
+              extras
+            );
           } catch (err) {
             throw createError.BadRequest(err.message);
           }
