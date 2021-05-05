@@ -96,13 +96,20 @@ const auth = function (params) {
             const { max_age, code_verifier, nonce, state } = authVerification
               ? JSON.parse(authVerification)
               : {};
-
-            session = await client.callback(redirectUri, callbackParams, {
+            
+            const checks = {
               max_age,
               code_verifier,
               nonce,
               state,
-            });
+            };
+            
+            let extras;
+            if (config.tokenEndpointParams) {
+              extras = { exchangeBody: config.tokenEndpointParams }
+            }
+
+            session = await client.callback(redirectUri, callbackParams, checks, extras);
 
             req.openidState = decodeState(state);
           } catch (err) {

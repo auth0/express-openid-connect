@@ -451,6 +451,11 @@ interface ConfigParams {
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
    */
   clientAuthMethod?: string;
+
+  /**
+   * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
+   */
+  tokenEndpointParams?: TokenParameters
 }
 
 interface SessionStorePayload {
@@ -623,7 +628,11 @@ interface AccessToken {
    * }
    * ```
    */
-  refresh(): Promise<AccessToken>;
+  refresh(params?: TokenParameters): Promise<AccessToken>;
+}
+
+interface TokenParameters {
+  [key: string]: unknown;
 }
 
 /**
