@@ -57,7 +57,7 @@
     "oidc-provider": "^6.27.0",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.1",
-    "puppeteer": "^5.2.0",
+    "puppeteer": "^5.5.0",
     "redis-mock": "^0.56.3",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
