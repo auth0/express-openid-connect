@@ -262,7 +262,7 @@ describe('callback response_mode: form_post', () => {
         legacySameSiteCookie: false,
       },
       cookies: {
-        _auth_verification: JSON.stringify({ state: '__test_state__', }),
+        _auth_verification: JSON.stringify({ state: '__test_state__' }),
       },
       body: {
         state: '__test_state__',
@@ -602,7 +602,9 @@ describe('callback response_mode: form_post', () => {
     };
     const router = auth(authOpts);
     router.get('/refresh', async (req, res) => {
-      const accessToken = await req.oidc.accessToken.refresh({ tokenEndpointParams: { force: true }});
+      const accessToken = await req.oidc.accessToken.refresh({
+        tokenEndpointParams: { force: true },
+      });
       res.json({
         accessToken,
         refreshToken: req.oidc.refreshToken,
@@ -790,7 +792,7 @@ describe('callback response_mode: form_post', () => {
       const idToken = makeIdToken({
         c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
       });
-  
+
       const authOpts = {
         ...defaultConfig,
         clientSecret: '__test_client_secret__',
@@ -801,8 +803,8 @@ describe('callback response_mode: form_post', () => {
         },
         afterCallback: async (req, res, session) => {
           const userInfo = await req.oidc.fetchUserInfo();
-          return { ...session, ...userInfo};
-        }
+          return { ...session, ...userInfo };
+        },
       };
 
       // userinfo endpoint will be returned to req.oidc.fetchUserInfo
@@ -843,9 +845,9 @@ describe('callback response_mode: form_post', () => {
       nock.removeInterceptor(interceptor);
 
       const body = await request
-      .get('/session', { baseUrl, jar, json: true })
-      .then((r) => r.body);
-  
+        .get('/session', { baseUrl, jar, json: true })
+        .then((r) => r.body);
+
       assert.deepEqual(body.session.org_id, 'auth_org_123');
     });
 
@@ -853,7 +855,7 @@ describe('callback response_mode: form_post', () => {
       const idToken = makeIdToken({
         c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
       });
-  
+
       const authOpts = {
         ...defaultConfig,
         clientSecret: '__test_client_secret__',
@@ -863,12 +865,14 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email',
         },
         afterCallback: async () => {
-          throw {status: 999};
-        }
+          throw { status: 999 };
+        },
       };
-      const { response: { statusCode } } = await setup({
+      const {
+        response: { statusCode },
+      } = await setup({
         router: auth(authOpts),
-        authOpts, 
+        authOpts,
         cookies: generateCookies({
           state: expectedDefaultState,
           nonce: '__test_nonce__',
