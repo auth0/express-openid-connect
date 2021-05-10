@@ -203,6 +203,11 @@ interface LoginOptions {
    *  URL to return to after login, overrides the Default is {@link Request.originalUrl}
    */
   returnTo?: string;
+
+  /**
+   *  Used by {@link ConfigParams.attemptSilentLogin} to swallow callback errors on silent login.
+   */
+  silent?: boolean;
 }
 
 /**
@@ -455,7 +460,7 @@ interface ConfigParams {
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
-  tokenEndpointParams?: TokenParameters
+  tokenEndpointParams?: TokenParameters;
 }
 
 interface SessionStorePayload {
