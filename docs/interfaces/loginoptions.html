@@ -2738,6 +2738,9 @@ img {
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
 					<a href="loginoptions.html#returnto" class="tsd-kind-icon">return<wbr>To</a>
 				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="loginoptions.html#silent" class="tsd-kind-icon">silent</a>
+				</li>
 			</ul>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2766,6 +2769,9 @@ img {
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="sessionstorepayload.html" class="tsd-kind-icon">Session<wbr>Store<wbr>Payload</a>
+		</li>
+		<li class=" tsd-kind-interface">
+			<a href="tokenparameters.html" class="tsd-kind-icon">Token<wbr>Parameters</a>
 		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#attemptsilentlogin" class="tsd-kind-icon">attempt<wbr>Silent<wbr>Login</a>
@@ -2813,6 +2819,7 @@ img {
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="loginoptions.html#authorizationparams" class="tsd-kind-icon">authorization<wbr>Params</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="loginoptions.html#returnto" class="tsd-kind-icon">return<wbr>To</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="loginoptions.html#silent" class="tsd-kind-icon">silent</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2826,7 +2833,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">authorization<wbr>Params<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">AuthorizationParameters</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/d1ed72f/index.d.ts#L179">index.d.ts:179</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/5779415/index.d.ts#L200">index.d.ts:200</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2841,12 +2848,27 @@ img {
 				<div class="tsd-signature tsd-kind-icon">return<wbr>To<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/d1ed72f/index.d.ts#L184">index.d.ts:184</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/5779415/index.d.ts#L205">index.d.ts:205</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
 						<p> URL to return to after login, overrides the Default is {@link Request.originalUrl}</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+				<a name="silent" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> silent</h3>
+				<div class="tsd-signature tsd-kind-icon">silent<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/5779415/index.d.ts#L210">index.d.ts:210</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p> Used by <a href="configparams.html#attemptsilentlogin">ConfigParams.attemptSilentLogin</a> to swallow callback errors on silent login.</p>
 					</div>
 				</div>
 			</section>
