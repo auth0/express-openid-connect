@@ -3019,6 +3019,9 @@ img {
 		<li class=" tsd-kind-interface">
 			<a href="sessionstorepayload.html" class="tsd-kind-icon">Session<wbr>Store<wbr>Payload</a>
 		</li>
+		<li class=" tsd-kind-interface">
+			<a href="tokenparameters.html" class="tsd-kind-icon">Token<wbr>Parameters</a>
+		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#attemptsilentlogin" class="tsd-kind-icon">attempt<wbr>Silent<wbr>Login</a>
 		</li>
@@ -3052,6 +3055,12 @@ app.get(<span class="hljs-string">&#x27;/profile&#x27;</span>, <span class="hljs
   <span class="hljs-keyword">const</span> user = req.oidc.user;
   ...
 })</code></pre>
+				<dl class="tsd-comment-tags">
+					<dt>deprecated</dt>
+					<dd><p>use the native the <code>Request</code> interface of <code>express</code> instead; it has
+						been extended and now includes a built in <code>oidc</code> param.</p>
+					</dd>
+				</dl>
 			</div>
 		</section>
 		<section class="tsd-panel tsd-type-parameters">
@@ -3492,7 +3501,7 @@ app.get(<span class="hljs-string">&#x27;/profile&#x27;</span>, <span class="hljs
 				<div class="tsd-signature tsd-kind-icon">oidc<span class="tsd-signature-symbol">:</span> <a href="requestcontext.html" class="tsd-signature-type">RequestContext</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/d1ed72f/index.d.ts#L41">index.d.ts:41</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/5779415/index.d.ts#L44">index.d.ts:44</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [2.4.0](https://github.com/auth0/express-openid-connect/tree/v2.4.0) (2021-05-11)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.3.1...v2.4.0)
+
+**Added**
+- Swallor error on silent auth [#230](https://github.com/auth0/express-openid-connect/pull/230) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Token Endpoint Parameters [#228](https://github.com/auth0/express-openid-connect/pull/228) ([davidpatrick](https://github.com/davidpatrick))
+
 ## [2.3.1](https://github.com/auth0/express-openid-connect/tree/v2.3.1) (2021-04-09)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.3.0...v2.3.1)
 
