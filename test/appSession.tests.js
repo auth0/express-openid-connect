@@ -122,6 +122,36 @@ describe('appSession', () => {
     });
   });
 
+  it('should limit total cookie size to 4096 Bytes', async () => {
+    const path =
+    '/some-really-really-really-really-really-really-really-really-really-really-really-really-really-long-path';
+
+    server = await createServer(appSession(getConfig({ ...defaultConfig, session: { cookie: { path } } })));
+
+    const jar = request.jar();
+    const random = crypto.randomBytes(8000).toString('base64');
+
+    await request.post('session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random,
+      },
+    });
+    
+    
+    const cookies = jar
+    .getCookies(`${baseUrl}${path}`)
+      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+
+    assert.exists(cookies);
+    assert.equal(cookies['appSession.0'].length, 4096);
+    assert.equal(cookies['appSession.1'].length, 4096);
+    assert.equal(cookies['appSession.2'].length, 4096);
+    assert.isTrue(cookies['appSession.3'].length <= 4096)
+  });
+
   it('should handle unordered chunked cookies', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
