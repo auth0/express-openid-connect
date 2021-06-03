@@ -122,6 +122,87 @@ describe('appSession', () => {
     });
   });
 
+  it('should limit total cookie size to 4096 Bytes', async () => {
+    const path =
+    '/some-really-really-really-really-really-really-really-really-really-really-really-really-really-long-path';
+    server = await createServer(appSession(getConfig({ ...defaultConfig, session: { cookie: { path } } })));
+    const jar = request.jar();
+
+    await request.post('session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random: crypto.randomBytes(8000).toString('base64'),
+      },
+    });
+
+    const cookies = jar
+      .getCookies(`${baseUrl}${path}`)
+      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+
+    assert.exists(cookies);
+    assert.equal(cookies['appSession.0'].length, 4096);
+    assert.equal(cookies['appSession.1'].length, 4096);
+    assert.equal(cookies['appSession.2'].length, 4096);
+    assert.isTrue(cookies['appSession.3'].length <= 4096)
+  });
+
+  it('should clean up single cookie when switching to chunked', async () => {
+    server = await createServer(appSession(getConfig(defaultConfig)));
+    const jar = request.jar();
+    jar.setCookie(`appSession=foo`, baseUrl)
+
+    const firstCookies = jar
+      .getCookies(baseUrl)
+      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+    assert.property(firstCookies, 'appSession')
+
+    await request.post('session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random: crypto.randomBytes(8000).toString('base64'),
+      },
+    });
+
+    const cookies = jar
+      .getCookies(baseUrl)
+      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+
+    assert.property(cookies, 'appSession.0')
+    assert.notProperty(cookies, 'appSession')
+  });
+
+  it('should clean up chunked cookies when switching to single cookie', async () => {
+    server = await createServer(appSession(getConfig(defaultConfig)));
+    const jar = request.jar();
+    jar.setCookie(`appSession.0=foo`, baseUrl)
+    jar.setCookie(`appSession.1=foo`, baseUrl)
+
+    const firstCookies = jar
+      .getCookies(baseUrl)
+      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+    assert.property(firstCookies, 'appSession.0')
+    assert.property(firstCookies, 'appSession.1')
+
+    await request.post('session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+      },
+    });
+
+    const cookies = jar
+      .getCookies(baseUrl)
+      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+
+    assert.property(cookies, 'appSession')
+    assert.notProperty(cookies, 'appSession.0')
+  });
+
   it('should handle unordered chunked cookies', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
