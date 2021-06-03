@@ -14,7 +14,7 @@
   "scripts": {
     "lint": "eslint .",
     "start:example": "node ./examples/run_example.js",
-    "test": "mocha",
+    "test": "mocha --max-http-header-size=16384",
     "test:ci": "nyc --reporter=lcov npm test",
     "docs": "typedoc --options typedoc.js index.d.ts",
     "test:end-to-end": "mocha end-to-end"
