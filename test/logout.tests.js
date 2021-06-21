@@ -16,12 +16,12 @@ const defaultConfig = {
   authRequired: false,
 };
 
-const login = async (baseUrl = 'http://localhost:3000') => {
+const login = async (baseUrl = 'http://localhost:3000', idToken) => {
   const jar = request.jar();
   await request.post({
     uri: '/session',
     json: {
-      id_token: makeIdToken(),
+      id_token: idToken || makeIdToken(),
     },
     baseUrl,
     jar,
@@ -85,14 +85,15 @@ describe('logout route', async () => {
       })
     );
 
-    const { jar } = await login();
+    const idToken = makeIdToken();
+    const { jar } = await login('http://localhost:3000', idToken);
     const { response, session: loggedOutSession } = await logout(jar);
     assert.notOk(loggedOutSession.id_token);
     assert.equal(response.statusCode, 302);
     assert.include(
       response.headers,
       {
-        location: `https://op.example.com/session/end?post_logout_redirect_uri=http%3A%2F%2Fexample.org&id_token_hint=${makeIdToken()}`,
+        location: `https://op.example.com/session/end?post_logout_redirect_uri=http%3A%2F%2Fexample.org&id_token_hint=${idToken}`,
       },
       'should redirect to the identity provider'
     );
