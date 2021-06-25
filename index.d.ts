@@ -463,7 +463,7 @@ interface ConfigParams {
   tokenEndpointParams?: TokenParameters;
 
   /**
-   * Default http timeout for oidc client requests in milliseconds.  Default is `5000`.
+   * Http timeout for oidc client requests in milliseconds.  Default is 5000.
    */
   httpTimeout?: number;
 }
