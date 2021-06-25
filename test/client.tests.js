@@ -75,12 +75,6 @@ describe('client initialization', function () {
   });
 
   describe('idTokenSigningAlg configuration is not overridden by discovery server', function () {
-    nock('https://op.example.com', { allowUnmocked: true })
-      .persist()
-      .get('/.well-known/openid-configuration')
-      .delayBody(2000) // 2 second delay
-      .reply(200, { ...wellKnown });
-
     const config = getConfig({
       secret: '__test_session_secret__',
       clientID: '__test_client_id__',
