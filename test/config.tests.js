@@ -165,12 +165,14 @@ describe('get config', () => {
   });
 
   it('should set custom cookie configuration', () => {
+    const sessionIdGenerator = () => '1235';
     const config = getConfig({
       ...defaultConfig,
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       session: {
         name: '__test_custom_session_name__',
         rollingDuration: 1234567890,
+        genid: sessionIdGenerator,
         cookie: {
           domain: '__test_custom_domain__',
           transient: true,
@@ -187,6 +189,7 @@ describe('get config', () => {
         rollingDuration: 1234567890,
         absoluteDuration: 604800,
         rolling: true,
+        genid: sessionIdGenerator,
         cookie: {
           domain: '__test_custom_domain__',
           transient: true,

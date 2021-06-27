@@ -532,6 +532,16 @@ interface SessionConfigParams {
   store?: SessionStore;
 
   /**
+   * A Function for generating a session id when using a custom session store.
+   * For full details see the documentation for express-session
+   * at [genid](https://github.com/expressjs/session/blob/master/README.md#genid).
+   * If encrypted cookie storage is used or no value is provided, a default implementation is used.
+   * Be aware the default implmentation is  slightly different in this library as compared to the
+   * default session id generation used express-session.
+   */
+  genid?: (req: OpenidRequest) => string;
+
+  /**
    * If you want your session duration to be rolling, eg reset everytime the
    * user is active on your site, set this to a `true`. If you want the session
    * duration to be absolute, where the user is logged out a fixed time after login,
