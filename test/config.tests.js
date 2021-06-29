@@ -180,6 +180,7 @@ describe('get config', () => {
         },
       },
     });
+
     assert.deepInclude(config, {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       session: {
@@ -377,6 +378,29 @@ describe('get config', () => {
         },
       });
     }, '"session.cookie.domain" must be a string');
+  });
+
+  it('should fail when http timeout is invalid', function () {
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        httpTimeout: 'abcd',
+      });
+    }, '"httpTimeout" must be a number');
+
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        httpTimeout: '-100',
+      });
+    }, '"httpTimeout" must be greater than or equal to 500');
+
+    assert.throws(() => {
+      getConfig({
+        ...defaultConfig,
+        httpTimeout: '499',
+      });
+    }, '"httpTimeout" must be greater than or equal to 500');
   });
 
   it("shouldn't allow a secret of less than 8 chars", () => {
@@ -630,6 +654,18 @@ describe('get config', () => {
     );
   });
 
+  it('should allow valid httpTimeout configuration', () => {
+    const config = (httpTimeout) => ({
+      ...defaultConfig,
+      httpTimeout,
+    });
+
+    assert.doesNotThrow(() => config(5000));
+    assert.doesNotThrow(() => config(10000));
+    assert.doesNotThrow(() => config('5000'));
+    assert.doesNotThrow(() => config('10000'));
+  });
+
   it('should default clientAuthMethod to none for id_token response type', () => {
     {
       const config = getConfig(defaultConfig);
@@ -644,6 +680,15 @@ describe('get config', () => {
       });
       assert.deepInclude(config, {
         clientAuthMethod: 'none',
+      });
+    }
+  });
+
+  it('should default httpTimeout to 5000', () => {
+    {
+      const config = getConfig(defaultConfig);
+      assert.deepInclude(config, {
+        httpTimeout: 5000,
       });
     }
   });

@@ -1,4 +1,4 @@
-const { assert } = require('chai').use(require('chai-as-promised'));
+const { assert, expect } = require('chai').use(require('chai-as-promised'));
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const wellKnown = require('./fixture/well-known.json');
@@ -96,6 +96,55 @@ describe('client initialization', function () {
 
       const client = await getClient(config);
       assert.equal(client.id_token_signed_response_alg, 'RS256');
+    });
+  });
+
+  describe('client respects httpTimeout configuration', function () {
+    const config = getConfig({
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+    });
+
+    function mockRequest(delay = 0) {
+      nock('https://op.example.com').post('/slow').delay(delay).reply(200);
+    }
+
+    async function invokeRequest(client) {
+      return await client.requestResource(
+        'https://op.example.com/slow',
+        'token',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer foo',
+          },
+        }
+      );
+    }
+
+    it('should not timeout for default', async function () {
+      mockRequest(0);
+      const client = await getClient({ ...config });
+      const response = await invokeRequest(client);
+      assert.equal(response.statusCode, 200);
+    });
+
+    it('should not timeout for delay < httpTimeout', async function () {
+      mockRequest(1000);
+      const client = await getClient({ ...config, httpTimeout: 1500 });
+      const response = await invokeRequest(client);
+      assert.equal(response.statusCode, 200);
+    });
+
+    it('should timeout for delay > httpTimeout', async function () {
+      mockRequest(1500);
+      const client = await getClient({ ...config, httpTimeout: 500 });
+      await expect(invokeRequest(client)).to.be.rejectedWith(
+        `Timeout awaiting 'request' for 500ms`
+      );
     });
   });
 });
