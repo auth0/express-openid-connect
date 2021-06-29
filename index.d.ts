@@ -461,6 +461,11 @@ interface ConfigParams {
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
   tokenEndpointParams?: TokenParameters;
+
+  /**
+   * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
+   */
+  httpTimeout?: number;
 }
 
 interface SessionStorePayload {
