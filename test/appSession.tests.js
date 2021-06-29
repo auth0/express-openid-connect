@@ -124,8 +124,10 @@ describe('appSession', () => {
 
   it('should limit total cookie size to 4096 Bytes', async () => {
     const path =
-    '/some-really-really-really-really-really-really-really-really-really-really-really-really-really-long-path';
-    server = await createServer(appSession(getConfig({ ...defaultConfig, session: { cookie: { path } } })));
+      '/some-really-really-really-really-really-really-really-really-really-really-really-really-really-long-path';
+    server = await createServer(
+      appSession(getConfig({ ...defaultConfig, session: { cookie: { path } } }))
+    );
     const jar = request.jar();
 
     await request.post('session', {
@@ -139,24 +141,30 @@ describe('appSession', () => {
 
     const cookies = jar
       .getCookies(`${baseUrl}${path}`)
-      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+      .reduce(
+        (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
+        {}
+      );
 
     assert.exists(cookies);
     assert.equal(cookies['appSession.0'].length, 4096);
     assert.equal(cookies['appSession.1'].length, 4096);
     assert.equal(cookies['appSession.2'].length, 4096);
-    assert.isTrue(cookies['appSession.3'].length <= 4096)
+    assert.isTrue(cookies['appSession.3'].length <= 4096);
   });
 
   it('should clean up single cookie when switching to chunked', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
-    jar.setCookie(`appSession=foo`, baseUrl)
+    jar.setCookie(`appSession=foo`, baseUrl);
 
     const firstCookies = jar
       .getCookies(baseUrl)
-      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
-    assert.property(firstCookies, 'appSession')
+      .reduce(
+        (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
+        {}
+      );
+    assert.property(firstCookies, 'appSession');
 
     await request.post('session', {
       baseUrl,
@@ -169,23 +177,29 @@ describe('appSession', () => {
 
     const cookies = jar
       .getCookies(baseUrl)
-      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+      .reduce(
+        (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
+        {}
+      );
 
-    assert.property(cookies, 'appSession.0')
-    assert.notProperty(cookies, 'appSession')
+    assert.property(cookies, 'appSession.0');
+    assert.notProperty(cookies, 'appSession');
   });
 
   it('should clean up chunked cookies when switching to single cookie', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
-    jar.setCookie(`appSession.0=foo`, baseUrl)
-    jar.setCookie(`appSession.1=foo`, baseUrl)
+    jar.setCookie(`appSession.0=foo`, baseUrl);
+    jar.setCookie(`appSession.1=foo`, baseUrl);
 
     const firstCookies = jar
       .getCookies(baseUrl)
-      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
-    assert.property(firstCookies, 'appSession.0')
-    assert.property(firstCookies, 'appSession.1')
+      .reduce(
+        (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
+        {}
+      );
+    assert.property(firstCookies, 'appSession.0');
+    assert.property(firstCookies, 'appSession.1');
 
     await request.post('session', {
       baseUrl,
@@ -197,10 +211,13 @@ describe('appSession', () => {
 
     const cookies = jar
       .getCookies(baseUrl)
-      .reduce((obj, value) => Object.assign(obj, { [value.key]: value + '' }), {});
+      .reduce(
+        (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
+        {}
+      );
 
-    assert.property(cookies, 'appSession')
-    assert.notProperty(cookies, 'appSession.0')
+    assert.property(cookies, 'appSession');
+    assert.notProperty(cookies, 'appSession.0');
   });
 
   it('should handle unordered chunked cookies', async () => {
@@ -321,6 +338,33 @@ describe('appSession', () => {
       httpOnly: false,
       extensions: ['SameSite=Strict'],
     });
+  });
+
+  it('should disregard custom id generation without a custom store', async () => {
+    server = await createServer(
+      appSession(
+        getConfig({
+          ...defaultConfig,
+          session: {
+            genid: () => {
+              throw 'this should not be called';
+            }, //consider using chai-spies
+          },
+        })
+      )
+    );
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+      headers: {
+        cookie: `appSession=${encrypted}`,
+      },
+    });
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.sub, '__test_sub__');
   });
 
   it('should use a custom cookie name', async () => {

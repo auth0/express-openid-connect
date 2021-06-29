@@ -60,8 +60,8 @@ describe('appSession custom store', () => {
 
     const conf = getConfig({
       ...defaultConfig,
-      session: { store, ...(config && config.session) },
       ...config,
+      session: { ...(config && config.session), store },
     });
 
     server = await createServer(appSession(conf));
@@ -153,6 +153,31 @@ describe('appSession custom store', () => {
     });
     assert.isEmpty(loggedOutRes.body);
     assert.isEmpty(jar.getCookies(baseUrl));
+  });
+
+  it('uses custom session id generator when provided', async () => {
+    const immId = 'apple';
+    await setup({
+      session: { genid: () => immId },
+    });
+    const jar = await login({
+      sub: '__foo_user__',
+      role: 'test',
+      userid: immId,
+    });
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+    });
+    assert.equal(res.statusCode, 200);
+    const storedSessionJson = await redisClient.asyncGet(immId);
+    const { data: sessionValues } = JSON.parse(storedSessionJson);
+    assert.deepEqual(sessionValues, {
+      sub: '__foo_user__',
+      role: 'test',
+      userid: immId,
+    });
   });
 
   it('should handle storage errors', async () => {
