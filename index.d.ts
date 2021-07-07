@@ -307,7 +307,7 @@ interface ConfigParams {
    * REQUIRED. The root URL for the application router, eg https://localhost
    * Can use env key BASE_URL instead.
    */
-  baseURL?: string;
+  baseURL?: string | func;
 
   /**
    * REQUIRED. The Client ID for your application.
