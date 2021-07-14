@@ -12,7 +12,6 @@
 
 - Chunked cookies should not exceed browser max [#237](https://github.com/auth0/express-openid-connect/pull/237) ([davidpatrick](https://github.com/davidpatrick))
 
-
 ## [2.4.0](https://github.com/auth0/express-openid-connect/tree/v2.4.0) (2021-05-11)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.3.1...v2.4.0)
 
