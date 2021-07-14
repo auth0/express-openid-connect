@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [2.5.0](https://github.com/auth0/express-openid-connect/tree/v2.5.0) (2021-07-14)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.4.0...v2.5.0)
+
+**Added**
+
+- Add custom session id generation [#252](https://github.com/auth0/express-openid-connect/pull/252) ([nholik](https://github.com/nholik))
+- Add `httpTimeout` Option [#251](https://github.com/auth0/express-openid-connect/pull/251) ([jmacvey](https://github.com/jmacvey))
+
+**Fixed**
+
+- Chunked cookies should not exceed browser max [#237](https://github.com/auth0/express-openid-connect/pull/237) ([davidpatrick](https://github.com/davidpatrick))
+
+
 ## [2.4.0](https://github.com/auth0/express-openid-connect/tree/v2.4.0) (2021-05-11)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.3.1...v2.4.0)
 
