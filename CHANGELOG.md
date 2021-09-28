@@ -1,4 +1,10 @@
-# CHANGELOG
+# Change Log
+
+## [v2.5.1](https://github.com/auth0/express-openid-connect/tree/v2.5.1) (2021-09-28)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.0...v2.5.1)
+
+**Fixed**
+- Fix cookie chunking [\#275](https://github.com/auth0/express-openid-connect/pull/275) ([adamjmcgrath](https://github.com/adamjmcgrath))
 
 ## [2.5.0](https://github.com/auth0/express-openid-connect/tree/v2.5.0) (2021-07-14)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.4.0...v2.5.0)
