@@ -1,6 +1,6 @@
 {
   "name": "express-openid-connect",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "Express middleware to protect web applications using OpenID Connect.",
   "homepage": "https://github.com/auth0/express-openid-connect",
   "license": "MIT",
@@ -35,8 +35,8 @@
     "joi": "^17.4.2",
     "jose": "^2.0.5",
     "on-headers": "^1.0.2",
-    "openid-client": "^4.7.4",
-    "p-memoize": "^4.0.1",
+    "openid-client": "^4.8.0",
+    "p-memoize": "^4.0.2",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
