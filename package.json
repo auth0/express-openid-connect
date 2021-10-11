@@ -36,7 +36,7 @@
     "jose": "^2.0.5",
     "on-headers": "^1.0.2",
     "openid-client": "^4.8.0",
-    "p-memoize": "^4.0.1",
+    "p-memoize": "^4.0.2",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
