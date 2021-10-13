@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const { auth } = require('../');
 
@@ -5,11 +7,15 @@ const app = express();
 
 app.use(
   auth({
+    clientID: 'jwtca-client',
     authRequired: false,
     authorizationParams: {
       response_type: 'code',
     },
-    clientAuthMethod: 'client_secret_post',
+    clientAuthMethod: 'private_key_jwt',
+    clientAssertionSigningKey: fs.readFileSync(
+      path.join(__dirname, 'private-key.pem')
+    ),
   })
 );
 
