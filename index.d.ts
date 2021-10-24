@@ -451,6 +451,11 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
+
+    /**
+     * Relative path to the application's JSON Web Key Set URL (JWKS URL).
+     */
+    jwksUrl?: string;
   };
 
   /**
