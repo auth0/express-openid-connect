@@ -6,6 +6,7 @@ import {
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
+import { KeyInput } from 'jose';
 
 /**
  * Session object
@@ -458,6 +459,24 @@ interface ConfigParams {
   clientAuthMethod?: string;
 
   /**
+   * Private key and signing algorithm for use with 'private_key_jwt' clients
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAuthMethod: 'private_key_jwt',
+   *   clientAssertionConfig: {
+   *    signingKey: fs.readFileSync(
+   *      path.join(__dirname, 'private-key.pem')
+   *    ),
+   *    signingAlg: 'RS384'
+   *  }
+   * }))
+   * ```
+   */
+  clientAssertionConfig?: ClientAssertionConfig;
+
+  /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
   tokenEndpointParams?: TokenParameters;
@@ -466,6 +485,22 @@ interface ConfigParams {
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
+}
+
+interface ClientAssertionConfig {
+  signingKey: KeyInput | object;
+  signingAlg:
+    | 'RS256'
+    | 'RS384'
+    | 'RS512'
+    | 'PS256'
+    | 'PS384'
+    | 'PS512'
+    | 'ES256'
+    | 'ES256K'
+    | 'ES384'
+    | 'ES512'
+    | 'EdDSA';
 }
 
 interface SessionStorePayload {
