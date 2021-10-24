@@ -424,32 +424,71 @@ describe('get config', () => {
     );
   });
 
-  it("shouldn't allow code flow without clientSecret", () => {
-    const config = {
-      ...defaultConfig,
-      authorizationParams: {
-        response_type: 'code',
-      },
-    };
-    assert.throws(
-      () => getConfig(config),
-      TypeError,
-      '"clientSecret" is required for a response_type that includes code'
-    );
+  context(
+    'when clientAuthMethod is "client_secret_basic" (by default)',
+    async () => {
+      it("shouldn't allow code flow without client authn", () => {
+        const config = {
+          ...defaultConfig,
+          authorizationParams: {
+            response_type: 'code',
+          },
+        };
+        assert.throws(
+          () => getConfig(config),
+          TypeError,
+          '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
+        );
+      });
+
+      it("shouldn't allow hybrid flow without client authn", () => {
+        const config = {
+          ...defaultConfig,
+          authorizationParams: {
+            response_type: 'code id_token',
+          },
+        };
+        assert.throws(
+          () => getConfig(config),
+          TypeError,
+          '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
+        );
+      });
+    }
+  );
+
+  context('when clientAuthMethod is "none"', async () => {
+    it("shouldn't allow code flow without client authn", () => {
+      const config = {
+        ...defaultConfig,
+        authorizationParams: {
+          response_type: 'code',
+        },
+        clientAuthMethod: 'none',
+      };
+      assert.throws(
+        () => getConfig(config),
+        TypeError,
+        '"clientAuthMethod" cannot be "none" when "response_type" includes "code"'
+      );
+    });
   });
 
-  it("shouldn't allow hybrid flow without clientSecret", () => {
-    const config = {
-      ...defaultConfig,
-      authorizationParams: {
-        response_type: 'code id_token',
-      },
-    };
-    assert.throws(
-      () => getConfig(config),
-      TypeError,
-      '"clientSecret" is required for a response_type that includes code'
-    );
+  context('when clientAuthMethod is "private_key_jwt"', async () => {
+    it('should require "clientAssertionConfig"', () => {
+      const config = {
+        ...defaultConfig,
+        authorizationParams: {
+          response_type: 'code',
+        },
+        clientAuthMethod: 'private_key_jwt',
+      };
+      assert.throws(
+        () => getConfig(config),
+        TypeError,
+        '"clientAssertionConfig" is required for a "clientAuthMethod" of includes "private_key_jwt"'
+      );
+    });
   });
 
   it('should not allow "none" for idTokenSigningAlg', () => {
