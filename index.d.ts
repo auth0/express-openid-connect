@@ -648,7 +648,11 @@ interface AccessToken {
    * }
    * ```
    */
-  refresh(params?: TokenParameters): Promise<AccessToken>;
+  refresh(params?: RefreshParams): Promise<AccessToken>;
+}
+
+interface RefreshParams {
+  tokenEndpointParams?: TokenParameters;
 }
 
 interface TokenParameters {
