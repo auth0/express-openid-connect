@@ -10,6 +10,7 @@ const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
+const { regenerateSession } = appSession;
 const { decodeState } = require('../lib/hooks/getLoginState');
 
 const enforceLeadingSlash = (path) => {
@@ -83,7 +84,7 @@ const auth = function (params) {
         try {
           const redirectUri = res.oidc.getRedirectUri();
 
-          let session;
+          let tokenSet;
 
           try {
             const callbackParams = client.callbackParams(req);
@@ -110,7 +111,7 @@ const auth = function (params) {
               extras = { exchangeBody: config.tokenEndpointParams };
             }
 
-            session = await client.callback(
+            tokenSet = await client.callback(
               redirectUri,
               callbackParams,
               checks,
@@ -120,16 +121,27 @@ const auth = function (params) {
             throw createError.BadRequest(err.message);
           }
 
+          let session = Object.assign({}, tokenSet); // Remove non-enumerable methods from the TokenSet
+
           if (config.afterCallback) {
             session = await config.afterCallback(
               req,
               res,
-              Object.assign({}, session), // Remove non-enumerable methods from the TokenSet
+              session,
               req.openidState
             );
           }
 
-          Object.assign(req[config.session.name], session);
+          // Regenerate the session if a new user is logging in replacing
+          // a different user who is currently logged in.
+          if (
+            req.oidc.isAuthenticated() &&
+            tokenSet.claims().sub !== req.oidc.user.sub
+          ) {
+            regenerateSession(req, session, config);
+          } else {
+            Object.assign(req[config.session.name], session);
+          }
           attemptSilentLogin.resumeSilentLogin(req, res);
 
           next();
