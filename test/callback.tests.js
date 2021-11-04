@@ -992,7 +992,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       2,
-      'There should only be two sessions in the store'
+      'There should be two sessions in the store'
     );
   });
 });
