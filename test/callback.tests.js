@@ -901,7 +901,7 @@ describe('callback response_mode: form_post', () => {
     });
   });
 
-  it('should preserve session when a new user is logging in over an anonymous session', async () => {
+  it('should preserve session but regenerate session id when a new user is logging in over an anonymous session', async () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
@@ -927,7 +927,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(currentSession.shoppingCartId, 'bar');
     assert.equal(
       store.store.length,
-      1,
+      2,
       'There should only be one session in the store'
     );
   });
