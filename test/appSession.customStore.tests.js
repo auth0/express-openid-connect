@@ -57,6 +57,7 @@ describe('appSession custom store', () => {
     const store = new RedisStore({ client: redisClient, prefix: '' });
     redisClient.asyncSet = promisify(redisClient.set).bind(redisClient);
     redisClient.asyncGet = promisify(redisClient.get).bind(redisClient);
+    redisClient.asyncDbsize = promisify(redisClient.dbsize).bind(redisClient);
 
     const conf = getConfig({
       ...defaultConfig,
@@ -116,6 +117,15 @@ describe('appSession custom store', () => {
     });
   });
 
+  it('should not populate the store when there is no session', async () => {
+    await setup();
+    await request.get('/session', {
+      baseUrl,
+      json: true,
+    });
+    assert.equal(await redisClient.asyncDbsize(), 0);
+  });
+
   it('should get a new session', async () => {
     await setup();
     const jar = await login({ sub: '__foo_user__' });
@@ -126,6 +136,7 @@ describe('appSession custom store', () => {
     });
     assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, { sub: '__foo_user__' });
+    assert.equal(await redisClient.asyncDbsize(), 1);
   });
 
   it('should destroy an existing session', async () => {
@@ -153,6 +164,7 @@ describe('appSession custom store', () => {
     });
     assert.isEmpty(loggedOutRes.body);
     assert.isEmpty(jar.getCookies(baseUrl));
+    assert.equal(await redisClient.asyncDbsize(), 0);
   });
 
   it('uses custom session id generator when provided', async () => {
@@ -178,6 +190,7 @@ describe('appSession custom store', () => {
       role: 'test',
       userid: immId,
     });
+    assert.equal(await redisClient.asyncDbsize(), 1);
   });
 
   it('should handle storage errors', async () => {

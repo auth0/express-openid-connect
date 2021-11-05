@@ -78,12 +78,15 @@ const setup = async (params) => {
       };
     });
 
+  let existingSessionCookie;
   if (params.existingSession) {
     await request.post('/session', {
       baseUrl,
       jar,
       json: params.existingSession,
     });
+    const cookies = jar.getCookies(baseUrl);
+    existingSessionCookie = cookies.find(({ key }) => key === 'appSession');
   }
 
   const response = await request.post('/callback', {
@@ -112,6 +115,7 @@ const setup = async (params) => {
     tokenReqHeader,
     tokenReqBody,
     tokens,
+    existingSessionCookie,
   };
 };
 
@@ -905,7 +909,7 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const { currentSession, currentUser } = await setup({
+    const { currentSession, currentUser, existingSessionCookie, jar } = await setup({
       cookies: generateCookies({
         state: expectedDefaultState,
         nonce: '__test_nonce__',
@@ -923,38 +927,10 @@ describe('callback response_mode: form_post', () => {
         },
       },
     });
-    assert.equal(currentUser.sub, 'foo');
-    assert.equal(currentSession.shoppingCartId, 'bar');
-    assert.equal(
-      store.store.length,
-      2,
-      'There should be two sessions in the store'
-    );
-  });
 
-  it('should preserve session when the same user is logging in over their existing session', async () => {
-    const store = new MemoryStore({
-      checkPeriod: 24 * 60 * 1000,
-    });
-    const { currentSession, currentUser } = await setup({
-      cookies: generateCookies({
-        state: expectedDefaultState,
-        nonce: '__test_nonce__',
-      }),
-      body: {
-        state: expectedDefaultState,
-        id_token: makeIdToken({ sub: 'foo' }),
-      },
-      existingSession: {
-        shoppingCartId: 'bar',
-        id_token: makeIdToken({ sub: 'foo' }),
-      },
-      authOpts: {
-        session: {
-          store,
-        },
-      },
-    });
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+    
     assert.equal(currentUser.sub, 'foo');
     assert.equal(currentSession.shoppingCartId, 'bar');
     assert.equal(
@@ -962,13 +938,51 @@ describe('callback response_mode: form_post', () => {
       1,
       'There should only be one session in the store'
     );
+    assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
+  });
+
+  it('should preserve session when the same user is logging in over their existing session', async () => {
+    const store = new MemoryStore({
+      checkPeriod: 24 * 60 * 1000,
+    });
+    const { currentSession, currentUser, existingSessionCookie, jar } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      authOpts: {
+        session: {
+          store,
+        },
+      },
+    });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+    
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+    assert.equal(
+      store.store.length,
+      1,
+      'There should only be one session in the store'
+    );
+    assert.equal(existingSessionCookie.value, newSessionCookie.value);
   });
 
   it('should regenerate the session when a new user is logging in over an existing different user', async () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const { currentSession, currentUser } = await setup({
+    const { currentSession, currentUser, existingSessionCookie, jar } = await setup({
       cookies: generateCookies({
         state: expectedDefaultState,
         nonce: '__test_nonce__',
@@ -987,12 +1001,17 @@ describe('callback response_mode: form_post', () => {
         },
       },
     });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+    
     assert.equal(currentUser.sub, 'bar');
     assert.isUndefined(currentSession.shoppingCartId);
     assert.equal(
       store.store.length,
-      2,
-      'There should be two sessions in the store'
+      1,
+      'There should only be one session in the store'
     );
+    assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });
 });
