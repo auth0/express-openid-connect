@@ -905,6 +905,45 @@ describe('callback response_mode: form_post', () => {
     });
   });
 
+  it('should replace the cookie session when a new user is logging in over an existing different user', async () => {
+    const { currentSession, currentUser } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'bar' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+    });
+
+    assert.equal(currentUser.sub, 'bar');
+    assert.isUndefined(currentSession.shoppingCartId);
+  });
+
+  it('should preserve the cookie session when a new user is logging in over an anonymous session', async () => {
+    const { currentSession, currentUser } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+      },
+    });
+
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+  });
+
   it('should preserve session but regenerate session id when a new user is logging in over an anonymous session', async () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,

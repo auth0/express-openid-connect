@@ -73,6 +73,7 @@ describe('appSession custom store', () => {
       await new Promise((resolve) => server.close(resolve));
     }
     if (redisClient) {
+      await new Promise((resolve) => redisClient.flushall(resolve));
       await new Promise((resolve) => redisClient.quit(resolve));
     }
   });
