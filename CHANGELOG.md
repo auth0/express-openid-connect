@@ -1,5 +1,15 @@
 # Change Log
 
+## [v2.5.2](https://github.com/auth0/express-openid-connect/tree/v2.5.2) (2021-12-09)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.1...v2.5.2)
+
+**Security**
+
+- Session fixation fix [CVE-2021-41246](https://github.com/auth0/express-openid-connect/security/advisories/GHSA-7rg2-qxmf-hhx9)
+
+**Fixed**
+- Fix refresh signature in ts defs [\#294](https://github.com/auth0/express-openid-connect/pull/294) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.5.1](https://github.com/auth0/express-openid-connect/tree/v2.5.1) (2021-09-28)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.0...v2.5.1)
 
