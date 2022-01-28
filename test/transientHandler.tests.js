@@ -122,6 +122,21 @@ describe('transientHandler', function () {
       );
     });
 
+    it('should return main value and delete both cookies by default', function () {
+      const signature = generateSignature('test_key', 'foo');
+      const cookies = {
+        test_key: `foo.${signature}`,
+        _test_key: `foo.${signature}`,
+      };
+      const req = reqWithCookies(cookies);
+      const value = transientHandler.getOnce('test_key', req, res);
+
+      assert.equal(value, 'foo');
+
+      sinon.assert.calledWith(res.clearCookie, 'test_key');
+      sinon.assert.calledWith(res.clearCookie, '_test_key');
+    });
+
     it('should delete both cookies with a secure iframe config', function () {
       const transientHandlerHttpsIframe = new TransientCookieHandler({
         secret,
