@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.6.0](https://github.com/auth0/express-openid-connect/tree/v2.6.0) (2022-01-31)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.2...v2.6.0)
+
+**Added**
+- Add cross domain iframe support for modern browsers [\#317](https://github.com/auth0/express-openid-connect/pull/317) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.5.2](https://github.com/auth0/express-openid-connect/tree/v2.5.2) (2021-12-09)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.1...v2.5.2)
 
