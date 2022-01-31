@@ -8,7 +8,7 @@ const cancelSilentLogin = (req, res) => {
   const {
     config: {
       session: {
-        cookie: { secure, domain, path },
+        cookie: { secure, domain, path, sameSite },
       },
     },
   } = weakRef(req.oidc);
@@ -17,6 +17,7 @@ const cancelSilentLogin = (req, res) => {
     secure,
     domain,
     path,
+    sameSite,
   });
 };
 
@@ -24,7 +25,7 @@ const resumeSilentLogin = (req, res) => {
   const {
     config: {
       session: {
-        cookie: { domain, path },
+        cookie: { domain, path, sameSite, secure },
       },
     },
   } = weakRef(req.oidc);
@@ -32,6 +33,8 @@ const resumeSilentLogin = (req, res) => {
     httpOnly: true,
     domain,
     path,
+    sameSite,
+    secure,
   });
 };
 
