@@ -450,6 +450,11 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
+
+    /**
+     * Configuration parameters used for the verification cookie.
+     */
+    transactionCookie: Pick<CookieConfigParams, 'sameSite'>;
   };
 
   /**
@@ -569,11 +574,6 @@ interface SessionConfigParams {
    * Default is 604800 seconds (7 days).
    */
   absoluteDuration?: boolean | number;
-
-  /**
-   * Configuration parameters used for the verification cookie.
-   */
-  verificationCookie: Pick<CookieConfigParams, 'sameSite'>;
 
   /**
    * Configuration parameters used for the session cookie and transient cookies.

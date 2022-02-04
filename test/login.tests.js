@@ -363,15 +363,35 @@ describe('auth', () => {
     assert.isDefined(fetchFromAuthCookie(res, 'code_verifier'));
   });
 
-  it('should respect verificationCookie.sameSite when response_mode is not form_post', async () => {
+  it('should respect session.cookie.sameSite when transaction.sameSite is not set and response_mode is not form_post', async () => {
     server = await createServer(
       auth({
         ...defaultConfig,
         clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_mode: 'query',
+          response_type: 'code',
+        },
         session: {
-          verificationCookie: {
+          cookie: {
             sameSite: 'Strict',
           },
+        },
+      })
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    assert.include(fetchAuthCookie(res), 'SameSite=Strict');
+  });
+
+  it('should respect transactionCookie.sameSite when response_mode is not form_post', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        transactionCookie: {
+          sameSite: 'Strict',
         },
         authorizationParams: {
           response_mode: 'query',
@@ -389,10 +409,8 @@ describe('auth', () => {
     server = await createServer(
       auth({
         ...defaultConfig,
-        session: {
-          cookie: {
-            sameSite: 'Strict',
-          },
+        transactionCookie: {
+          sameSite: 'Strict',
         },
       })
     );
