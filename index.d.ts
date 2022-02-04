@@ -452,7 +452,7 @@ interface ConfigParams {
     callback?: string;
 
     /**
-     * Configuration parameters used for the verification cookie.
+     * Configuration parameters used for the transaction cookie.
      */
     transactionCookie: Pick<CookieConfigParams, 'sameSite'>;
   };
