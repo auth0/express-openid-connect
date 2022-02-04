@@ -571,6 +571,11 @@ interface SessionConfigParams {
   absoluteDuration?: boolean | number;
 
   /**
+   * Configuration parameters used for the verification cookie.
+   */
+  verificationCookie: Pick<CookieConfigParams, 'sameSite'>;
+
+  /**
    * Configuration parameters used for the session cookie and transient cookies.
    */
   cookie?: CookieConfigParams;

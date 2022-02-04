@@ -363,13 +363,13 @@ describe('auth', () => {
     assert.isDefined(fetchFromAuthCookie(res, 'code_verifier'));
   });
 
-  it('should respect sameSite when response_mode is not form_post', async () => {
+  it('should respect verificationCookie.sameSite when response_mode is not form_post', async () => {
     server = await createServer(
       auth({
         ...defaultConfig,
         clientSecret: '__test_client_secret__',
         session: {
-          cookie: {
+          verificationCookie: {
             sameSite: 'Strict',
           },
         },
