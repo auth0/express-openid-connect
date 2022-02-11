@@ -450,6 +450,11 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
+
+    /**
+     * Configuration parameters used for the transaction cookie.
+     */
+    transactionCookie: Pick<CookieConfigParams, 'sameSite'>;
   };
 
   /**
