@@ -471,6 +471,11 @@ interface ConfigParams {
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
+
+  /**
+   * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
+   */
+  httpUserAgent?: number;
 }
 
 interface SessionStorePayload {
