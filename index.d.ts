@@ -475,7 +475,7 @@ interface ConfigParams {
   /**
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
-  httpUserAgent?: number;
+  httpUserAgent?: string;
 }
 
 interface SessionStorePayload {
