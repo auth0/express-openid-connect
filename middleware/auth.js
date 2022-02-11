@@ -118,7 +118,10 @@ const auth = function (params) {
               extras
             );
           } catch (err) {
-            throw createError.BadRequest(err.message);
+            throw createError(400, err.message, {
+              error: err.error,
+              error_description: err.error_description,
+            });
           }
 
           let session = Object.assign({}, tokenSet); // Remove non-enumerable methods from the TokenSet

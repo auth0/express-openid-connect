@@ -290,6 +290,26 @@ describe('callback response_mode: form_post', () => {
     assert.equal(err.message, 'checks.state argument is missing');
   });
 
+  it('should include oauth error properties in error', async () => {
+    const {
+      response: {
+        statusCode,
+        body: {
+          err: { error, error_description },
+        },
+      },
+    } = await setup({
+      cookies: {},
+      body: {
+        error: 'foo',
+        error_description: 'bar',
+      },
+    });
+    assert.equal(statusCode, 400);
+    assert.equal(error, 'foo');
+    assert.equal(error_description, 'bar');
+  });
+
   it('should use legacy samesite fallback', async () => {
     const { currentUser } = await setup({
       authOpts: {
@@ -948,7 +968,12 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const { currentSession, currentUser, existingSessionCookie, jar } = await setup({
+    const {
+      currentSession,
+      currentUser,
+      existingSessionCookie,
+      jar,
+    } = await setup({
       cookies: generateCookies({
         state: expectedDefaultState,
         nonce: '__test_nonce__',
@@ -969,7 +994,7 @@ describe('callback response_mode: form_post', () => {
 
     const cookies = jar.getCookies(baseUrl);
     const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
-    
+
     assert.equal(currentUser.sub, 'foo');
     assert.equal(currentSession.shoppingCartId, 'bar');
     assert.equal(
@@ -984,7 +1009,12 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const { currentSession, currentUser, existingSessionCookie, jar } = await setup({
+    const {
+      currentSession,
+      currentUser,
+      existingSessionCookie,
+      jar,
+    } = await setup({
       cookies: generateCookies({
         state: expectedDefaultState,
         nonce: '__test_nonce__',
@@ -1006,7 +1036,7 @@ describe('callback response_mode: form_post', () => {
 
     const cookies = jar.getCookies(baseUrl);
     const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
-    
+
     assert.equal(currentUser.sub, 'foo');
     assert.equal(currentSession.shoppingCartId, 'bar');
     assert.equal(
@@ -1021,7 +1051,12 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const { currentSession, currentUser, existingSessionCookie, jar } = await setup({
+    const {
+      currentSession,
+      currentUser,
+      existingSessionCookie,
+      jar,
+    } = await setup({
       cookies: generateCookies({
         state: expectedDefaultState,
         nonce: '__test_nonce__',
@@ -1043,7 +1078,7 @@ describe('callback response_mode: form_post', () => {
 
     const cookies = jar.getCookies(baseUrl);
     const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
-    
+
     assert.equal(currentUser.sub, 'bar');
     assert.isUndefined(currentSession.shoppingCartId);
     assert.equal(
