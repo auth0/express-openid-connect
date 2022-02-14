@@ -6,9 +6,6 @@ const app = express();
 app.use(
   auth({
     idpLogout: true,
-    logoutParams: {
-      federated: '',
-    },
   })
 );
 
