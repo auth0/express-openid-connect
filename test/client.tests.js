@@ -4,6 +4,7 @@ const { get: getClient } = require('../lib/client');
 const wellKnown = require('./fixture/well-known.json');
 const nock = require('nock');
 const pkg = require('../package.json');
+const sinon = require('sinon');
 
 describe('client initialization', function () {
   beforeEach(async function () {
@@ -144,6 +145,36 @@ describe('client initialization', function () {
       const client = await getClient({ ...config, httpTimeout: 500 });
       await expect(invokeRequest(client)).to.be.rejectedWith(
         `Timeout awaiting 'request' for 500ms`
+      );
+    });
+  });
+
+  describe('client respects httpUserAgent configuration', function () {
+    const config = getConfig({
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+    });
+
+    it('should send default UA header', async function () {
+      const handler = sinon.stub().returns([200]);
+      nock('https://op.example.com').get('/foo').reply(handler);
+      const client = await getClient({ ...config });
+      await client.requestResource('https://op.example.com/foo');
+      expect(handler.firstCall.thisValue.req.headers['user-agent']).to.match(
+        /^express-openid-connect\//
+      );
+    });
+
+    it('should send custom UA header', async function () {
+      const handler = sinon.stub().returns([200]);
+      nock('https://op.example.com').get('/foo').reply(handler);
+      const client = await getClient({ ...config, httpUserAgent: 'foo' });
+      await client.requestResource('https://op.example.com/foo');
+      expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
+        'foo'
       );
     });
   });
