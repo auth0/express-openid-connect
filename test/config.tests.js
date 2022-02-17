@@ -205,6 +205,37 @@ describe('get config', () => {
     });
   });
 
+  it('should validate session name', () => {
+    const validNames = [
+      'mySession',
+      'my-session',
+      'my_session',
+      '__Host-mysession',
+      'mySession123',
+    ];
+    const invalidNames = [
+      'my session',
+      'my;session',
+      'mysession?',
+      'my{session}',
+      '<my_session>',
+      'my@session',
+      'mySession:123',
+      'my=session',
+    ];
+
+    for (const name of validNames) {
+      assert.doesNotThrow(() => {
+        getConfig({ ...defaultConfig, session: { name } });
+      });
+    }
+    for (const name of invalidNames) {
+      assert.throws(() => {
+        getConfig({ ...defaultConfig, session: { name } });
+      });
+    }
+  });
+
   it('should set default transaction cookie sameSite configuration', () => {
     const config = getConfig({
       ...defaultConfig,
