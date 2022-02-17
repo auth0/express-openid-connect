@@ -218,6 +218,11 @@ interface LogoutOptions {
    *  URL to returnTo after logout, overrides the Default in {@link ConfigParams.routes.postLogoutRedirect routes.postLogoutRedirect}
    */
   returnTo?: string;
+
+  /**
+   * Additional custom parameters to pass to the logout endpoint.
+   */
+  logoutParams?: { [key: string]: any };
 }
 
 /**
@@ -302,6 +307,11 @@ interface ConfigParams {
    * ```
    */
   authorizationParams?: AuthorizationParameters;
+
+  /**
+   * Additional custom parameters to pass to the logout endpoint.
+   */
+  logoutParams?: { [key: string]: any };
 
   /**
    * REQUIRED. The root URL for the application router, eg https://localhost
