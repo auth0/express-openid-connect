@@ -460,12 +460,12 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
-
-    /**
-     * Configuration parameters used for the transaction cookie.
-     */
-    transactionCookie: Pick<CookieConfigParams, 'sameSite'>;
   };
+
+  /**
+   * Configuration parameters used for the transaction cookie.
+   */
+  transactionCookie: Pick<CookieConfigParams, 'sameSite'>;
 
   /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
