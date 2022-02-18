@@ -1,5 +1,17 @@
 # Change Log
 
+## [v2.7.0](https://github.com/auth0/express-openid-connect/tree/v2.7.0) (2022-02-17)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.6.0...v2.7.0)
+
+**Added**
+- [SDK-3109] Add ability to pass custom logout params [\#329](https://github.com/auth0/express-openid-connect/pull/329) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-3111] Add Oauth error props to http error when available [\#328](https://github.com/auth0/express-openid-connect/pull/328) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-3110] Allow customising the UA header in client reqs [\#327](https://github.com/auth0/express-openid-connect/pull/327) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- allow configuration of same site attribute on auth_verification cookie [\#323](https://github.com/auth0/express-openid-connect/pull/323) ([BitPatty](https://github.com/BitPatty))
+
+**Changed**
+- Looser cookie name validation [\#330](https://github.com/auth0/express-openid-connect/pull/330) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.6.0](https://github.com/auth0/express-openid-connect/tree/v2.6.0) (2022-01-31)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.2...v2.6.0)
 
