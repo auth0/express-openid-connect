@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.7.1](https://github.com/auth0/express-openid-connect/tree/v2.7.1) (2022-02-24)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.0...v2.7.1)
+
+**Fixed**
+- transactionCookie configuration should be optional [\#338](https://github.com/auth0/express-openid-connect/pull/338) ([BitPatty](https://github.com/BitPatty))
+
 ## [v2.7.0](https://github.com/auth0/express-openid-connect/tree/v2.7.0) (2022-02-17)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.6.0...v2.7.0)
 
