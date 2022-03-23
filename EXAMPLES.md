@@ -256,10 +256,15 @@ By default the session is stored in an encrypted cookie. But when the session ge
 
 ```js
 const { auth } = require('express-openid-connect');
-const redis = require('redis');
+const { createClient } = require('redis');
 const RedisStore = require('connect-redis')(auth);
 
-const redisClient = redis.createClient();
+// redis@v4
+let redisClient = createClient({ legacyMode: true });
+redisClient.connect().catch(console.error);
+
+// redis@v3
+let redisClient = createClient();
 
 app.use(
   auth({
