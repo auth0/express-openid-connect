@@ -354,4 +354,21 @@ describe('requiresAuth', () => {
     assert.equal(response.statusCode, 401);
     sinon.assert.notCalled(checkSpy);
   });
+
+  it('should collapse leading slashes on returnTo', async () => {
+    server = await createServer(auth(defaultConfig));
+    const payloads = ['//google.com', '///google.com', '//google.com'];
+    for (const payload of payloads) {
+      const response = await request({ url: `${baseUrl}${payload}` });
+      const state = new URL(response.headers.location).searchParams.get(
+        'state'
+      );
+      const decoded = Buffer.from(state, 'base64');
+      const parsed = JSON.parse(decoded);
+
+      assert.equal(response.statusCode, 302);
+      assert.include(response.headers.location, 'https://op.example.com');
+      assert.equal(parsed.returnTo, '/google.com');
+    }
+  });
 });
