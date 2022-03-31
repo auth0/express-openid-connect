@@ -1,5 +1,17 @@
 # Change Log
 
+## [v2.7.2](https://github.com/auth0/express-openid-connect/tree/v2.7.2) (2022-03-29)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.1...v2.7.2)
+
+**Security**
+- URL Redirection to Untrusted Site ('Open Redirect') in express-openid-connect [GHSA-7p99-3798-f85c](https://github.com/auth0/express-openid-connect/security/advisories/GHSA-7p99-3798-f85c)
+
+## [v2.7.1](https://github.com/auth0/express-openid-connect/tree/v2.7.1) (2022-02-24)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.0...v2.7.1)
+
+**Fixed**
+- transactionCookie configuration should be optional [\#338](https://github.com/auth0/express-openid-connect/pull/338) ([BitPatty](https://github.com/BitPatty))
+
 ## [v2.7.0](https://github.com/auth0/express-openid-connect/tree/v2.7.0) (2022-02-17)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.6.0...v2.7.0)
 
