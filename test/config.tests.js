@@ -212,6 +212,7 @@ describe('get config', () => {
       'my_session',
       '__Host-mysession',
       'mySession123',
+      'my.session',
     ];
     const invalidNames = [
       'my session',
