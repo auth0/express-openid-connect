@@ -107,7 +107,7 @@ If your application needs an [access token](https://auth0.com/docs/tokens/access
 app.use(
   auth({
     authorizationParams: {
-      response_type: 'code',
+      response_type: 'code', // This requires you to provide a client secret
       audience: 'https://api.example.com/products',
       scope: 'openid profile email read:products',
     },
@@ -135,7 +135,7 @@ Full example at [access-an-api.js](./examples/access-an-api.js), to run it: `npm
 app.use(
   auth({
     authorizationParams: {
-      response_type: 'code',
+      response_type: 'code', // This requires you to provide a client secret
       audience: 'https://api.example.com/products',
       scope: 'openid profile email offline_access read:products',
     },
