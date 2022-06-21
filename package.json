@@ -30,7 +30,7 @@
     "clone": "^2.1.2",
     "cookie": "^0.5.0",
     "debug": "^4.3.4",
-    "futoin-hkdf": "^1.5.0",
+    "futoin-hkdf": "^1.5.1",
     "http-errors": "^1.8.1",
     "joi": "^17.6.0",
     "jose": "^2.0.5",
