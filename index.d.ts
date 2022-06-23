@@ -436,7 +436,7 @@ interface ConfigParams {
   authRequired?: boolean;
 
   /**
-   * Boolean value to automatically install the login and logout routes.
+   * Configuration for the login, logout, callback and postLogoutRedirect routes.
    */
   routes?: {
     /**
