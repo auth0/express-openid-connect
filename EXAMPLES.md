@@ -252,7 +252,7 @@ If you don't know the Organization upfront, then your application should validat
 
 ## 9. Use a custom session store
 
-By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of cookie storage. In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
+By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of the platform's max header size (16KB for Node >= 14, 8KB for Node <14). In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
 
 ```js
 const { auth } = require('express-openid-connect');
