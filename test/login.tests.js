@@ -1,6 +1,7 @@
 const assert = require('chai').assert;
 const url = require('url');
 const querystring = require('querystring');
+const nock = require('nock');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -418,5 +419,33 @@ describe('auth', () => {
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=None');
+  });
+
+  it('should pass discovery errors to the express mw', async () => {
+    nock('https://example.com')
+      .get('/.well-known/openid-configuration')
+      .reply(500);
+    nock('https://example.com')
+      .get('/.well-known/oauth-authorization-server')
+      .reply(500);
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+      })
+    );
+    const res = await request.get('/login', {
+      baseUrl,
+      followRedirect: false,
+      json: true,
+    });
+    assert.equal(res.statusCode, 500);
+    console.log(res.body.err.message);
+    assert.match(
+      res.body.err.message,
+      /^Issuer.discover\(\) failed/,
+      'Should get error json from server error middleware'
+    );
   });
 });
