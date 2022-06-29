@@ -1,3 +1,4 @@
+const nock = require('nock');
 const { assert } = require('chai');
 const { URL } = require('url');
 const { create: createServer } = require('./fixture/server');
@@ -319,5 +320,34 @@ describe('logout route', async () => {
     assert.isFalse(url.searchParams.has('bar'));
     assert.isFalse(url.searchParams.has('baz'));
     assert.equal(url.searchParams.get('qux'), '');
+  });
+
+  it('should pass discovery errors to the express mw', async () => {
+    nock('https://example.com')
+      .get('/.well-known/openid-configuration')
+      .reply(500);
+    nock('https://example.com')
+      .get('/.well-known/oauth-authorization-server')
+      .reply(500);
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+      })
+    );
+    const res = await request.get({
+      uri: '/logout',
+      baseUrl: 'http://localhost:3000',
+      followRedirect: false,
+      json: true,
+    });
+    assert.equal(res.statusCode, 500);
+    console.log(res.body.err.message);
+    assert.match(
+      res.body.err.message,
+      /^Issuer.discover\(\) failed/,
+      'Should get error json from server error middleware'
+    );
   });
 });
