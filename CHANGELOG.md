@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.7.3](https://github.com/auth0/express-openid-connect/tree/v2.7.3) (2022-06-29)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.2...v2.7.3)
+
+**Fixed**
+- discovery errors should be handled in express middleware [\#371](https://github.com/auth0/express-openid-connect/pull/371) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Allow periods in cookie name [\#350](https://github.com/auth0/express-openid-connect/pull/350) ([moberegger](https://github.com/moberegger))
+
 ## [v2.7.2](https://github.com/auth0/express-openid-connect/tree/v2.7.2) (2022-03-29)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.1...v2.7.2)
 
