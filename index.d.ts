@@ -6,6 +6,7 @@ import {
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
+import { KeyInput } from 'jose';
 
 /**
  * Session object
@@ -450,12 +451,35 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
+
+    /**
+     * Relative path to the application's JSON Web Key Set URL (JWKS URL).
+     */
+    jwksUrl?: string;
   };
 
   /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
    */
   clientAuthMethod?: string;
+
+  /**
+   * Private key and signing algorithm for use with 'private_key_jwt' clients
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAuthMethod: 'private_key_jwt',
+   *   clientAssertionConfig: {
+   *    signingKey: fs.readFileSync(
+   *      path.join(__dirname, 'private-key.pem')
+   *    ),
+   *    signingAlg: 'RS384'
+   *  }
+   * }))
+   * ```
+   */
+  clientAssertionConfig?: ClientAssertionConfig;
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
@@ -466,6 +490,22 @@ interface ConfigParams {
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
+}
+
+interface ClientAssertionConfig {
+  signingKey: KeyInput | object;
+  signingAlg:
+    | 'RS256'
+    | 'RS384'
+    | 'RS512'
+    | 'PS256'
+    | 'PS384'
+    | 'PS512'
+    | 'ES256'
+    | 'ES256K'
+    | 'ES384'
+    | 'ES512'
+    | 'EdDSA';
 }
 
 interface SessionStorePayload {

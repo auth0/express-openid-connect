@@ -17,6 +17,7 @@ const config = {
   clients: [
     client,
     Object.assign({}, client, {
+      client_secret: undefined,
       client_id: 'jwtca-client',
       token_endpoint_auth_method: 'private_key_jwt',
       jwks: {
