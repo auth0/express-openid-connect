@@ -185,6 +185,9 @@ describe('get config', () => {
 
     assert.deepInclude(config, {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      transactionCookie: {
+        sameSite: 'Strict',
+      },
       session: {
         name: '__test_custom_session_name__',
         rollingDuration: 1234567890,
@@ -198,6 +201,93 @@ describe('get config', () => {
           secure: true,
           sameSite: 'Strict',
         },
+      },
+    });
+  });
+
+  it('should validate session name', () => {
+    const validNames = [
+      'mySession',
+      'my-session',
+      'my_session',
+      '__Host-mysession',
+      'mySession123',
+      'my.session',
+    ];
+    const invalidNames = [
+      'my session',
+      'my;session',
+      'mysession?',
+      'my{session}',
+      '<my_session>',
+      'my@session',
+      'mySession:123',
+      'my=session',
+    ];
+
+    for (const name of validNames) {
+      assert.doesNotThrow(() => {
+        getConfig({ ...defaultConfig, session: { name } });
+      });
+    }
+    for (const name of invalidNames) {
+      assert.throws(() => {
+        getConfig({ ...defaultConfig, session: { name } });
+      });
+    }
+  });
+
+  it('should set default transaction cookie sameSite configuration', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+    });
+
+    assert.deepInclude(config, {
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      transactionCookie: {
+        sameSite: 'Lax',
+      },
+    });
+  });
+
+  it('should set default transaction cookie sameSite configuration from session cookie configuration', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      session: {
+        cookie: {
+          sameSite: 'Strict',
+        },
+      },
+    });
+
+    assert.deepInclude(config, {
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      transactionCookie: {
+        sameSite: 'Strict',
+      },
+    });
+  });
+
+  it('should set custom transaction cookie configuration', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      transactionCookie: {
+        sameSite: 'Strict',
+      },
+      session: {
+        cookie: {
+          sameSite: 'Lax',
+        },
+      },
+    });
+
+    assert.deepInclude(config, {
+      secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
+      transactionCookie: {
+        sameSite: 'Strict',
       },
     });
   });

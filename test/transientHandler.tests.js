@@ -137,6 +137,32 @@ describe('transientHandler', function () {
       sinon.assert.calledWith(res.clearCookie, '_test_key');
     });
 
+    it('should delete both cookies with a secure iframe config', function () {
+      const transientHandlerHttpsIframe = new TransientCookieHandler({
+        secret,
+        session: { cookie: { secure: true, sameSite: 'None' } },
+        legacySameSiteCookie: true,
+      });
+      const signature = generateSignature('test_key', 'foo');
+      const cookies = {
+        test_key: `foo.${signature}`,
+        _test_key: `foo.${signature}`,
+      };
+      const req = reqWithCookies(cookies);
+      const value = transientHandlerHttpsIframe.getOnce('test_key', req, res);
+
+      assert.equal(value, 'foo');
+
+      sinon.assert.calledWithMatch(res.clearCookie, 'test_key', {
+        sameSite: 'None',
+        secure: true,
+      });
+      sinon.assert.calledWithMatch(res.clearCookie, '_test_key', {
+        sameSite: undefined,
+        secure: undefined,
+      });
+    });
+
     it('should return fallback value and delete both cookies if main value not present', function () {
       const cookies = {
         _test_key: `foo.${generateSignature('_test_key', 'foo')}`,

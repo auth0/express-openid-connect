@@ -107,7 +107,7 @@ If your application needs an [access token](https://auth0.com/docs/tokens/access
 app.use(
   auth({
     authorizationParams: {
-      response_type: 'code',
+      response_type: 'code', // This requires you to provide a client secret
       audience: 'https://api.example.com/products',
       scope: 'openid profile email read:products',
     },
@@ -135,7 +135,7 @@ Full example at [access-an-api.js](./examples/access-an-api.js), to run it: `npm
 app.use(
   auth({
     authorizationParams: {
-      response_type: 'code',
+      response_type: 'code', // This requires you to provide a client secret
       audience: 'https://api.example.com/products',
       scope: 'openid profile email offline_access read:products',
     },
@@ -252,14 +252,19 @@ If you don't know the Organization upfront, then your application should validat
 
 ## 9. Use a custom session store
 
-By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of cookie storage. In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
+By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of the platform's max header size (16KB for Node >= 14, 8KB for Node <14). In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
 
 ```js
 const { auth } = require('express-openid-connect');
-const redis = require('redis');
+const { createClient } = require('redis');
 const RedisStore = require('connect-redis')(auth);
 
-const redisClient = redis.createClient();
+// redis@v4
+let redisClient = createClient({ legacyMode: true });
+redisClient.connect().catch(console.error);
+
+// redis@v3
+let redisClient = createClient();
 
 app.use(
   auth({

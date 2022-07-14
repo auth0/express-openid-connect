@@ -219,6 +219,11 @@ interface LogoutOptions {
    *  URL to returnTo after logout, overrides the Default in {@link ConfigParams.routes.postLogoutRedirect routes.postLogoutRedirect}
    */
   returnTo?: string;
+
+  /**
+   * Additional custom parameters to pass to the logout endpoint.
+   */
+  logoutParams?: { [key: string]: any };
 }
 
 /**
@@ -303,6 +308,11 @@ interface ConfigParams {
    * ```
    */
   authorizationParams?: AuthorizationParameters;
+
+  /**
+   * Additional custom parameters to pass to the logout endpoint.
+   */
+  logoutParams?: { [key: string]: any };
 
   /**
    * REQUIRED. The root URL for the application router, eg https://localhost
@@ -427,7 +437,7 @@ interface ConfigParams {
   authRequired?: boolean;
 
   /**
-   * Boolean value to automatically install the login and logout routes.
+   * Configuration for the login, logout, callback and postLogoutRedirect routes.
    */
   routes?: {
     /**
@@ -457,6 +467,11 @@ interface ConfigParams {
      */
     jwksUrl?: string;
   };
+
+  /**
+   * Configuration parameters used for the transaction cookie.
+   */
+  transactionCookie?: Pick<CookieConfigParams, 'sameSite'>;
 
   /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
@@ -490,6 +505,11 @@ interface ConfigParams {
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
+
+  /**
+   * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
+   */
+  httpUserAgent?: string;
 }
 
 interface ClientAssertionConfig {
@@ -688,7 +708,11 @@ interface AccessToken {
    * }
    * ```
    */
-  refresh(params?: TokenParameters): Promise<AccessToken>;
+  refresh(params?: RefreshParams): Promise<AccessToken>;
+}
+
+interface RefreshParams {
+  tokenEndpointParams?: TokenParameters;
 }
 
 interface TokenParameters {

@@ -1,6 +1,7 @@
 const assert = require('chai').assert;
 const url = require('url');
 const querystring = require('querystring');
+const nock = require('nock');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -363,15 +364,35 @@ describe('auth', () => {
     assert.isDefined(fetchFromAuthCookie(res, 'code_verifier'));
   });
 
-  it('should respect sameSite when response_mode is not form_post', async () => {
+  it('should respect session.cookie.sameSite when transaction.sameSite is not set and response_mode is not form_post', async () => {
     server = await createServer(
       auth({
         ...defaultConfig,
         clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_mode: 'query',
+          response_type: 'code',
+        },
         session: {
           cookie: {
             sameSite: 'Strict',
           },
+        },
+      })
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    assert.include(fetchAuthCookie(res), 'SameSite=Strict');
+  });
+
+  it('should respect transactionCookie.sameSite when response_mode is not form_post', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        transactionCookie: {
+          sameSite: 'Strict',
         },
         authorizationParams: {
           response_mode: 'query',
@@ -389,10 +410,8 @@ describe('auth', () => {
     server = await createServer(
       auth({
         ...defaultConfig,
-        session: {
-          cookie: {
-            sameSite: 'Strict',
-          },
+        transactionCookie: {
+          sameSite: 'Strict',
         },
       })
     );
@@ -400,5 +419,33 @@ describe('auth', () => {
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=None');
+  });
+
+  it('should pass discovery errors to the express mw', async () => {
+    nock('https://example.com')
+      .get('/.well-known/openid-configuration')
+      .reply(500);
+    nock('https://example.com')
+      .get('/.well-known/oauth-authorization-server')
+      .reply(500);
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+      })
+    );
+    const res = await request.get('/login', {
+      baseUrl,
+      followRedirect: false,
+      json: true,
+    });
+    assert.equal(res.statusCode, 500);
+    console.log(res.body.err.message);
+    assert.match(
+      res.body.err.message,
+      /^Issuer.discover\(\) failed/,
+      'Should get error json from server error middleware'
+    );
   });
 });

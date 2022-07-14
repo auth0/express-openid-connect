@@ -1,4 +1,5 @@
 const { URL } = require('url');
+const sinon = require('sinon');
 const { assert } = require('chai');
 const { create: createServer } = require('./fixture/server');
 const { makeIdToken } = require('./fixture/cert');
@@ -8,6 +9,11 @@ const request = require('request-promise-native').defaults({
   resolveWithFullResponse: true,
   followRedirect: false,
 });
+const weakRef = require('../lib/weakCache.js');
+const {
+  cancelSilentLogin,
+  resumeSilentLogin,
+} = require('../middleware/attemptSilentLogin');
 
 const baseUrl = 'http://localhost:3000';
 
@@ -157,5 +163,30 @@ describe('attemptSilentLogin', () => {
       err.message,
       'req.oidc is not found, did you include the auth middleware?'
     );
+  });
+
+  it('should honor SameSite config for use in iframes', async () => {
+    const ctx = {};
+    const oidc = weakRef(ctx);
+    oidc.config = {
+      session: {
+        cookie: {
+          sameSite: 'None',
+          secure: true,
+        },
+      },
+    };
+    const resumeSpy = sinon.spy();
+    const cancelSpy = sinon.spy();
+    resumeSilentLogin({ oidc: ctx }, { clearCookie: resumeSpy });
+    cancelSilentLogin({ oidc: ctx }, { cookie: cancelSpy });
+    sinon.assert.calledWithMatch(resumeSpy, 'skipSilentLogin', {
+      sameSite: 'None',
+      secure: true,
+    });
+    sinon.assert.calledWithMatch(cancelSpy, 'skipSilentLogin', true, {
+      sameSite: 'None',
+      secure: true,
+    });
   });
 });

@@ -74,7 +74,7 @@ See the [API documentation](https://auth0.github.io/express-openid-connect) for 
 
 ## A note on error handling
 
-Errors raised by this library are handled by the [default Express error handler](https://expressjs.com/en/guide/error-handling.html#the-default-error-handler) which, in the interests of security, does not include the stack trace or error message in the production environment. If you write your own error handler, you should not render the error message without using a templating engine that will properly escape it first.
+Errors raised by this library are handled by the [default Express error handler](https://expressjs.com/en/guide/error-handling.html#the-default-error-handler) which, in the interests of security, does not include the stack trace or error message in the production environment. If you write your own error handler, you should not render the error message or the OAuth `error`/`error_description` properties without using a templating engine that will properly escape them first.
 
 To write your own error handler, see the Express documentation on writing [Custom error handlers](https://expressjs.com/en/guide/error-handling.html#writing-error-handlers). 
 

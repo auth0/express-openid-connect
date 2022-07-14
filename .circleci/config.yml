@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   ship: auth0/ship@0.2.0
+  codecov: codecov/codecov@3
 jobs:
   build:
     docker:
@@ -24,10 +25,7 @@ jobs:
           command: npm run lint
       - store_artifacts:
           path: ./coverage/lcov-report
-      - run:
-          name: Upload Coverage
-          when: on_success
-          command: bash <(curl -s https://codecov.io/bash)
+      - codecov/upload
 workflows:
   build-and-test:
     jobs:

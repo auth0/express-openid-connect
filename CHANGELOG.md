@@ -1,5 +1,52 @@
 # Change Log
 
+## [v2.7.3](https://github.com/auth0/express-openid-connect/tree/v2.7.3) (2022-06-29)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.2...v2.7.3)
+
+**Fixed**
+- discovery errors should be handled in express middleware [\#371](https://github.com/auth0/express-openid-connect/pull/371) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Allow periods in cookie name [\#350](https://github.com/auth0/express-openid-connect/pull/350) ([moberegger](https://github.com/moberegger))
+
+## [v2.7.2](https://github.com/auth0/express-openid-connect/tree/v2.7.2) (2022-03-29)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.1...v2.7.2)
+
+**Security**
+- URL Redirection to Untrusted Site ('Open Redirect') in express-openid-connect [GHSA-7p99-3798-f85c](https://github.com/auth0/express-openid-connect/security/advisories/GHSA-7p99-3798-f85c)
+
+## [v2.7.1](https://github.com/auth0/express-openid-connect/tree/v2.7.1) (2022-02-24)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.0...v2.7.1)
+
+**Fixed**
+- transactionCookie configuration should be optional [\#338](https://github.com/auth0/express-openid-connect/pull/338) ([BitPatty](https://github.com/BitPatty))
+
+## [v2.7.0](https://github.com/auth0/express-openid-connect/tree/v2.7.0) (2022-02-17)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.6.0...v2.7.0)
+
+**Added**
+- [SDK-3109] Add ability to pass custom logout params [\#329](https://github.com/auth0/express-openid-connect/pull/329) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-3111] Add Oauth error props to http error when available [\#328](https://github.com/auth0/express-openid-connect/pull/328) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-3110] Allow customising the UA header in client reqs [\#327](https://github.com/auth0/express-openid-connect/pull/327) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- allow configuration of same site attribute on auth_verification cookie [\#323](https://github.com/auth0/express-openid-connect/pull/323) ([BitPatty](https://github.com/BitPatty))
+
+**Changed**
+- Looser cookie name validation [\#330](https://github.com/auth0/express-openid-connect/pull/330) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+## [v2.6.0](https://github.com/auth0/express-openid-connect/tree/v2.6.0) (2022-01-31)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.2...v2.6.0)
+
+**Added**
+- Add cross domain iframe support for modern browsers [\#317](https://github.com/auth0/express-openid-connect/pull/317) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+## [v2.5.2](https://github.com/auth0/express-openid-connect/tree/v2.5.2) (2021-12-09)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.1...v2.5.2)
+
+**Security**
+
+- Session fixation fix [CVE-2021-41246](https://github.com/auth0/express-openid-connect/security/advisories/GHSA-7rg2-qxmf-hhx9)
+
+**Fixed**
+- Fix refresh signature in ts defs [\#294](https://github.com/auth0/express-openid-connect/pull/294) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.5.1](https://github.com/auth0/express-openid-connect/tree/v2.5.1) (2021-09-28)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.5.0...v2.5.1)
 

@@ -14,6 +14,7 @@ const { makeIdToken } = require('./fixture/cert');
 const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
+const MemoryStore = require('memorystore')(auth);
 
 const baseUrl = 'http://localhost:3000';
 const defaultConfig = {
@@ -77,6 +78,17 @@ const setup = async (params) => {
       };
     });
 
+  let existingSessionCookie;
+  if (params.existingSession) {
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: params.existingSession,
+    });
+    const cookies = jar.getCookies(baseUrl);
+    existingSessionCookie = cookies.find(({ key }) => key === 'appSession');
+  }
+
   const response = await request.post('/callback', {
     baseUrl,
     jar,
@@ -84,6 +96,9 @@ const setup = async (params) => {
   });
   const currentUser = await request
     .get('/user', { baseUrl, jar, json: true })
+    .then((r) => r.body);
+  const currentSession = await request
+    .get('/session', { baseUrl, jar, json: true })
     .then((r) => r.body);
   const tokens = await request
     .get('/tokens', { baseUrl, jar, json: true })
@@ -96,9 +111,11 @@ const setup = async (params) => {
     jar,
     response,
     currentUser,
+    currentSession,
     tokenReqHeader,
     tokenReqBody,
     tokens,
+    existingSessionCookie,
   };
 };
 
@@ -271,6 +288,26 @@ describe('callback response_mode: form_post', () => {
     });
     assert.equal(statusCode, 400);
     assert.equal(err.message, 'checks.state argument is missing');
+  });
+
+  it('should include oauth error properties in error', async () => {
+    const {
+      response: {
+        statusCode,
+        body: {
+          err: { error, error_description },
+        },
+      },
+    } = await setup({
+      cookies: {},
+      body: {
+        error: 'foo',
+        error_description: 'bar',
+      },
+    });
+    assert.equal(statusCode, 400);
+    assert.equal(error, 'foo');
+    assert.equal(error_description, 'bar');
   });
 
   it('should use legacy samesite fallback', async () => {
@@ -886,5 +923,169 @@ describe('callback response_mode: form_post', () => {
 
       assert.equal(statusCode, 999);
     });
+  });
+
+  it('should replace the cookie session when a new user is logging in over an existing different user', async () => {
+    const { currentSession, currentUser } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'bar' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+    });
+
+    assert.equal(currentUser.sub, 'bar');
+    assert.isUndefined(currentSession.shoppingCartId);
+  });
+
+  it('should preserve the cookie session when a new user is logging in over an anonymous session', async () => {
+    const { currentSession, currentUser } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+      },
+    });
+
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+  });
+
+  it('should preserve session but regenerate session id when a new user is logging in over an anonymous session', async () => {
+    const store = new MemoryStore({
+      checkPeriod: 24 * 60 * 1000,
+    });
+    const {
+      currentSession,
+      currentUser,
+      existingSessionCookie,
+      jar,
+    } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+      },
+      authOpts: {
+        session: {
+          store,
+        },
+      },
+    });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+    assert.equal(
+      store.store.length,
+      1,
+      'There should only be one session in the store'
+    );
+    assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
+  });
+
+  it('should preserve session when the same user is logging in over their existing session', async () => {
+    const store = new MemoryStore({
+      checkPeriod: 24 * 60 * 1000,
+    });
+    const {
+      currentSession,
+      currentUser,
+      existingSessionCookie,
+      jar,
+    } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      authOpts: {
+        session: {
+          store,
+        },
+      },
+    });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+    assert.equal(
+      store.store.length,
+      1,
+      'There should only be one session in the store'
+    );
+    assert.equal(existingSessionCookie.value, newSessionCookie.value);
+  });
+
+  it('should regenerate the session when a new user is logging in over an existing different user', async () => {
+    const store = new MemoryStore({
+      checkPeriod: 24 * 60 * 1000,
+    });
+    const {
+      currentSession,
+      currentUser,
+      existingSessionCookie,
+      jar,
+    } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ sub: 'bar' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+        id_token: makeIdToken({ sub: 'foo' }),
+      },
+      authOpts: {
+        session: {
+          store,
+        },
+      },
+    });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+
+    assert.equal(currentUser.sub, 'bar');
+    assert.isUndefined(currentSession.shoppingCartId);
+    assert.equal(
+      store.store.length,
+      1,
+      'There should only be one session in the store'
+    );
+    assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });
 });

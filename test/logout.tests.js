@@ -1,4 +1,6 @@
+const nock = require('nock');
 const { assert } = require('chai');
+const { URL } = require('url');
 const { create: createServer } = require('./fixture/server');
 const { makeIdToken } = require('./fixture/cert');
 const { auth } = require('./..');
@@ -208,6 +210,144 @@ describe('logout route', async () => {
     await logout(jar);
     assert.ok(
       jar.getCookies(baseUrl).find(({ key }) => key === 'skipSilentLogin')
+    );
+  });
+
+  it('should pass logout params to end session url', async () => {
+    server = await createServer(
+      auth({ ...defaultConfig, idpLogout: true, logoutParams: { foo: 'bar' } })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const params = new URL(location).searchParams;
+    assert.equal(params.get('foo'), 'bar');
+  });
+
+  it('should override logout params per request', async () => {
+    const router = auth({
+      ...defaultConfig,
+      idpLogout: true,
+      logoutParams: { foo: 'bar' },
+      routes: { logout: false },
+    });
+    server = await createServer(router);
+    router.get('/logout', (req, res) =>
+      res.oidc.logout({ logoutParams: { foo: 'baz' } })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const params = new URL(location).searchParams;
+    assert.equal(params.get('foo'), 'baz');
+  });
+
+  it('should pass logout params to auth0 logout url', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://test.eu.auth0.com',
+        idpLogout: true,
+        auth0Logout: true,
+        logoutParams: { foo: 'bar' },
+      })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.equal(url.pathname, '/v2/logout');
+    assert.equal(url.searchParams.get('foo'), 'bar');
+  });
+
+  it('should honor logout url config over logout params', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        routes: { postLogoutRedirect: 'http://foo.com' },
+        idpLogout: true,
+        logoutParams: {
+          foo: 'bar',
+          post_logout_redirect_uri: 'http://bar.com',
+        },
+      })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(
+      new URL(location).searchParams.get('post_logout_redirect_uri')
+    );
+    assert.equal(url.hostname, 'foo.com');
+  });
+
+  it('should ignore undefined or null logout params', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://test.eu.auth0.com',
+        idpLogout: true,
+        auth0Logout: true,
+        logoutParams: { foo: 'bar', bar: undefined, baz: null, qux: '' },
+      })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.equal(url.pathname, '/v2/logout');
+    assert.equal(url.searchParams.get('foo'), 'bar');
+    assert.isFalse(url.searchParams.has('bar'));
+    assert.isFalse(url.searchParams.has('baz'));
+    assert.equal(url.searchParams.get('qux'), '');
+  });
+
+  it('should pass discovery errors to the express mw', async () => {
+    nock('https://example.com')
+      .get('/.well-known/openid-configuration')
+      .reply(500);
+    nock('https://example.com')
+      .get('/.well-known/oauth-authorization-server')
+      .reply(500);
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+      })
+    );
+    const res = await request.get({
+      uri: '/logout',
+      baseUrl: 'http://localhost:3000',
+      followRedirect: false,
+      json: true,
+    });
+    assert.equal(res.statusCode, 500);
+    console.log(res.body.err.message);
+    assert.match(
+      res.body.err.message,
+      /^Issuer.discover\(\) failed/,
+      'Should get error json from server error middleware'
     );
   });
 });

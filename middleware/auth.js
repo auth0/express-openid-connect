@@ -11,6 +11,7 @@ const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
+const { regenerateSessionStoreId, replaceSession } = appSession;
 const { decodeState } = require('../lib/hooks/getLoginState');
 
 const enforceLeadingSlash = (path) => {
@@ -101,7 +102,7 @@ const auth = function (params) {
         try {
           const redirectUri = res.oidc.getRedirectUri();
 
-          let session;
+          let tokenSet;
 
           try {
             const callbackParams = client.callbackParams(req);
@@ -128,26 +129,48 @@ const auth = function (params) {
               extras = { exchangeBody: config.tokenEndpointParams };
             }
 
-            session = await client.callback(
+            tokenSet = await client.callback(
               redirectUri,
               callbackParams,
               checks,
               extras
             );
           } catch (err) {
-            throw createError.BadRequest(err.message);
+            throw createError(400, err.message, {
+              error: err.error,
+              error_description: err.error_description,
+            });
           }
+
+          let session = Object.assign({}, tokenSet); // Remove non-enumerable methods from the TokenSet
 
           if (config.afterCallback) {
             session = await config.afterCallback(
               req,
               res,
-              Object.assign({}, session), // Remove non-enumerable methods from the TokenSet
+              session,
               req.openidState
             );
           }
 
-          Object.assign(req[config.session.name], session);
+          if (req.oidc.isAuthenticated()) {
+            if (req.oidc.user.sub === tokenSet.claims().sub) {
+              // If it's the same user logging in again, just update the existing session.
+              Object.assign(req[config.session.name], session);
+            } else {
+              // If it's a different user, replace the session to remove any custom user
+              // properties on the session
+              replaceSession(req, session, config);
+              // And regenerate the session id so the previous user wont know the new user's session id
+              regenerateSessionStoreId(req, config);
+            }
+          } else {
+            // If a new user is replacing an anonymous session, update the existing session to keep
+            // any anonymous session state (eg. checkout basket)
+            Object.assign(req[config.session.name], session);
+            // But update the session store id so a previous anonymous user wont know the new user's session id
+            regenerateSessionStoreId(req, config);
+          }
           attemptSilentLogin.resumeSilentLogin(req, res);
 
           next();
