@@ -469,7 +469,7 @@ interface ConfigParams {
   transactionCookie?: Pick<CookieConfigParams, 'sameSite'>;
 
   /**
-   * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
+   * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
    */
   clientAuthMethod?: string;
 
@@ -481,7 +481,6 @@ interface ConfigParams {
    * ```js
    * app.use(auth({
    *   ...
-   *   clientAuthMethod: 'private_key_jwt',
    *   clientAssertionSigningKey: '-----BEGIN RSA PRIVATE KEY-----\nMIIEo...PgCaw\n-----END RSA PRIVATE KEY-----',
    * }))
    * ```
@@ -491,7 +490,6 @@ interface ConfigParams {
    * ```js
    * app.use(auth({
    *   ...
-   *   clientAuthMethod: 'private_key_jwt',
    *   clientAssertionSigningKey: {
    *     kty: 'RSA',
    *     e: 'AQAB',
