@@ -12,13 +12,9 @@ app.use(
     authorizationParams: {
       response_type: 'code',
     },
-    clientAuthMethod: 'private_key_jwt',
-    clientAssertionConfig: {
-      signingKey: fs.readFileSync(
+    clientAssertionSigningKey: fs.readFileSync(
       path.join(__dirname, 'private-key.pem')
     ),
-      signingAlg: 'RS256'
-    }
   })
 );
 

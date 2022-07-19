@@ -17,7 +17,6 @@ const config = {
   clients: [
     client,
     Object.assign({}, client, {
-      client_secret: undefined,
       client_id: 'jwtca-client',
       token_endpoint_auth_method: 'private_key_jwt',
       jwks: {
@@ -28,8 +27,7 @@ const config = {
             use: 'sig',
             kid: 'cZNBq0YuRtJ2W9K2xSKZunnLayHcARrjcKtvbkELbdY',
             alg: 'RS256',
-            n:
-              'wJ0FAxJvhTqQGORKMdYInzfjduWHmjikWPv4t-gze-NPgCawwsmOC5N5pgb2qPK_3hdvLAucm36kJyq1C9XDdmA6va51qDHWsAwOd0ob5Tm1xosiULr83KiFhGPCBsgWEPvO3vkdqEwTOq0_p55TfJFfnP5IrwrrUPPwCfDXlGc5xiV-ah4JcqlTdZTk_CfIO7zdhAJUBORam5dDoPzZ035f8GOw6k1ktcX2QxquO3zVcQ4ZOeSwve9ox2ZwNTXOassurfR8jC_E8LcytY083UJ0DdRUJ-8NKjnH_RczfKYmd8nyvjAsD4HBMu97xBat1vP975oHsVA5a9rE-j0lQw',
+            n: 'wJ0FAxJvhTqQGORKMdYInzfjduWHmjikWPv4t-gze-NPgCawwsmOC5N5pgb2qPK_3hdvLAucm36kJyq1C9XDdmA6va51qDHWsAwOd0ob5Tm1xosiULr83KiFhGPCBsgWEPvO3vkdqEwTOq0_p55TfJFfnP5IrwrrUPPwCfDXlGc5xiV-ah4JcqlTdZTk_CfIO7zdhAJUBORam5dDoPzZ035f8GOw6k1ktcX2QxquO3zVcQ4ZOeSwve9ox2ZwNTXOassurfR8jC_E8LcytY083UJ0DdRUJ-8NKjnH_RczfKYmd8nyvjAsD4HBMu97xBat1vP975oHsVA5a9rE-j0lQw',
           },
         ],
       },

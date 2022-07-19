@@ -576,7 +576,7 @@ describe('get config', () => {
       assert.throws(
         () => getConfig(config),
         TypeError,
-        '"clientAssertionConfig" is required for a "clientAuthMethod" of includes "private_key_jwt"'
+        '"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"'
       );
     });
   });

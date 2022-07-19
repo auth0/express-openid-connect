@@ -1,7 +1,6 @@
 const express = require('express');
 const cb = require('cb');
 const createError = require('http-errors');
-const { JWK } = require('jose');
 
 const debug = require('../lib/debug')('auth');
 const { get: getConfig } = require('../lib/config');
@@ -58,23 +57,6 @@ const auth = function (params) {
     router.get(path, (req, res) => res.oidc.logout());
   } else {
     debug('logout handling route not applied');
-  }
-
-  // jwks url route, configured with routes.jwksUrl
-  if (config.routes.jwksUrl && config.clientAuthMethod == 'private_key_jwt') {
-    const path = enforceLeadingSlash(config.routes.jwksUrl);
-    debug('adding GET %s route', path);
-    const jwks = {
-      keys: [
-        JWK.asKey(config.clientAssertionConfig.signingKey, {
-          alg: config.clientAssertionConfig.signingAlg,
-          use: 'sig',
-        }).toJWK(false),
-      ],
-    };
-    router.get(path, (req, res) => res.json(jwks));
-  } else {
-    debug('json web key set distribution route not applied');
   }
 
   // Callback route, configured with routes.callback.
