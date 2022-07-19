@@ -41,9 +41,6 @@ describe('private key jwt', async () => {
     );
     const promise = once(provider, 'grant.success');
 
-    provider.on('grant.success', (ctx) => {
-      ctx.oidc.body.client_assertion;
-    });
     await login('username', 'password', page);
     const [ctx] = await promise;
     assert(
