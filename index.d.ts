@@ -461,11 +461,6 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
-
-    /**
-     * Relative path to the application's JSON Web Key Set URL (JWKS URL).
-     */
-    jwksUrl?: string;
   };
 
   /**
@@ -479,22 +474,50 @@ interface ConfigParams {
   clientAuthMethod?: string;
 
   /**
-   * Private key and signing algorithm for use with 'private_key_jwt' clients
+   * Private key for use with 'private_key_jwt' clients.
+   *
+   * Can be a PEM:
    *
    * ```js
    * app.use(auth({
    *   ...
    *   clientAuthMethod: 'private_key_jwt',
-   *   clientAssertionConfig: {
-   *    signingKey: fs.readFileSync(
-   *      path.join(__dirname, 'private-key.pem')
-   *    ),
-   *    signingAlg: 'RS384'
-   *  }
+   *   clientAssertionSigningKey: '-----BEGIN RSA PRIVATE KEY-----\nMIIEo...PgCaw\n-----END RSA PRIVATE KEY-----',
+   * }))
+   * ```
+   *
+   * Or JWK:
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAuthMethod: 'private_key_jwt',
+   *   clientAssertionSigningKey: {
+   *     kty: 'RSA',
+   *     e: 'AQAB',
+   *     n: '12oBZRhCiZFJLcPg59LkZZ9mdhSMTKAQZYq32k_ti5SBB6jerkh-WzOMAO664r_qyLkqHUSp3u5SbXtseZEpN3XPWGKSxjsy-1JyEFTdLSYe6f9gfrmxkUF_7DTpq0gn6rntP05g2-wFW50YO7mosfdslfrTJYWHFhJALabAeYirYD7-9kqq9ebfFMF4sRRELbv9oi36As6Q9B3Qb5_C1rAzqfao_PCsf9EPsTZsVVVkA5qoIAr47lo1ipfiBPxUCCNSdvkmDTYgvvRm6ZoMjFbvOtgyts55fXKdMWv7I9HMD5HwE9uW839PWA514qhbcIsXEYSFMPMV6fnlsiZvQQ',
+   *   },
    * }))
    * ```
    */
-  clientAssertionConfig?: ClientAssertionConfig;
+  clientAssertionSigningKey?: KeyInput | object;
+
+  /**
+   * The algorithm to sign the client assertion JWT.
+   * Uses one of `token_endpoint_auth_signing_alg_values_supported` if not specified.
+   */
+  clientAssertionSigningAlg?:
+    | 'RS256'
+    | 'RS384'
+    | 'RS512'
+    | 'PS256'
+    | 'PS384'
+    | 'PS512'
+    | 'ES256'
+    | 'ES256K'
+    | 'ES384'
+    | 'ES512'
+    | 'EdDSA';
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
@@ -510,22 +533,6 @@ interface ConfigParams {
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
-}
-
-interface ClientAssertionConfig {
-  signingKey: KeyInput | object;
-  signingAlg:
-    | 'RS256'
-    | 'RS384'
-    | 'RS512'
-    | 'PS256'
-    | 'PS384'
-    | 'PS512'
-    | 'ES256'
-    | 'ES256K'
-    | 'ES384'
-    | 'ES512'
-    | 'EdDSA';
 }
 
 interface SessionStorePayload {

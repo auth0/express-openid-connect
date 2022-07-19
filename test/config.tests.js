@@ -514,71 +514,73 @@ describe('get config', () => {
     );
   });
 
-  context(
-    'when clientAuthMethod is "client_secret_basic" (by default)',
-    async () => {
-      it("shouldn't allow code flow without client authn", () => {
-        const config = {
-          ...defaultConfig,
-          authorizationParams: {
-            response_type: 'code',
-          },
-        };
-        assert.throws(
-          () => getConfig(config),
-          TypeError,
-          '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
-        );
-      });
-
-      it("shouldn't allow hybrid flow without client authn", () => {
-        const config = {
-          ...defaultConfig,
-          authorizationParams: {
-            response_type: 'code id_token',
-          },
-        };
-        assert.throws(
-          () => getConfig(config),
-          TypeError,
-          '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
-        );
-      });
-    }
-  );
-
-  context('when clientAuthMethod is "none"', async () => {
-    it("shouldn't allow code flow without client authn", () => {
-      const config = {
-        ...defaultConfig,
-        authorizationParams: {
-          response_type: 'code',
-        },
-        clientAuthMethod: 'none',
-      };
-      assert.throws(
-        () => getConfig(config),
-        TypeError,
-        '"clientAuthMethod" cannot be "none" when "response_type" includes "code"'
-      );
-    });
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
+    );
   });
 
-  context('when clientAuthMethod is "private_key_jwt"', async () => {
-    it('should require "clientAssertionConfig"', () => {
-      const config = {
-        ...defaultConfig,
-        authorizationParams: {
-          response_type: 'code',
-        },
-        clientAuthMethod: 'private_key_jwt',
-      };
-      assert.throws(
-        () => getConfig(config),
-        TypeError,
-        '"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"'
-      );
-    });
+  it('shouldn\'t allow hybrid flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code id_token',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
+    );
+  });
+
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "none"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAuthMethod: 'none',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientAuthMethod" cannot be "none" when "response_type" includes "code"'
+    );
+  });
+
+  it('should require "clientAssertionSigningKey" when clientAuthMethod is "private_key_jwt"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAuthMethod: 'private_key_jwt',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"'
+    );
+  });
+
+  it('should default to "private_key_jwt" when "clientAssertionSigningKey" is present', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: 'foo',
+    };
+    assert.equal(getConfig(config).clientAuthMethod, 'private_key_jwt');
   });
 
   it('should not allow "none" for idTokenSigningAlg', () => {

@@ -5,6 +5,7 @@ const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
+const qs = require('querystring');
 
 const TransientCookieHandler = require('../lib/transientHandler');
 const { encodeState } = require('../lib/hooks/getLoginState');
@@ -15,6 +16,9 @@ const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
 const MemoryStore = require('memorystore')(auth);
+const privateKey = require('fs').readFileSync(
+  require('path').join(__dirname, '../examples', 'private-key.pem')
+);
 
 const baseUrl = 'http://localhost:3000';
 const defaultConfig = {
@@ -39,6 +43,7 @@ const setup = async (params) => {
   server = await createServer(router);
   let tokenReqHeader;
   let tokenReqBody;
+  let tokenReqBodyJson;
 
   Object.keys(params.cookies).forEach(function (cookieName) {
     let value;
@@ -69,6 +74,8 @@ const setup = async (params) => {
     .reply(200, function (uri, requestBody) {
       tokenReqHeader = this.req.headers;
       tokenReqBody = requestBody;
+      tokenReqBodyJson = qs.parse(requestBody);
+      require('querystring').parse(requestBody);
       return {
         access_token: '__test_access_token__',
         refresh_token: '__test_refresh_token__',
@@ -114,6 +121,7 @@ const setup = async (params) => {
     currentSession,
     tokenReqHeader,
     tokenReqBody,
+    tokenReqBodyJson,
     tokens,
     existingSessionCookie,
   };
@@ -804,6 +812,75 @@ describe('callback response_mode: form_post', () => {
     );
   });
 
+  it('should use private key jwt on token endpoint', async () => {
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+
+    const { tokenReqBodyJson } = await setup({
+      authOpts: {
+        authorizationParams: {
+          response_type: 'code',
+        },
+        clientAssertionSigningKey: privateKey,
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      },
+    });
+
+    assert(tokenReqBodyJson.client_assertion);
+    assert.equal(
+      tokenReqBodyJson.client_assertion_type,
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+    );
+    const { header } = jose.JWT.decode(tokenReqBodyJson.client_assertion, {
+      complete: true,
+    });
+    assert.equal(header.alg, 'RS256');
+  });
+
+  it('should use client secret jwt on token endpoint', async () => {
+    const idToken = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+
+    const { tokenReqBodyJson } = await setup({
+      authOpts: {
+        clientSecret: 'foo',
+        authorizationParams: {
+          response_type: 'code',
+        },
+        clientAuthMethod: 'client_secret_jwt',
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      },
+    });
+
+    assert(tokenReqBodyJson.client_assertion);
+    assert.equal(
+      tokenReqBodyJson.client_assertion_type,
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+    );
+    const { header } = jose.JWT.decode(tokenReqBodyJson.client_assertion, {
+      complete: true,
+    });
+    assert.equal(header.alg, 'HS256');
+  });
+
   it('should resume silent logins when user successfully logs in', async () => {
     const idToken = makeIdToken();
     const jar = request.jar();
@@ -968,29 +1045,25 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const {
-      currentSession,
-      currentUser,
-      existingSessionCookie,
-      jar,
-    } = await setup({
-      cookies: generateCookies({
-        state: expectedDefaultState,
-        nonce: '__test_nonce__',
-      }),
-      body: {
-        state: expectedDefaultState,
-        id_token: makeIdToken({ sub: 'foo' }),
-      },
-      existingSession: {
-        shoppingCartId: 'bar',
-      },
-      authOpts: {
-        session: {
-          store,
+    const { currentSession, currentUser, existingSessionCookie, jar } =
+      await setup({
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: makeIdToken({ sub: 'foo' }),
         },
-      },
-    });
+        existingSession: {
+          shoppingCartId: 'bar',
+        },
+        authOpts: {
+          session: {
+            store,
+          },
+        },
+      });
 
     const cookies = jar.getCookies(baseUrl);
     const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
@@ -1009,30 +1082,26 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const {
-      currentSession,
-      currentUser,
-      existingSessionCookie,
-      jar,
-    } = await setup({
-      cookies: generateCookies({
-        state: expectedDefaultState,
-        nonce: '__test_nonce__',
-      }),
-      body: {
-        state: expectedDefaultState,
-        id_token: makeIdToken({ sub: 'foo' }),
-      },
-      existingSession: {
-        shoppingCartId: 'bar',
-        id_token: makeIdToken({ sub: 'foo' }),
-      },
-      authOpts: {
-        session: {
-          store,
+    const { currentSession, currentUser, existingSessionCookie, jar } =
+      await setup({
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: makeIdToken({ sub: 'foo' }),
         },
-      },
-    });
+        existingSession: {
+          shoppingCartId: 'bar',
+          id_token: makeIdToken({ sub: 'foo' }),
+        },
+        authOpts: {
+          session: {
+            store,
+          },
+        },
+      });
 
     const cookies = jar.getCookies(baseUrl);
     const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
@@ -1051,30 +1120,26 @@ describe('callback response_mode: form_post', () => {
     const store = new MemoryStore({
       checkPeriod: 24 * 60 * 1000,
     });
-    const {
-      currentSession,
-      currentUser,
-      existingSessionCookie,
-      jar,
-    } = await setup({
-      cookies: generateCookies({
-        state: expectedDefaultState,
-        nonce: '__test_nonce__',
-      }),
-      body: {
-        state: expectedDefaultState,
-        id_token: makeIdToken({ sub: 'bar' }),
-      },
-      existingSession: {
-        shoppingCartId: 'bar',
-        id_token: makeIdToken({ sub: 'foo' }),
-      },
-      authOpts: {
-        session: {
-          store,
+    const { currentSession, currentUser, existingSessionCookie, jar } =
+      await setup({
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: makeIdToken({ sub: 'bar' }),
         },
-      },
-    });
+        existingSession: {
+          shoppingCartId: 'bar',
+          id_token: makeIdToken({ sub: 'foo' }),
+        },
+        authOpts: {
+          session: {
+            store,
+          },
+        },
+      });
 
     const cookies = jar.getCookies(baseUrl);
     const newSessionCookie = cookies.find(({ key }) => key === 'appSession');

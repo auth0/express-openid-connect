@@ -7,7 +7,7 @@ const app = express();
 
 app.use(
   auth({
-    clientID: 'jwtca-client',
+    clientID: 'private-key-jwt-client',
     authRequired: false,
     authorizationParams: {
       response_type: 'code',
