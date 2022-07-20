@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.8.0](https://github.com/auth0/express-openid-connect/tree/v2.8.0) (2022-07-20)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.3...v2.8.0)
+
+**Added**
+- [SDK-3503] Add *_jwt token endpoint auth methods [\#376](https://github.com/auth0/express-openid-connect/pull/376) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.7.3](https://github.com/auth0/express-openid-connect/tree/v2.7.3) (2022-06-29)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.2...v2.7.3)
 
