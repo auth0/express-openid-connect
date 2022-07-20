@@ -6,7 +6,8 @@ import {
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import { KeyInput } from 'jose';
+import { JSONWebKey, KeyInput } from 'jose';
+import { KeyObject } from 'crypto';
 
 /**
  * Session object
@@ -492,13 +493,27 @@ interface ConfigParams {
    *   ...
    *   clientAssertionSigningKey: {
    *     kty: 'RSA',
+   *     n: 'u2fhZbXdBdp3_p5bVfq15LaP4iuiV9cMLYLbCPfXJEQSDyhatRmEvNLAy5twwY1GG5jKgfKa4jYIrfLVVdT252uyBhe97Lx9uB2Y8NnzEmdYVpXlnTGLo1Ts-QwLISBiDgjltoVT3p4XkEoSODWQq-4JwLgmbP1pV64IVWoyaoVXmy-_oRHVSyD57wtRBBObXHGi1xeBzSiyt0YFDxkfFcuLUSplQQbZNtjUdmH8K6zrLRUryQslUmz2XeiR6Oe6SJ_GcePpgBYTktxD7iU0X6eRheAsioF2uuw-0JKjxMK_cy3ybreE3MkpvT_88hBHqidLnHOP68XZ6bMp3XIqhQ',
    *     e: 'AQAB',
-   *     n: '12oBZRhCiZFJLcPg59LkZZ9mdhSMTKAQZYq32k_ti5SBB6jerkh-WzOMAO664r_qyLkqHUSp3u5SbXtseZEpN3XPWGKSxjsy-1JyEFTdLSYe6f9gfrmxkUF_7DTpq0gn6rntP05g2-wFW50YO7mosfdslfrTJYWHFhJALabAeYirYD7-9kqq9ebfFMF4sRRELbv9oi36As6Q9B3Qb5_C1rAzqfao_PCsf9EPsTZsVVVkA5qoIAr47lo1ipfiBPxUCCNSdvkmDTYgvvRm6ZoMjFbvOtgyts55fXKdMWv7I9HMD5HwE9uW839PWA514qhbcIsXEYSFMPMV6fnlsiZvQQ',
+   *     d: 'Cmvt9GaHKoaqKp4qzR66k8P1P2oWxpS-aB-BR7_klm80o-QmGzEWmRuNPiVgQVs2XV2DUXOo2lCP7gB1jabgriDmjwEt_ibDRQRcV3R_WHQnzPTcBoBVWBlmbjkVu1teKJKlF5_VeKlI_SypU7fi2jTMFQwIkwIKpCYY74sOz66PMfzvY5_3B2akADygzTjWXVkw6T-koEbDBN0dSZ2xwe_HmavhlvBFQ9U7pAcujtQtDN456ZesqUs6nw8_PKWzIGgbXhHg1Ozwxjr0ZE2OPLX1huL3AqiT2fPPgyXpYRTYZ_RitXJpfS3vAqyvSVUZsqe87lx1LlwTjTKbVg__Jw',
+   *     p: 'y5iuhteuCPZcyL7PgRrXmPYSgXc2eBTN8BWnDtHPRqDmeWzKe68usTOCUaBcHkCLvjiDMkpeSmvEWNOeH9mF2IPJp7dZMllTY4LKJxjOXRyVSeL7U0_Qmkj2Qm0UupI78lrDXhK49P6asPJiivwqeWpG8VJodXG054UmnDdIMwM',
+   *     q: '66Rexr5EP5LrXAKRFZE-2R6CX8EgXuUtZdTsiNHsbnNzw_8IehJmCFOFMHU9ojYY7jm0cbFrZ_NqWeBG-5pcvCV5YVdydBVSNwW6ndnxnj3BGPiFQVsIESAL3nfVHZBa73VKv4AOOwsSd3w_5Kp2_tbwJrlZ17lNQa18LzIZcdc',
+   *     dp: 'GVGVcqNjuy2YAEbqWy3RXe5MAtmmZmx_57lpmwgwdKIRx0vmKldwwQycyjXc_s4cEr3IYvqomyynsDwwz9knMfPBoh_E8eP14MwlA5OsJhwl3JhjlMq6MFWeekhCaalB1zO-U_aUFbOL3TFnW81cItk6lUwgPWq0io4ebRLa4a0',
+   *     dq: 'SyER8q2xFs_h6GkNFuJDNnhKuvrZNkg9bC0x6QF9L03yB_hlHH6HN3phiaynpPM4iaOuS1100CTEsLkYCJoTnQ0ZoRZ_cFFn8BEMic12AqzPxwVdfxPmA4fDIP_128ItrBEqbtoGL379OUlNGbvbyq5-zOnloij7X8hPQsDnaes',
+   *     qi: 'JTtu5XhXvr4xRg9EomRbqs5Si1nIsVLs3MVRggutGlEOvYZQZTxjEqAb6dnl-DSKEV3fSdxM_I61P0oE8eLpboTvqYoNZB4jL3CY_gS8-81SWrNqfk8z2P6UIGyRmKAfAZ2oKZZoHv2neygqD6AvKTV8AWHXTGUOw5n90YP2HMw'
    *   },
    * }))
+   *
+   * Or KeyObject:
+   *
+   * app.use(auth({
+   *   ...
+   *   clientAssertionSigningKey: crypto.createPrivateKey({ key: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----' }),
+   * }))
+   *
    * ```
    */
-  clientAssertionSigningKey?: KeyInput | object;
+  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
 
   /**
    * The algorithm to sign the client assertion JWT.

@@ -23,11 +23,8 @@ const config = {
         keys: [
           {
             kty: 'RSA',
+            n: '20yjkC7WmelNZN33GAjFaMvKaInjTz3G49eUwizpuAW6Me9_1FMSAK6nM1XI7VBpy_o5-ffNleRIgcvFudZuSvZiAYBBS2HS5F5PjluVExPwHTD7X7CIwqJxq67N5sTeFkh_ZL4fWK-Na4VlFEsKhcjDrLGxhPCuOgr9FmL0u0Vx_TM3Mk3DEhaf-tMlFx-K3R2GRJRe1wnYhOt1sXm8SNUM2uMZI05W6eRFn1gUAdTLNdCTvDY67ZAl6wyOewYo-WGpzwFYXLXDvc-f8vYucRM3Hq_GSzvFQ4l0nRLLj_33vlCg8mB1CEw_LudadzticAir3Ux3bnpno9yndUZR6w',
             e: 'AQAB',
-            use: 'sig',
-            kid: 'cZNBq0YuRtJ2W9K2xSKZunnLayHcARrjcKtvbkELbdY',
-            alg: 'RS256',
-            n: 'wJ0FAxJvhTqQGORKMdYInzfjduWHmjikWPv4t-gze-NPgCawwsmOC5N5pgb2qPK_3hdvLAucm36kJyq1C9XDdmA6va51qDHWsAwOd0ob5Tm1xosiULr83KiFhGPCBsgWEPvO3vkdqEwTOq0_p55TfJFfnP5IrwrrUPPwCfDXlGc5xiV-ah4JcqlTdZTk_CfIO7zdhAJUBORam5dDoPzZ035f8GOw6k1ktcX2QxquO3zVcQ4ZOeSwve9ox2ZwNTXOassurfR8jC_E8LcytY083UJ0DdRUJ-8NKjnH_RczfKYmd8nyvjAsD4HBMu97xBat1vP975oHsVA5a9rE-j0lQw',
           },
         ],
       },
