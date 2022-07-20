@@ -6,8 +6,8 @@ import {
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import { JSONWebKey, KeyInput } from 'jose';
-import { KeyObject } from 'crypto';
+import type { JSONWebKey, KeyInput } from 'jose';
+import type { KeyObject } from 'crypto';
 
 /**
  * Session object
