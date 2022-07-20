@@ -6,6 +6,8 @@ import {
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
+import type { JSONWebKey, KeyInput } from 'jose';
+import type { KeyObject } from 'crypto';
 
 /**
  * Session object
@@ -468,9 +470,70 @@ interface ConfigParams {
   transactionCookie?: Pick<CookieConfigParams, 'sameSite'>;
 
   /**
-   * String value for the client's authentication method. Default is `none` when using response_type='id_token', otherwise `client_secret_basic`.
+   * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
    */
   clientAuthMethod?: string;
+
+  /**
+   * Private key for use with 'private_key_jwt' clients.
+   *
+   * Can be a PEM:
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAssertionSigningKey: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----',
+   * }))
+   * ```
+   *
+   * Or JWK:
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAssertionSigningKey: {
+   *     kty: 'RSA',
+   *     n: 'u2fhZ...XIqhQ',
+   *     e: 'AQAB',
+   *     d: 'Cmvt9...g__Jw',
+   *     p: 'y5iuh...dIMwM',
+   *     q: '66Rex...IZcdc',
+   *     dp: 'GVGVc...La4a0',
+   *     dq: 'SyER8...Dnaes',
+   *     qi: 'JTtu5...P2HMw'
+   *   },
+   * }))
+   * ```
+   *
+   * Or KeyObject:
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAssertionSigningKey: crypto.createPrivateKey({ key: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----' }),
+   * }))
+   * ```
+   */
+  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
+
+  /**
+   * The algorithm to sign the client assertion JWT.
+   * Uses one of `token_endpoint_auth_signing_alg_values_supported` if not specified.
+   * If the Authorization Server discovery document does not list `token_endpoint_auth_signing_alg_values_supported`
+   * this property will be required.
+   */
+  clientAssertionSigningAlg?:
+    | 'RS256'
+    | 'RS384'
+    | 'RS512'
+    | 'PS256'
+    | 'PS384'
+    | 'PS512'
+    | 'ES256'
+    | 'ES256K'
+    | 'ES384'
+    | 'ES512'
+    | 'EdDSA';
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.

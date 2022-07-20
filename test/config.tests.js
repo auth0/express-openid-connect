@@ -514,7 +514,7 @@ describe('get config', () => {
     );
   });
 
-  it("shouldn't allow code flow without clientSecret", () => {
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
@@ -524,11 +524,11 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for a response_type that includes code'
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"'
     );
   });
 
-  it("shouldn't allow hybrid flow without clientSecret", () => {
+  it('shouldn\'t allow hybrid flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
@@ -538,8 +538,49 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for a response_type that includes code'
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"'
     );
+  });
+
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "none"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAuthMethod: 'none',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      'Public code flow clients are not supported.'
+    );
+  });
+
+  it('should require "clientAssertionSigningKey" when clientAuthMethod is "private_key_jwt"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAuthMethod: 'private_key_jwt',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"'
+    );
+  });
+
+  it('should default to "private_key_jwt" when "clientAssertionSigningKey" is present', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: 'foo',
+    };
+    assert.equal(getConfig(config).clientAuthMethod, 'private_key_jwt');
   });
 
   it('should not allow "none" for idTokenSigningAlg', () => {
