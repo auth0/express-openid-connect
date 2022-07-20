@@ -503,14 +503,15 @@ interface ConfigParams {
    *     qi: 'JTtu5XhXvr4xRg9EomRbqs5Si1nIsVLs3MVRggutGlEOvYZQZTxjEqAb6dnl-DSKEV3fSdxM_I61P0oE8eLpboTvqYoNZB4jL3CY_gS8-81SWrNqfk8z2P6UIGyRmKAfAZ2oKZZoHv2neygqD6AvKTV8AWHXTGUOw5n90YP2HMw'
    *   },
    * }))
+   * ```
    *
    * Or KeyObject:
    *
+   * ```js
    * app.use(auth({
    *   ...
    *   clientAssertionSigningKey: crypto.createPrivateKey({ key: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----' }),
    * }))
-   *
    * ```
    */
   clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
