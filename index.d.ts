@@ -481,7 +481,7 @@ interface ConfigParams {
    * ```js
    * app.use(auth({
    *   ...
-   *   clientAssertionSigningKey: '-----BEGIN RSA PRIVATE KEY-----\nMIIEo...PgCaw\n-----END RSA PRIVATE KEY-----',
+   *   clientAssertionSigningKey: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----',
    * }))
    * ```
    *
@@ -503,6 +503,8 @@ interface ConfigParams {
   /**
    * The algorithm to sign the client assertion JWT.
    * Uses one of `token_endpoint_auth_signing_alg_values_supported` if not specified.
+   * If the Authorization Server discovery document does not list `token_endpoint_auth_signing_alg_values_supported`
+   * this property will be required.
    */
   clientAssertionSigningAlg?:
     | 'RS256'
