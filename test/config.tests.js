@@ -524,7 +524,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"'
     );
   });
 
@@ -538,7 +538,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for a "clientAuthMethod" that includes client_secret'
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"'
     );
   });
 
@@ -553,7 +553,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientAuthMethod" cannot be "none" when "response_type" includes "code"'
+      'Public code flow clients are not supported.'
     );
   });
 
