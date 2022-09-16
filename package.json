@@ -63,7 +63,7 @@
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
     "sinon": "^7.5.0",
-    "typedoc": "^0.17.8",
+    "typedoc": "^0.23.14",
     "typescript": "^3.9.6"
   },
   "peerDependencies": {
