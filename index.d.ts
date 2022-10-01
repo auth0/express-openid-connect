@@ -318,6 +318,16 @@ interface ConfigParams {
   /**
    * REQUIRED. The root URL for the application router, eg https://localhost
    * Can use env key BASE_URL instead.
+   *
+   * Note: In the event that the URL has a path
+   * at the end the `auth` middleware will need to be bound relative to that path. I.e
+   *
+   * ```js
+   * app.use('/some/path', auth({
+   *  baseURL: "https://example.com/some/path"
+   *  [...]
+   * })
+   * ```
    */
   baseURL?: string;
 
