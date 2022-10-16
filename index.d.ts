@@ -183,11 +183,11 @@ interface ResponseContext {
 declare global {
   namespace Express {
     interface Request {
-      oidc: RequestContext;
+      oidc?: RequestContext;
     }
 
     interface Response {
-      oidc: ResponseContext;
+      oidc?: ResponseContext;
     }
   }
 }
