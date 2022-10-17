@@ -58,6 +58,7 @@ describe('appSession custom store', () => {
     redisClient.asyncSet = promisify(redisClient.set).bind(redisClient);
     redisClient.asyncGet = promisify(redisClient.get).bind(redisClient);
     redisClient.asyncDbsize = promisify(redisClient.dbsize).bind(redisClient);
+    redisClient.asyncTtl = promisify(redisClient.ttl).bind(redisClient);
 
     const conf = getConfig({
       ...defaultConfig,
@@ -116,6 +117,26 @@ describe('appSession custom store', () => {
       key: 'appSession',
       value: 'foo',
     });
+  });
+
+  it('should set ttl for compatible session stores', async () => {
+    const twoDays = 172800;
+    await setup({ session: { rolling: false, absoluteDuration: twoDays } });
+    await redisClient.asyncSet('foo', sessionData());
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: 'appSession=foo',
+      },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, { sub: '__test_sub__' });
+    assert.equal(res.statusCode, 200);
+    const ttl = await redisClient.asyncTtl('foo');
+    assert.closeTo(ttl, twoDays, 10 * 1000);
   });
 
   it('should not populate the store when there is no session', async () => {
