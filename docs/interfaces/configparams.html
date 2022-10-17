@@ -2946,7 +2946,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">after<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>req<span class="tsd-signature-symbol">: </span><a href="openidrequest.html" class="tsd-signature-type">OpenidRequest</a>, res<span class="tsd-signature-symbol">: </span><a href="openidresponse.html" class="tsd-signature-type">OpenidResponse</a>, session<span class="tsd-signature-symbol">: </span><a href="session.html" class="tsd-signature-type">Session</a>, decodedState<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{}</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="session.html" class="tsd-signature-type">Session</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><a href="session.html" class="tsd-signature-type">Session</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L400">index.d.ts:400</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L410">index.d.ts:410</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3008,7 +3008,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">attempt<wbr>Silent<wbr>Login<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L363">index.d.ts:363</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L373">index.d.ts:373</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3028,7 +3028,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">auth0<wbr>Logout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L264">index.d.ts:264</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L264">index.d.ts:264</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3043,7 +3043,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">auth<wbr>Required<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L438">index.d.ts:438</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L448">index.d.ts:448</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3058,7 +3058,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">authorization<wbr>Params<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">AuthorizationParameters</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L311">index.d.ts:311</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L311">index.d.ts:311</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3102,7 +3102,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">baseURL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L322">index.d.ts:322</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L332">index.d.ts:332</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3110,6 +3110,12 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 						<p>REQUIRED. The root URL for the application router, eg <a href="https://localhost">https://localhost</a>
 						Can use env key BASE_URL instead.</p>
 					</div>
+					<p>Note: In the event that the URL has a path at the end, the <code>auth</code> middleware
+					will need to be bound relative to that path. I.e</p>
+					<pre><code class="language-js">app.use(<span class="hljs-string">&#x27;/some/path&#x27;</span>, auth({
+ <span class="hljs-attr">baseURL</span>: <span class="hljs-string">&quot;https://example.com/some/path&quot;</span>
+ [...]
+})</code></pre>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
@@ -3118,7 +3124,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">client<wbr>Assertion<wbr>Signing<wbr>Alg<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"RS256"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"RS384"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"RS512"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"PS256"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"PS384"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"PS512"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"ES256"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"ES256K"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"ES384"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"ES512"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"EdDSA"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L525">index.d.ts:525</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L535">index.d.ts:535</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3136,7 +3142,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">client<wbr>Assertion<wbr>Signing<wbr>Key<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">KeyInput</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">KeyObject</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">JSONWebKey</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L517">index.d.ts:517</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L527">index.d.ts:527</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3176,7 +3182,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">client<wbr>Auth<wbr>Method<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L475">index.d.ts:475</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L485">index.d.ts:485</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3191,7 +3197,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">clientID<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L328">index.d.ts:328</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L338">index.d.ts:338</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3207,7 +3213,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">client<wbr>Secret<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L335">index.d.ts:335</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L345">index.d.ts:345</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3224,7 +3230,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">clock<wbr>Tolerance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L341">index.d.ts:341</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L351">index.d.ts:351</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3240,7 +3246,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">enable<wbr>Telemetry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L347">index.d.ts:347</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L357">index.d.ts:357</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3256,7 +3262,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">error<wbr>OnRequired<wbr>Auth<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L353">index.d.ts:353</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L363">index.d.ts:363</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3272,7 +3278,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">get<wbr>Login<wbr>State<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>req<span class="tsd-signature-symbol">: </span><a href="openidrequest.html" class="tsd-signature-type">OpenidRequest</a>, options<span class="tsd-signature-symbol">: </span><a href="loginoptions.html" class="tsd-signature-type">LoginOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">object</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L381">index.d.ts:381</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L391">index.d.ts:391</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3322,7 +3328,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">http<wbr>Timeout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L546">index.d.ts:546</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L556">index.d.ts:556</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3337,7 +3343,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">http<wbr>User<wbr>Agent<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L551">index.d.ts:551</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L561">index.d.ts:561</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3352,7 +3358,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">id<wbr>Token<wbr>Signing<wbr>Alg<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L421">index.d.ts:421</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L431">index.d.ts:431</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3367,7 +3373,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">identity<wbr>Claim<wbr>Filter<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L411">index.d.ts:411</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L421">index.d.ts:421</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3383,7 +3389,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">idp<wbr>Logout<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L416">index.d.ts:416</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L426">index.d.ts:426</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3398,7 +3404,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">issuer<wbr>BaseURL<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L427">index.d.ts:427</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L437">index.d.ts:437</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3414,7 +3420,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">legacy<wbr>Same<wbr>Site<wbr>Cookie<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L433">index.d.ts:433</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L443">index.d.ts:443</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3430,7 +3436,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">logout<wbr>Params<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L316">index.d.ts:316</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L316">index.d.ts:316</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3453,7 +3459,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">routes<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>callback<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>login<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol">; </span>logout<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">false</span><span class="tsd-signature-symbol">; </span>postLogoutRedirect<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L443">index.d.ts:443</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L453">index.d.ts:453</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3507,7 +3513,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">secret<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L254">index.d.ts:254</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L254">index.d.ts:254</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3525,7 +3531,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">session<span class="tsd-signature-symbol">:</span> <a href="sessionconfigparams.html" class="tsd-signature-type">SessionConfigParams</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L259">index.d.ts:259</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L259">index.d.ts:259</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3540,7 +3546,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">token<wbr>Endpoint<wbr>Params<span class="tsd-signature-symbol">:</span> <a href="tokenparameters.html" class="tsd-signature-type">TokenParameters</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L541">index.d.ts:541</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L551">index.d.ts:551</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3555,7 +3561,7 @@ CLIENT_SECRET=YOUR_CLIENT_SECRET</code></pre>
 				<div class="tsd-signature tsd-kind-icon">transaction<wbr>Cookie<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Pick</span><span class="tsd-signature-symbol">&lt;</span><a href="cookieconfigparams.html" class="tsd-signature-type">CookieConfigParams</a><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"sameSite"</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/4d20689/index.d.ts#L470">index.d.ts:470</a></li>
+						<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/b90c6fe/index.d.ts#L480">index.d.ts:480</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
