@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.9.0](https://github.com/auth0/express-openid-connect/tree/v2.9.0) (2022-10-17)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.8.0...v2.9.0)
+
+**Added**
+- [SDK-3717] Add cookie prop to support more express-session stores [\#395](https://github.com/auth0/express-openid-connect/pull/395) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.8.0](https://github.com/auth0/express-openid-connect/tree/v2.8.0) (2022-07-20)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.7.3...v2.8.0)
 
