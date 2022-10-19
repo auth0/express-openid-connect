@@ -8,13 +8,13 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 ![CircleCI](https://img.shields.io/circleci/build/github/auth0/express-openid-connect)
 
-:books: [Documentation](#documentation) - :rocket: [Getting Started](#getting-started) - :computer: [API Reference](#api-reference) - :speech_balloon: [Feedback](#feedback)
+📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
 ## Documentation
 
 - [Quickstart](https://auth0.com/docs/quickstart/webapp/express) - our guide for quickly adding Auth0 to your Express app.
 - [Sample](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master/01-Login) - an Express app integrated with Auth0.
-- [FAQs](./FAQ.md) - Frequently asked questions about express-openid-connect.
+- [FAQs](https://github.com/auth0/express-openid-connect/blob/master/FAQ.md) - Frequently asked questions about express-openid-connect.
 - [Docs Site](https://auth0.com/docs) - explore our docs site and learn more about Auth0.
 ## Getting Started
 
@@ -92,12 +92,12 @@ Errors raised by this library are handled by the [default Express error handler]
 To write your own error handler, see the Express documentation on writing [Custom error handlers](https://expressjs.com/en/guide/error-handling.html#writing-error-handlers). 
 
 
-For other comprehensive examples such as route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more, see the [EXAMPLES.md](./EXAMPLES.md) document.
+For other comprehensive examples such as route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more, see the [EXAMPLES.md](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) document.
 
-See the [examples](EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
+See the [examples](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
 
 
-## API Documentation
+## API Reference
 
 Explore the express-openid-connect API.
 
@@ -120,11 +120,11 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 - [Auth0's general contribution guidelines](https://github.com/auth0/open-source-template/blob/master/GENERAL-CONTRIBUTING.md)
 - [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
-- [This repo's contribution guide](./CONTRIBUTING.md)
+- [This repo's contribution guide](https://github.com/auth0/express-openid-connect/blob/master/CONTRIBUTING.md)
 
 ### Raise an issue
 
-To provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
+To provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/auth0/express-openid-connect/issues).
 
 ### Vulnerability Reporting
 
@@ -134,14 +134,14 @@ Please do not report security vulnerabilities on the public GitHub issue tracker
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./auth0_dark_mode.png" width="150">
-    <source media="(prefers-color-scheme: light)" srcset="./auth0_light_mode.png" width="150">
-    <img alt="Auth0 Logo" src="./auth0_light_mode.png" width="150">
+    <source media="(prefers-color-scheme: dark)" srcset="https://cdn.auth0.com/website/sdks/logos/auth0_dark_mode.png" width="150">
+    <source media="(prefers-color-scheme: light)" srcset="https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png" width="150">
+    <img alt="Auth0 Logo" src="https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png" width="150">
   </picture>
 </p>
 <p align="center">
   Auth0 is an easy to implement, adaptable authentication and authorization platform. To learn more checkout <a href="https://auth0.com/why-auth0">Why Auth0?</a>
 </p>
 <p align="center">
-  This project is licensed under the MIT license. See the <a href="./LICENSE"> LICENSE</a> file for more info.
+  This project is licensed under the MIT license. See the <a href="https://github.com/auth0/express-openid-connect/blob/master/LICENSE"> LICENSE</a> file for more info.
 </p>
