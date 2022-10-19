@@ -633,9 +633,13 @@ interface SessionConfigParams {
    * A Function for generating a session id when using a custom session store.
    * For full details see the documentation for express-session
    * at [genid](https://github.com/expressjs/session/blob/master/README.md#genid).
-   * If encrypted cookie storage is used or no value is provided, a default implementation is used.
-   * Be aware the default implmentation is  slightly different in this library as compared to the
-   * default session id generation used express-session.
+   *
+   * Be aware the default implementation is slightly different in this library as
+   * compared to the default session id generation used in express-session.
+   *
+   * **IMPORTANT** If you override this method you must use a suitable
+   * cryptographically strong random value of sufficient size to prevent collisions
+   * and reduce the ability to hijack a session by guessing the session ID.
    */
   genid?: (req: OpenidRequest) => string;
 
