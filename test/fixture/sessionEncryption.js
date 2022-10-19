@@ -1,6 +1,6 @@
 const { JWK, JWE } = require('jose');
 
-const { encryption: deriveKey } = require('../../lib/hkdf');
+const { encryption: deriveKey } = require('../../lib/crypto');
 const epoch = () => (Date.now() / 1000) | 0;
 
 const key = JWK.asKey(deriveKey('__test_secret__'));
