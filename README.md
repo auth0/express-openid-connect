@@ -16,8 +16,6 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 - [Sample](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master/01-Login) - an Express app integrated with Auth0.
 - [FAQs](./FAQ.md) - Frequently asked questions about express-openid-connect.
 - [Docs Site](https://auth0.com/docs) - explore our docs site and learn more about Auth0.
-- [Docs Site(https)
-
 ## Getting Started
 
 ### Requirements
@@ -28,7 +26,7 @@ This library supports the following tooling versions:
 
 ## Install
 
-Using [npm](https://npmjs.org) in your project directory run the following command:
+Using [npm](https://npmjs.org) in your project directory, run the following command:
 
 ```bash
 npm install express-openid-connect
