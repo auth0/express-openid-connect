@@ -10,6 +10,7 @@ const appSession = require('../lib/appSession');
 const { get: getConfig } = require('../lib/config');
 const { create: createServer } = require('./fixture/server');
 const redis = require('redis-mock');
+const { getKeyStore, signCookie } = require('../lib/crypto');
 const RedisStore = require('connect-redis')({ Store: class Store {} });
 
 const defaultConfig = {
@@ -19,6 +20,9 @@ const defaultConfig = {
   baseURL: 'http://example.org',
   secret: '__test_secret__',
   errorOnRequiredAuth: true,
+  session: {
+    signSessionStoreCookie: true,
+  },
 };
 
 const sessionData = () => {
@@ -51,6 +55,7 @@ const baseUrl = 'http://localhost:3000';
 describe('appSession custom store', () => {
   let server;
   let redisClient;
+  let signedCookieValue;
 
   const setup = async (config) => {
     redisClient = redis.createClient();
@@ -63,8 +68,15 @@ describe('appSession custom store', () => {
     const conf = getConfig({
       ...defaultConfig,
       ...config,
-      session: { ...(config && config.session), store },
+      session: {
+        ...defaultConfig.session,
+        ...(config && config.session),
+        store,
+      },
     });
+
+    const [key] = getKeyStore(conf.secret);
+    signedCookieValue = signCookie('appSession', 'foo', key);
 
     server = await createServer(appSession(conf));
   };
@@ -107,7 +119,7 @@ describe('appSession custom store', () => {
       jar,
       json: true,
       headers: {
-        cookie: `appSession=foo`,
+        cookie: `appSession=${signedCookieValue}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -115,7 +127,7 @@ describe('appSession custom store', () => {
     const [cookie] = jar.getCookies(baseUrl);
     assert.deepInclude(cookie, {
       key: 'appSession',
-      value: 'foo',
+      value: signedCookieValue,
     });
   });
 
@@ -129,7 +141,7 @@ describe('appSession custom store', () => {
       jar,
       json: true,
       headers: {
-        cookie: 'appSession=foo',
+        cookie: `appSession=${signedCookieValue}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -170,7 +182,7 @@ describe('appSession custom store', () => {
       jar,
       json: true,
       headers: {
-        cookie: `appSession=foo`,
+        cookie: `appSession=${signedCookieValue}`,
       },
     });
     assert.deepEqual(res.body, { sub: '__test_sub__' });
@@ -241,7 +253,7 @@ describe('appSession custom store', () => {
       jar,
       json: true,
       headers: {
-        cookie: `appSession=foo`,
+        cookie: `appSession=${signedCookieValue}`,
       },
     });
     assert.equal(res.statusCode, 500);
@@ -255,14 +267,14 @@ describe('appSession custom store', () => {
     const store = new RedisStore({ client: redisClient, prefix: '' });
     await promisify(redisClient.set).bind(redisClient)('foo', sessionData());
 
-    app.use(
-      appSession(
-        getConfig({
-          ...defaultConfig,
-          session: { store },
-        })
-      )
-    );
+    const conf = getConfig({
+      ...defaultConfig,
+      session: { ...defaultConfig.session, store },
+    });
+    app.use(appSession(conf));
+
+    const [key] = getKeyStore(conf.secret);
+    const cookieValue = signCookie('appSession', 'foo', key);
 
     app.get('/', (req, res, next) => {
       res.json(req.appSession);
@@ -285,11 +297,84 @@ describe('appSession custom store', () => {
         baseUrl,
         json: true,
         headers: {
-          cookie: `appSession=foo`,
+          cookie: `appSession=${cookieValue}`,
         },
         resolveWithFullResponse: false,
       }),
       { sub: '__test_sub__' }
     );
+  });
+
+  it('should not sign the session cookie if signSessionStoreCookie is false', async () => {
+    await setup({ session: { signSessionStoreCookie: false } });
+    await redisClient.asyncSet('foo', sessionData());
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: `appSession=foo`,
+      },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, { sub: '__test_sub__' });
+    const [cookie] = jar.getCookies(baseUrl);
+    assert.deepInclude(cookie, {
+      key: 'appSession',
+      value: 'foo',
+    });
+  });
+
+  it('should allow migration by signing the session cookie but not requiring it to be signed', async () => {
+    await setup({
+      session: {
+        signSessionStoreCookie: true,
+        requireSignedSessionStoreCookie: false,
+      },
+    });
+    await redisClient.asyncSet('foo', sessionData());
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: `appSession=foo`,
+      },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, { sub: '__test_sub__' });
+    const [cookie] = jar.getCookies(baseUrl);
+    assert.deepInclude(cookie, {
+      key: 'appSession',
+      value: signedCookieValue,
+    });
+  });
+
+  it('should allow signed session cookies when not requiring it to be signed', async () => {
+    await setup({
+      session: {
+        signSessionStoreCookie: true,
+        requireSignedSessionStoreCookie: false,
+      },
+    });
+    await redisClient.asyncSet('foo', sessionData());
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: `appSession=${signedCookieValue}`,
+      },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, { sub: '__test_sub__' });
+    const [cookie] = jar.getCookies(baseUrl);
+    assert.deepInclude(cookie, {
+      key: 'appSession',
+      value: signedCookieValue,
+    });
   });
 });

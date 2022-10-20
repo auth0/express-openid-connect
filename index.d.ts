@@ -246,9 +246,12 @@ interface LogoutOptions {
  */
 interface ConfigParams {
   /**
-   * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a session cookie and
-   * to sign the transient cookies used by the login callback.
-   * Use a single string key or array of keys for an encrypted session cookie.
+   * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a stateless session cookie,
+   * to sign the transient cookies used by the login callback and to sign the custom session store cookies if
+   * {@Link signSessionStoreCookie} is `true`. Use a single string key or array of keys.
+   * If an array of secrets is provided, only the first element will be used to sign or encrypt the values, while all
+   * the elements will be considered when decrypting or verifying the values.
+   *
    * Can use env key SECRET instead.
    */
   secret?: string | Array<string>;
@@ -637,11 +640,37 @@ interface SessionConfigParams {
    * Be aware the default implementation is slightly different in this library as
    * compared to the default session id generation used in express-session.
    *
-   * **IMPORTANT** If you override this method you must use a suitable
-   * cryptographically strong random value of sufficient size to prevent collisions
-   * and reduce the ability to hijack a session by guessing the session ID.
+   * **IMPORTANT** If you override this method you should be careful to generate
+   * unique IDs so your sessions do not conflict. Also, to reduce the ability
+   * to hijack a session by guessing the session ID, you must use a suitable
+   * cryptographically strong random value of sufficient size or sign the cookie
+   * by setting {@Link signSessionStoreCookie} to `true`.
    */
   genid?: (req: OpenidRequest) => string;
+
+  /**
+   * Sign the session store cookies to reduce the chance of collisions
+   * and reduce the ability to hijack a session by guessing the session ID.
+   *
+   * This is required if you override {@Link genid} and don't use a suitable
+   * cryptographically strong random value of sufficient size.
+   */
+  signSessionStoreCookie: boolean;
+
+  /**
+   * If you enable {@Link signSessionStoreCookie} your existing sessions will
+   * be invalidated. You can use this flag to temporarily allow unsigned cookies
+   * while you sign your user's session cookies. For example:
+   *
+   * Set {@Link signSessionStoreCookie} to `true` and {@Link requireSignedSessionStoreCookie} to `false`
+   * Wait for your {@Link rollingDuration} (default 1 day) or {@Link absoluteDuration} (default 1 week)
+   * to pass (which ever comes first). By this time all your sessions cookies will either be signed or
+   * have expired, then you can remove the {@Link requireSignedSessionStoreCookie} config option which
+   * will set it to `true`.
+   *
+   * Signed session store cookies will be mandatory in the next Major release.
+   */
+  requireSignedSessionStoreCookie: boolean;
 
   /**
    * If you want your session duration to be rolling, eg reset everytime the

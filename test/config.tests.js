@@ -195,6 +195,8 @@ describe('get config', () => {
         absoluteDuration: 604800,
         rolling: true,
         genid: sessionIdGenerator,
+        requireSignedSessionStoreCookie: false,
+        signSessionStoreCookie: false,
         cookie: {
           domain: '__test_custom_domain__',
           transient: true,
