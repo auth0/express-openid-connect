@@ -1,6 +1,4 @@
-# Express OpenID Connect
-
-Express JS middleware implementing sign on for Express web apps using OpenID Connect.
+![Express JS middleware implementing sign on for Express web apps using OpenID Connect.](https://cdn.auth0.com/website/sdks/banner/express-openid-connect-banner.png)
 
 ![Release](https://img.shields.io/npm/v/express-openid-connect)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/express-openid-connect)](https://codecov.io/gh/auth0/express-openid-connect)
@@ -16,13 +14,14 @@ Express JS middleware implementing sign on for Express web apps using OpenID Con
 - [Sample](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master/01-Login) - an Express app integrated with Auth0.
 - [FAQs](https://github.com/auth0/express-openid-connect/blob/master/FAQ.md) - Frequently asked questions about express-openid-connect.
 - [Docs Site](https://auth0.com/docs) - explore our docs site and learn more about Auth0.
+
 ## Getting Started
 
 ### Requirements
 
 This library supports the following tooling versions:
 
-* Node.js `^10.19.0 || >=12.0.0`
+- Node.js `^10.19.0 || >=12.0.0`
 
 ## Install
 
@@ -47,7 +46,7 @@ Create a **Regular Web Application** in the [Auth0 Dashboard](https://manage.aut
 > - Scroll down and click on the "Show Advanced Settings" link.
 > - Under "Advanced Settings", click on the "OAuth" tab.
 > - Ensure that "JsonWebToken Signature Algorithm" is set to `RS256` and that "OIDC Conformant" is enabled.
-Next, configure the following URLs for your application under the "Application URIs" section of the "Settings" page:
+>   Next, configure the following URLs for your application under the "Application URIs" section of the "Settings" page:
 
 - **Allowed Callback URLs**: `http://localhost:3000`
 - **Allowed Logout URLs**: `http://localhost:3000`
@@ -85,17 +84,16 @@ app.use(
 ```
 
 With this basic configuration, your application will require authentication for all routes and store the user identity in an encrypted and signed cookie.
+
 ### Error Handling
 
 Errors raised by this library are handled by the [default Express error handler](https://expressjs.com/en/guide/error-handling.html#the-default-error-handler) which, in the interests of security, does not include the stack trace or error message in the production environment. If you write your own error handler, you should not render the error message or the OAuth `error`/`error_description` properties without using a templating engine that will properly escape them first.
 
-To write your own error handler, see the Express documentation on writing [Custom error handlers](https://expressjs.com/en/guide/error-handling.html#writing-error-handlers). 
-
+To write your own error handler, see the Express documentation on writing [Custom error handlers](https://expressjs.com/en/guide/error-handling.html#writing-error-handlers).
 
 For other comprehensive examples such as route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more, see the [EXAMPLES.md](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) document.
 
 See the [examples](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
-
 
 ## API Reference
 
