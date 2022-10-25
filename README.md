@@ -39,7 +39,7 @@ Follow our [Secure Local Development guide](https://auth0.com/docs/libraries/sec
 
 Create a **Regular Web Application** in the [Auth0 Dashboard](https://manage.auth0.com/#/applications).
 
-> **If you're using an existing application**, verify that you have configured the following settings in your Single Page Application:
+> **If you're using an existing application**, verify that you have configured the following settings in your Regular Web Application:
 >
 > - Click on the "Settings" tab of your application's page.
 > - Ensure that "Token Endpoint Authentication Method" under "Application Properties" is set to "None"
