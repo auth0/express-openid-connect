@@ -95,6 +95,10 @@ For other comprehensive examples such as route-specific authentication, custom a
 
 See the [examples](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
 
+### Use of Custom Session Stores and `genid`
+
+If you create your own session id when using [Custom Session Stores](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md#9-use-a-custom-session-store) by overriding the `genid` configuration, you must use a suitable cryptographically strong random value of sufficient size to prevent collisions and reduce the ability to hijack a session by guessing the session ID.
+
 ## API Reference
 
 Explore the express-openid-connect API.
