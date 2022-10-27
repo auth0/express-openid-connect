@@ -16,9 +16,7 @@ const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
 const MemoryStore = require('memorystore')(auth);
-const privateKey = require('fs').readFileSync(
-  require('path').join(__dirname, '../examples', 'private-key.pem')
-);
+const { privatePEM: privateKey } = require('../end-to-end/fixture/jwk');
 
 const baseUrl = 'http://localhost:3000';
 const defaultConfig = {

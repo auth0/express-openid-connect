@@ -6,6 +6,7 @@ const debug = require('../lib/debug')('auth');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const { requiresAuth } = require('./requiresAuth');
+const checkBackChannelLogout = require('./checkBackChannelLogout');
 const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
@@ -176,6 +177,16 @@ const auth = function (params) {
       express.urlencoded({ extended: false }),
       ...callbackStack
     );
+  }
+
+  if (config.backChannelLogout) {
+    const path = enforceLeadingSlash(config.routes.backChannelLogout);
+    debug('adding POST %s route', path);
+    router.post(path, express.urlencoded({ extended: false }), (req, res) =>
+      res.oidc.backChannelLogout()
+    );
+
+    router.use(checkBackChannelLogout(config));
   }
 
   if (config.authRequired) {

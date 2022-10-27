@@ -1,6 +1,9 @@
 const path = require('path');
+const crypto = require('crypto');
 const sinon = require('sinon');
 const express = require('express');
+const { JWT } = require('jose');
+const { privateJWK } = require('./jwk');
 const request = require('request-promise-native').defaults({ json: true });
 
 const baseUrl = 'http://localhost:3000';
@@ -89,6 +92,45 @@ const logout = async (page) => {
   await Promise.all([page.click('[name=logout]'), page.waitForNavigation()]);
 };
 
+const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
+  const logoutToken = JWT.sign(
+    {
+      events: {
+        'http://schemas.openid.net/event/backchannel-logout': {},
+      },
+      ...(sid && { sid: req.oidc.user.sid }),
+      ...(sub && { sub: req.oidc.user.sub }),
+    },
+    privateJWK,
+    {
+      issuer: `http://localhost:${process.env.PROVIDER_PORT || 3001}`,
+      audience: clientId,
+      iat: true,
+      jti: crypto.randomBytes(16).toString('hex'),
+      algorithm: 'RS256',
+      header: { typ: 'logout+jwt' },
+    }
+  );
+
+  // Clear the oidc provider session (it's on the same host)
+  // to simulate logging out of the IDP.
+  // res.clearCookie('_session');
+  // res.clearCookie('_session.legacy');
+
+  const opts = JSON.stringify({
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    },
+    body: `logout_token=${logoutToken}`,
+  });
+  res.send(`
+    <button onclick='fetch("/back-channel-logout", ${opts})'>
+      Send logout token
+    </button>
+  `);
+};
+
 module.exports = {
   baseUrl,
   start,
@@ -100,4 +142,5 @@ module.exports = {
   goto,
   login,
   logout,
+  logoutTokenTester,
 };

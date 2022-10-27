@@ -451,6 +451,60 @@ interface ConfigParams {
   authRequired?: boolean;
 
   /**
+   * Set to `true` to enable Back-Channel Logout in your application.
+   * This will set up a web hook on your app at {@link ConfigParams.routes routes.backChannelLogout}
+   * On receipt of a Logout Token the webhook will store the token, then on any
+   * subsequent requests, will check the store for a Logout Token that corresponds to the
+   * current session. If it finds one, it will log the user out.
+   *
+   * In order for this to work you need to specify a {@link ConfigParams.backChannelLogoutStore},
+   * which can be any `express-session` compatible store, or you can
+   * reuse {@link SessionConfigParams.store} if you are using one already.
+   *
+   * See: https://openid.net/specs/openid-connect-backchannel-1_0.html
+   */
+  backChannelLogout?: boolean;
+
+  /**
+   * Used to store Back-Channel Logout tokens, you can specify a spearate store
+   * for this or just reuse {@link SessionConfigParams.store} if you are using one already.
+   *
+   * The store should have `get`, `set` and `destroy` methods, making it compatible
+   * with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
+   */
+  backChannelLogoutStore?: SessionStore<LogoutToken>;
+
+  /**
+   * On receipt of a Logout Token the SDK by default stores it by `sid`,
+   * it assumes that all Back-Channel Logout requests will receive a `sid`,
+   * You can override this to additionally store the token by `sub` if your
+   * Identity Provider also issues Logout Tokens that don't receive a `sid`.
+   * Your implementation might also directly interact with your session store,
+   * in which case you can use this hook to find your session and delete it.
+   */
+  storeLogoutToken?: (
+    payload: SessionStorePayload<LogoutToken>,
+    store: SessionStore<LogoutToken>,
+    config: ConfigParams
+  ) => Promise<void>;
+
+  /**
+   * When {@link backChannelLogout} is enabled all requests that have a session
+   * must also check for a Logout Token. By default, this uses the `sid` from the
+   * session's ID token to look up a Logout Token and logs the user out if one is
+   * found (and it is more recent than the session).
+   * If you also have Logout Tokens stored by `sub`, you can override this to
+   * also look up Logout Token's by the `sub` claim.
+   * Your implementation might also directly remove the session from the session store
+   * on receipt of the Logout Token, in this instance this can be a noop.
+   */
+  getLogoutToken?: (
+    req: Request,
+    store: SessionStore<LogoutToken>,
+    config: ConfigParams
+  ) => Promise<SessionStorePayload<LogoutToken>>;
+
+  /**
    * Configuration for the login, logout, callback and postLogoutRedirect routes.
    */
   routes?: {
@@ -475,6 +529,11 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string;
+
+    /**
+     * Relative path to the application's Back-Channel Logout web hook.
+     */
+    backChannelLogout?: string;
   };
 
   /**
@@ -564,7 +623,23 @@ interface ConfigParams {
   httpUserAgent?: string;
 }
 
-interface SessionStorePayload {
+/**
+ * Received from a Back-Channel Logout request.
+ */
+export interface LogoutToken {
+  iss: string;
+  aud: string;
+  iat: string;
+  jti: string;
+  sid: string;
+  sub: string;
+  events: {
+    'http://schemas.openid.net/event/backchannel-logout': {};
+  };
+  [key: string]: any;
+}
+
+interface SessionStorePayload<Data = Session> {
   header: {
     /**
      * timestamp (in secs) when the session was created.
@@ -583,16 +658,25 @@ interface SessionStorePayload {
   /**
    * The session data.
    */
-  data: Session;
+  data: Data;
+
+  /**
+   * This makes it compatible with some `express-session` stores that use this
+   * to set their ttl.
+   */
+  cookie: {
+    expires: number;
+    maxAge: number;
+  };
 }
 
-interface SessionStore {
+interface SessionStore<Data = Session> {
   /**
    * Gets the session from the store given a session ID and passes it to `callback`.
    */
   get(
     sid: string,
-    callback: (err: any, session?: SessionStorePayload | null) => void
+    callback: (err: any, session?: SessionStorePayload<Data> | null) => void
   ): void;
 
   /**
@@ -600,7 +684,7 @@ interface SessionStore {
    */
   set(
     sid: string,
-    session: SessionStorePayload,
+    session: SessionStorePayload<Data>,
     callback?: (err?: any) => void
   ): void;
 

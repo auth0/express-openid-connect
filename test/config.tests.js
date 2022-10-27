@@ -857,4 +857,32 @@ describe('get config', () => {
       });
     }
   });
+
+  it('should require a session store for back-channel logout', () => {
+    assert.throws(
+      () => getConfig({ ...defaultConfig, backChannelLogout: true }),
+      TypeError,
+      `Back-Channel Logout requires a "backChannelSessionStore" (you can also reuse "session.store" if you have stateful sessions).`
+    );
+  });
+
+  it(`should configure back-channel logout with it's own store`, () => {
+    assert.doesNotThrow(() =>
+      getConfig({
+        ...defaultConfig,
+        backChannelLogout: true,
+        backChannelLogoutStore: {},
+      })
+    );
+  });
+
+  it(`should configure back-channel logout with a shared store`, () => {
+    assert.doesNotThrow(() =>
+      getConfig({
+        ...defaultConfig,
+        backChannelLogout: true,
+        session: { store: {} },
+      })
+    );
+  });
 });
