@@ -16,9 +16,8 @@ const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
 const nock = require('nock');
 const MemoryStore = require('memorystore')(auth);
-const privateKey = require('fs').readFileSync(
-  require('path').join(__dirname, '../examples', 'private-key.pem')
-);
+const { privatePEM: privateKey } = require('../end-to-end/fixture/jwk');
+const getRedisStore = require('./fixture/store');
 
 const baseUrl = 'http://localhost:3000';
 const defaultConfig = {
@@ -597,6 +596,103 @@ describe('callback response_mode: form_post', () => {
       '__new_access_token__',
       'the new access token should be persisted in the session'
     );
+  });
+
+  it('should retain sid after token refresh', async () => {
+    const idTokenWithSid = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+      sid: 'foo',
+    });
+    const idTokenNoSid = makeIdToken({
+      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+    });
+
+    const authOpts = {
+      ...defaultConfig,
+      clientSecret: '__test_client_secret__',
+      authorizationParams: {
+        response_type: 'code id_token',
+        audience: 'https://api.example.com/',
+        scope: 'openid profile email read:reports offline_access',
+      },
+    };
+    const router = auth(authOpts);
+    router.get('/refresh', async (req, res) => {
+      const accessToken = await req.oidc.accessToken.refresh();
+      res.json({
+        accessToken,
+        refreshToken: req.oidc.refreshToken,
+      });
+    });
+
+    const { jar } = await setup({
+      router,
+      authOpts: {
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          audience: 'https://api.example.com/',
+          scope: 'openid profile email read:reports offline_access',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idTokenWithSid,
+        code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+      },
+    });
+
+    const reply = sinon.spy(() => ({
+      access_token: '__new_access_token__',
+      refresh_token: '__new_refresh_token__',
+      id_token: idTokenNoSid,
+      token_type: 'Bearer',
+      expires_in: 86400,
+    }));
+    const {
+      interceptors: [interceptor],
+    } = nock('https://op.example.com', { allowUnmocked: true })
+      .post('/oauth/token')
+      .reply(200, reply);
+
+    await request.get('/refresh', { baseUrl, jar });
+    const { body: newTokens } = await request.get('/tokens', {
+      baseUrl,
+      jar,
+      json: true,
+    });
+    nock.removeInterceptor(interceptor);
+
+    assert.equal(newTokens.accessToken.access_token, '__new_access_token__');
+    assert.equal(newTokens.idTokenClaims.sid, 'foo');
+  });
+
+  it('should remove any stale back-channel logout entries by sub', async () => {
+    const { client, store } = getRedisStore();
+    await client.asyncSet('https://op.example.com/|bcl-sub', '{}');
+    const idToken = makeIdToken({ sub: 'bcl-sub' });
+    const {
+      response: { statusCode },
+    } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+      },
+      authOpts: {
+        backchannelLogout: { store },
+      },
+    });
+    assert.equal(statusCode, 302);
+    const logout = await client.asyncGet('https://op.example.com/|bcl-sub');
+    assert.notOk(logout);
   });
 
   it('should refresh an access token and keep original refresh token', async () => {

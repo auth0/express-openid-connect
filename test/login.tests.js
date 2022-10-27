@@ -354,7 +354,6 @@ describe('auth', () => {
       baseUrl,
       followRedirect: false,
     });
-    console.log(res);
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -596,7 +595,6 @@ describe('auth', () => {
       json: true,
     });
     assert.equal(res.statusCode, 500);
-    console.log(res.body.err.message);
     assert.match(
       res.body.err.message,
       /^Issuer.discover\(\) failed/,

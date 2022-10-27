@@ -1,7 +1,6 @@
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
 const { auth } = require('../');
+const { privateJWK } = require('../end-to-end/fixture/jwk');
 
 const app = express();
 
@@ -12,9 +11,7 @@ app.use(
     authorizationParams: {
       response_type: 'code',
     },
-    clientAssertionSigningKey: fs.readFileSync(
-      path.join(__dirname, 'private-key.pem')
-    ),
+    clientAssertionSigningKey: privateJWK,
   })
 );
 

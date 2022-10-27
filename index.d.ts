@@ -257,6 +257,59 @@ interface CallbackOptions {
 }
 
 /**
+ * Custom options to configure Back-Channel Logout on your application.
+ */
+interface BackchannelLogoutOptions {
+  /**
+   * Used to store Back-Channel Logout entries, you can specify a separate store
+   * for this or just reuse {@link SessionConfigParams.store} if you are using one already.
+   *
+   * The store should have `get`, `set` and `destroy` methods, making it compatible
+   * with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
+   */
+  store?: SessionStore<Pick<SessionStorePayload, 'cookie'>>;
+
+  /**
+   * On receipt of a Logout Token the SDK validates the token then by default stores 2 entries: one
+   * by the token's `sid` claim (if available) and one by the token's `sub` claim (if available).
+   *
+   * If a session subsequently shows up with either the same `sid` or `sub`, the user if forbidden access and
+   * their cookie is deleted.
+   *
+   * You can override this to implement your own Back-Channel Logout logic
+   * (See {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-genid.js} or {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-query-store.js})
+   */
+  onLogoutToken?: (
+    decodedToken: object,
+    config: ConfigParams
+  ) => Promise<void> | void;
+
+  /**
+   * When {@link backchannelLogout} is enabled all requests that have a session
+   * will be checked for a previous Back-Channel logout. By default, this
+   * uses the `sub` and the `sid` (if available) from the session's ID token to look up a previous logout and
+   * logs the user out if one is found.
+   *
+   * You can override this to implement your own Back-Channel Logout logic
+   * (See {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-genid.js} or {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-query-store.js})
+   */
+  isLoggedOut?:
+    | false
+    | ((req: Request, config: ConfigParams) => Promise<boolean> | boolean);
+
+  /**
+   * When {@link backchannelLogout} is enabled, upon successful login the SDK will remove any existing Back-Channel
+   * logout entries for the same `sub`, to prevent the user from being logged out by an old Back-Channel logout.
+   *
+   * You can override this to implement your own Back-Channel Logout logic
+   * (See {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-genid.js} or {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-query-store.js})
+   */
+  onLogin?:
+    | false
+    | ((req: Request, config: ConfigParams) => Promise<void> | void);
+}
+
+/**
  * Configuration parameters passed to the `auth()` middleware.
  *
  * {@link ConfigParams.issuerBaseURL issuerBaseURL}, {@link ConfigParams.baseURL baseURL}, {@link ConfigParams.clientID clientID}
@@ -485,6 +538,21 @@ interface ConfigParams {
   pushedAuthorizationRequests?: boolean;
 
   /**
+   * Set to `true` to enable Back-Channel Logout in your application.
+   * This will set up a web hook on your app at {@link ConfigParams.routes routes.backchannelLogout}
+   * On receipt of a Logout Token the webhook will store the token, then on any
+   * subsequent requests, will check the store for a Logout Token that corresponds to the
+   * current session. If it finds one, it will log the user out.
+   *
+   * In order for this to work you need to specify a {@link ConfigParams.backchannelLogout.store},
+   * which can be any `express-session` compatible store, or you can
+   * reuse {@link SessionConfigParams.store} if you are using one already.
+   *
+   * See: https://openid.net/specs/openid-connect-backchannel-1_0.html
+   */
+  backchannelLogout?: boolean | BackchannelLogoutOptions;
+
+  /**
    * Configuration for the login, logout, callback and postLogoutRedirect routes.
    */
   routes?: {
@@ -509,6 +577,11 @@ interface ConfigParams {
      * Relative path to the application callback to process the response from the authorization server.
      */
     callback?: string | false;
+
+    /**
+     * Relative path to the application's Back-Channel Logout web hook.
+     */
+    backchannelLogout?: string;
   };
 
   /**
@@ -619,7 +692,7 @@ interface ConfigParams {
   httpUserAgent?: string;
 }
 
-interface SessionStorePayload {
+interface SessionStorePayload<Data = Session> {
   header: {
     /**
      * timestamp (in secs) when the session was created.
@@ -638,16 +711,25 @@ interface SessionStorePayload {
   /**
    * The session data.
    */
-  data: Session;
+  data: Data;
+
+  /**
+   * This makes it compatible with some `express-session` stores that use this
+   * to set their ttl.
+   */
+  cookie: {
+    expires: number;
+    maxAge: number;
+  };
 }
 
-interface SessionStore {
+interface SessionStore<Data = Session> {
   /**
    * Gets the session from the store given a session ID and passes it to `callback`.
    */
   get(
     sid: string,
-    callback: (err: any, session?: SessionStorePayload | null) => void
+    callback: (err: any, session?: SessionStorePayload<Data> | null) => void
   ): void;
 
   /**
@@ -655,7 +737,7 @@ interface SessionStore {
    */
   set(
     sid: string,
-    session: SessionStorePayload,
+    session: SessionStorePayload<Data>,
     callback?: (err?: any) => void
   ): void;
 

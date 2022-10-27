@@ -10,6 +10,7 @@
 8. [Logout from Identity Provider](#8-logout-from-identity-provider)
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
+11. [Back-Channel Logout](#11-back-channel-logout)
 
 ## 1. Basic setup
 
@@ -298,3 +299,50 @@ app.use(
 ```
 
 Full example at [custom-session-store.js](./examples/custom-session-store.js), to run it: `npm run start:example -- custom-session-store`
+
+## 11. Back-Channel Logout
+
+Configure the SDK with `backchannelLogout` enabled. You will also need a session store (like Redis) - you can use any `express-session` compatible store.
+
+```js
+// index.js
+const { auth } = require('express-openid-connect');
+const { createClient } = require('redis');
+const RedisStore = require('connect-redis')(auth);
+
+// redis@v4
+let redisClient = createClient({ legacyMode: true });
+redisClient.connect();
+
+app.use(
+  auth({
+    idpLogout: true,
+    backchannelLogout: {
+      store: new RedisStore({ client: redisClient }),
+    },
+  })
+);
+```
+
+If you're already using a session store for stateful sessions you can just reuse that.
+
+```js
+app.use(
+  auth({
+    idpLogout: true,
+    session: {
+      store: new RedisStore({ client: redisClient }),
+    },
+    backchannelLogout: true,
+  })
+);
+```
+
+### This will:
+
+- Create the handler `/backchannel-logout` that you can register with your ISP.
+- On receipt of a valid Logout Token, the SDK will store an entry by `sid` (Session ID) and an entry by `sub` (User ID) in the `backchannelLogout.store` - the expiry of the entry will be set to the duration of the session (this is customisable using the [onLogoutToken](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogoutToken) config hook)
+- On all authenticated requests, the SDK will check the store for an entry that corresponds with the session's ID token's `sid` or `sub`. If it finds a corresponding entry it will invalidate the session and clear the session cookie. (This is customisable using the [isLoggedOut](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#isLoggedOut) config hook)
+- If the user logs in again, the SDK will remove any stale `sub` entry in the Back-Channel Logout store to ensure they are not logged out immediately (this is customisable using the [onLogin](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogin) config hook)
+
+The config options are [documented here](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html)
