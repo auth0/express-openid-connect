@@ -1,9 +1,18 @@
 module.exports = {
+  name: 'express-openid-connect',
   out: './docs/',
-  mode: 'file',
   excludeExternals: true,
-  includeDeclarations: true,
+  excludePrivate: true,
   hideGenerator: true,
-  theme: 'minimal',
-  readme: false,
+  readme: 'none',
+  externalSymbolLinkMappings: {
+    '@types/express': {
+      'Request.originalUrl':
+        'https://expressjs.com/en/4x/api.html#req.originalUrl',
+    },
+    express: {
+      'Request.originalUrl':
+        'https://expressjs.com/en/4x/api.html#req.originalUrl',
+    },
+  },
 };
