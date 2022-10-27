@@ -202,7 +202,7 @@ interface LoginOptions {
   authorizationParams?: AuthorizationParameters;
 
   /**
-   *  URL to return to after login, overrides the Default is {@link Request.originalUrl}
+   *  URL to return to after login, overrides the Default is {@link express!Request.originalUrl Request.originalUrl}
    */
   returnTo?: string;
 
@@ -217,7 +217,7 @@ interface LoginOptions {
  */
 interface LogoutOptions {
   /**
-   *  URL to returnTo after logout, overrides the Default in {@link ConfigParams.routes.postLogoutRedirect routes.postLogoutRedirect}
+   *  URL to returnTo after logout, overrides the Default in {@link ConfigParams.routes routes.postLogoutRedirect}
    */
   returnTo?: string;
 
