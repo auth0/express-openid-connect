@@ -57,7 +57,7 @@ Take note of the **Client ID** and **Domain** values under the "Basic Informatio
 
 ### Configuring the SDK
 
-The library needs [issuerBaseURL](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#issuerbaseurl), [baseURL](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#baseurl), [clientID](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#clientid) and [secret](https://auth0.github.io/express-openid-connect/interfaces/configparams.html#secret) to request and accept authentication. These can be configured with environmental variables:
+The library needs [issuerBaseURL](https://auth0.github.io/express-openid-connect/interfaces/ConfigParams.html#issuerbaseurl), [baseURL](https://auth0.github.io/express-openid-connect/interfaces/ConfigParams.html#baseurl), [clientID](https://auth0.github.io/express-openid-connect/interfaces/ConfigParams.html#clientid) and [secret](https://auth0.github.io/express-openid-connect/interfaces/ConfigParams.html#secret) to request and accept authentication. These can be configured with environmental variables:
 
 ```text
 ISSUER_BASE_URL=https://YOUR_DOMAIN
@@ -103,16 +103,16 @@ If you create your own session id when using [Custom Session Stores](https://git
 
 Explore the express-openid-connect API.
 
-- [ConfigParams](https://auth0.github.io/express-openid-connect/interfaces/configparams.html)
+- [ConfigParams](https://auth0.github.io/express-openid-connect/interfaces/ConfigParams.html)
 
 **Provided middleware:**
 
-- [attemptSilentLogin](https://auth0.github.io/express-openid-connect/globals.html#attemptsilentlogin)
-- [auth](https://auth0.github.io/express-openid-connect/globals.html#auth)
-- [claimCheck](https://auth0.github.io/express-openid-connect/globals.html#claimcheck)
-- [claimEquals](https://auth0.github.io/express-openid-connect/globals.html#claimequals)
-- [claimIncludes](https://auth0.github.io/express-openid-connect/globals.html#claimincludes)
-- [requiresAuth](https://auth0.github.io/express-openid-connect/globals.html#requiresauth)
+- [attemptSilentLogin](https://auth0.github.io/express-openid-connect/functions/attemptSilentLogin.html)
+- [auth](https://auth0.github.io/express-openid-connect/functions/auth.html)
+- [claimCheck](https://auth0.github.io/express-openid-connect/functions/claimCheck.html)
+- [claimEquals](https://auth0.github.io/express-openid-connect/functions/claimEquals.html)
+- [claimIncludes](https://auth0.github.io/express-openid-connect/functions/claimIncludes.html)
+- [requiresAuth](https://auth0.github.io/express-openid-connect/functions/requiresAuth.html)
 
 ## Feedback
 
