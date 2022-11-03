@@ -20,7 +20,8 @@ const filterRoute = (method, path) => {
 const fetchAuthCookie = (res) => {
   const cookieHeaders = res.headers['set-cookie'];
   return cookieHeaders.filter(
-    (header) => header.split('=')[0] === 'auth_verification'
+    (header) =>
+      header.split('=')[0] === 'auth_verification.' + defaultConfig.clientID
   )[0];
 };
 
@@ -32,7 +33,9 @@ const fetchFromAuthCookie = (res, cookieName) => {
   }
 
   const decodedAuthCookie = querystring.decode(authCookie);
-  const cookieValuePart = decodedAuthCookie.auth_verification
+  const cookieValuePart = decodedAuthCookie[
+    'auth_verification.' + defaultConfig.clientID
+  ]
     .split('; ')[0]
     .split('.')[0];
   const authCookieParsed = JSON.parse(cookieValuePart);
