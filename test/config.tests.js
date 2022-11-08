@@ -187,6 +187,7 @@ describe('get config', () => {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       transactionCookie: {
         sameSite: 'Strict',
+        name: 'auth_verification',
       },
       session: {
         name: '__test_custom_session_name__',
@@ -247,6 +248,7 @@ describe('get config', () => {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       transactionCookie: {
         sameSite: 'Lax',
+        name: 'auth_verification',
       },
     });
   });
@@ -266,6 +268,7 @@ describe('get config', () => {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       transactionCookie: {
         sameSite: 'Strict',
+        name: 'auth_verification',
       },
     });
   });
@@ -276,6 +279,7 @@ describe('get config', () => {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       transactionCookie: {
         sameSite: 'Strict',
+        name: 'CustomTxnCookie',
       },
       session: {
         cookie: {
@@ -288,6 +292,7 @@ describe('get config', () => {
       secret: ['__test_session_secret_1__', '__test_session_secret_2__'],
       transactionCookie: {
         sameSite: 'Strict',
+        name: 'CustomTxnCookie',
       },
     });
   });

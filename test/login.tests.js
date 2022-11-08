@@ -17,25 +17,24 @@ const filterRoute = (method, path) => {
     r.route && r.route.path === path && r.route.methods[method.toLowerCase()];
 };
 
-const fetchAuthCookie = (res) => {
+const fetchAuthCookie = (res, txnCookieName) => {
+  txnCookieName = txnCookieName || 'auth_verification';
   const cookieHeaders = res.headers['set-cookie'];
   return cookieHeaders.filter(
-    (header) =>
-      header.split('=')[0] === 'auth_verification.' + defaultConfig.clientID
+    (header) => header.split('=')[0] === txnCookieName
   )[0];
 };
 
-const fetchFromAuthCookie = (res, cookieName) => {
-  const authCookie = fetchAuthCookie(res);
+const fetchFromAuthCookie = (res, cookieName, txnCookieName) => {
+  txnCookieName = txnCookieName || 'auth_verification';
+  const authCookie = fetchAuthCookie(res, txnCookieName);
 
   if (!authCookie) {
     return false;
   }
 
   const decodedAuthCookie = querystring.decode(authCookie);
-  const cookieValuePart = decodedAuthCookie[
-    'auth_verification.' + defaultConfig.clientID
-  ]
+  const cookieValuePart = decodedAuthCookie[txnCookieName]
     .split('; ')[0]
     .split('.')[0];
   const authCookieParsed = JSON.parse(cookieValuePart);
@@ -106,6 +105,39 @@ describe('auth', () => {
     assert.equal(fetchFromAuthCookie(res, 'state'), parsed.query.state);
   });
 
+  it('should redirect to the authorize url for /login when txn cookie name is custom', async () => {
+    let customTxnCookieName = 'CustomTxnCookie';
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        transactionCookie: { name: customTxnCookieName },
+      })
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+
+    assert.equal(
+      fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
+      parsed.query.nonce
+    );
+    assert.equal(
+      fetchFromAuthCookie(res, 'state', customTxnCookieName),
+      parsed.query.state
+    );
+  });
+
   it('should redirect to the authorize url for any route if authRequired', async () => {
     server = await createServer(
       auth({
@@ -126,6 +158,22 @@ describe('auth', () => {
         ...defaultConfig,
         authRequired: false,
         attemptSilentLogin: true,
+      })
+    );
+    const res = await request.get('/session', {
+      baseUrl,
+      followRedirect: false,
+    });
+    assert.equal(res.statusCode, 302);
+  });
+
+  it('should redirect to the authorize url for any route with custom txn name if attemptSilentLogin ', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+        attemptSilentLogin: true,
+        transactionCookie: { name: 'CustomTxnCookie' },
       })
     );
     const res = await request.get('/session', {
@@ -163,6 +211,44 @@ describe('auth', () => {
 
     assert.equal(fetchFromAuthCookie(res, 'nonce'), parsed.query.nonce);
     assert.equal(fetchFromAuthCookie(res, 'state'), parsed.query.state);
+  });
+
+  it('should redirect to the authorize url for /login in code flow with custom txn cookie', async () => {
+    let customTxnCookieName = 'CustomTxnCookie';
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code',
+        },
+        transactionCookie: { name: customTxnCookieName },
+      })
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'code');
+    assert.equal(parsed.query.response_mode, undefined);
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+    assert.property(res.headers, 'set-cookie');
+
+    assert.equal(
+      fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
+      parsed.query.nonce
+    );
+    assert.equal(
+      fetchFromAuthCookie(res, 'state', customTxnCookieName),
+      parsed.query.state
+    );
   });
 
   it('should redirect to the authorize url for /login in id_token flow', async () => {
@@ -300,7 +386,39 @@ describe('auth', () => {
   });
 
   it('should not allow an invalid response_type', async function () {
-    const router = auth({ ...defaultConfig, routes: { login: false } });
+    const router = auth({
+      ...defaultConfig,
+      routes: { login: false },
+    });
+    router.get('/login', (req, res) => {
+      res.oidc.login({
+        authorizationParams: {
+          response_type: 'invalid',
+        },
+      });
+    });
+    server = await createServer(router);
+
+    const cookieJar = request.jar();
+    const res = await request.get('/login', {
+      cookieJar,
+      baseUrl,
+      json: true,
+      followRedirect: false,
+    });
+    assert.equal(res.statusCode, 500);
+    assert.equal(
+      res.body.err.message,
+      'response_type should be one of id_token, code id_token, code'
+    );
+  });
+
+  it('should not allow an invalid response_type when txn cookie name custom', async function () {
+    const router = auth({
+      ...defaultConfig,
+      routes: { login: false },
+      transactionCookie: { name: 'CustomTxnCookie' },
+    });
     router.get('/login', (req, res) => {
       res.oidc.login({
         authorizationParams: {
