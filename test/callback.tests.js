@@ -287,7 +287,7 @@ describe('callback response_mode: form_post', () => {
         legacySameSiteCookie: false,
       },
       cookies: {
-        ['_auth_verification.' + clientID]: JSON.stringify({
+        ['_auth_verification.']: JSON.stringify({
           state: '__test_state__',
         }),
       },
