@@ -477,7 +477,7 @@ interface ConfigParams {
   /**
    * Configuration parameters used for the transaction cookie.
    */
-  transactionCookie?: Pick<CookieConfigParams, 'sameSite'>;
+  transactionCookie?: Pick<CookieConfigParams, 'sameSite'> & { name?: string };
 
   /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
