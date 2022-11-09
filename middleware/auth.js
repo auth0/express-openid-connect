@@ -89,7 +89,7 @@ const auth = function (params) {
           try {
             const callbackParams = client.callbackParams(req);
             const authVerification = transient.getOnce(
-              'auth_verification',
+              config.transactionCookie.name,
               req,
               res
             );

@@ -30,8 +30,8 @@ const defaultConfig = {
 };
 let server;
 
-const generateCookies = (values) => ({
-  auth_verification: JSON.stringify(values),
+const generateCookies = (values, customTxnCookieName) => ({
+  [customTxnCookieName || 'auth_verification']: JSON.stringify(values),
 });
 
 const setup = async (params) => {
@@ -287,7 +287,9 @@ describe('callback response_mode: form_post', () => {
         legacySameSiteCookie: false,
       },
       cookies: {
-        _auth_verification: JSON.stringify({ state: '__test_state__' }),
+        ['_auth_verification']: JSON.stringify({
+          state: '__test_state__',
+        }),
       },
       body: {
         state: '__test_state__',
@@ -324,7 +326,7 @@ describe('callback response_mode: form_post', () => {
         identityClaimFilter: [],
       },
       cookies: {
-        _auth_verification: JSON.stringify({
+        auth_verification: JSON.stringify({
           state: expectedDefaultState,
           nonce: '__test_nonce__',
         }),
@@ -373,6 +375,48 @@ describe('callback response_mode: form_post', () => {
       body: {
         state: expectedDefaultState,
         id_token: idToken,
+      },
+    });
+    assert.equal(statusCode, 302);
+    assert.equal(headers.location, 'https://example.org');
+    assert.ok(currentUser);
+    assert.equal(currentUser.sub, '__test_sub__');
+    assert.equal(currentUser.nickname, '__test_nickname__');
+    assert.notExists(currentUser.iat);
+    assert.notExists(currentUser.iss);
+    assert.notExists(currentUser.aud);
+    assert.notExists(currentUser.exp);
+    assert.notExists(currentUser.nonce);
+    assert.equal(tokens.isAuthenticated, true);
+    assert.equal(tokens.idToken, idToken);
+    assert.isUndefined(tokens.refreshToken);
+    assert.isUndefined(tokens.accessToken);
+    assert.include(tokens.idTokenClaims, {
+      sub: '__test_sub__',
+    });
+  });
+
+  it('should succeed even if custom transaction cookie name used', async () => {
+    let customTxnCookieName = 'CustomTxnCookie';
+    const idToken = makeIdToken();
+    const {
+      response: { statusCode, headers },
+      currentUser,
+      tokens,
+    } = await setup({
+      cookies: generateCookies(
+        {
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        },
+        customTxnCookieName
+      ),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+      },
+      authOpts: {
+        transactionCookie: { name: customTxnCookieName },
       },
     });
     assert.equal(statusCode, 302);
