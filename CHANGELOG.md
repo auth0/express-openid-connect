@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.10.0](https://github.com/auth0/express-openid-connect/tree/v2.10.0) (2022-11-11)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.9.0...v2.10.0)
+
+**Added**
+- Add option to override transaction cookie name [\#414](https://github.com/auth0/express-openid-connect/pull/414) ([MatthewBacalakis](https://github.com/MatthewBacalakis))
+
 ## [v2.9.0](https://github.com/auth0/express-openid-connect/tree/v2.9.0) (2022-10-17)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.8.0...v2.9.0)
 
