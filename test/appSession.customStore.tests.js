@@ -110,6 +110,21 @@ describe('appSession custom store', () => {
     assert.isEmpty(res.body);
   });
 
+  it('should not error for non existent signed sessions', async () => {
+    await setup();
+    const conf = getConfig(defaultConfig);
+    const [key] = getKeyStore(conf.secret);
+    const res = await request.get('/session', {
+      baseUrl,
+      json: true,
+      headers: {
+        cookie: 'appSession=' + signCookie('appSession', 'foo', key),
+      },
+    });
+    assert.equal(res.statusCode, 200);
+    assert.isEmpty(res.body);
+  });
+
   it('should get an existing session', async () => {
     await setup();
     await redisClient.asyncSet('foo', sessionData());
