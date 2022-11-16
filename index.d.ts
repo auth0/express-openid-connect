@@ -668,7 +668,7 @@ interface SessionConfigParams {
    * have expired, then you can remove the {@Link requireSignedSessionStoreCookie} config option which
    * will set it to `true`.
    *
-   * Signed session store cookies will be mandatory in the next Major release.
+   * Signed session store cookies will be mandatory in the next major release.
    */
   requireSignedSessionStoreCookie: boolean;
 
