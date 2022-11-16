@@ -662,7 +662,7 @@ interface SessionConfigParams {
    * be invalidated. You can use this flag to temporarily allow unsigned cookies
    * while you sign your user's session cookies. For example:
    *
-   * Set {@Link signSessionStoreCookie} to `true` and {@Link requireSignedSessionStoreCookie} to `false`
+   * Set {@Link signSessionStoreCookie} to `true` and {@Link requireSignedSessionStoreCookie} to `false`.
    * Wait for your {@Link rollingDuration} (default 1 day) or {@Link absoluteDuration} (default 1 week)
    * to pass (which ever comes first). By this time all your sessions cookies will either be signed or
    * have expired, then you can remove the {@Link requireSignedSessionStoreCookie} config option which
