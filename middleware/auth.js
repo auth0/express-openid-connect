@@ -1,8 +1,8 @@
 const express = require('express');
-const cb = require('cb');
 const createError = require('http-errors');
 
 const debug = require('../lib/debug')('auth');
+const { once } = require('../lib/once');
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const { requiresAuth } = require('./requiresAuth');
@@ -69,7 +69,7 @@ const auth = function (params) {
         next();
       },
       async (req, res, next) => {
-        next = cb(next).once();
+        next = once(next);
 
         client =
           client ||
