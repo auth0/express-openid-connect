@@ -10,6 +10,7 @@
 8. [Logout from Identity Provider](#8-logout-from-identity-provider)
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
+11. [Use appSession for CSRF](#11-use-appsession-for-csrf)
 
 ## 1. Basic setup
 
@@ -276,3 +277,78 @@ app.use(
 ```
 
 Full example at [custom-session-store.js](./examples/custom-session-store.js), to run it: `npm run start:example -- custom-session-store`
+
+## 11. Use SDK session for CSRF protection
+
+This example creates per-session CSRF tokens your app can use to protect stateful operations. It provides [Synchronizer Token](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern) protection **without** needing to add another cookie (which would be managed by a separate [library](https://www.npmjs.com/search?q=express%20csrf) of your choice).
+
+There are 3 key pieces to this example:
+
+1. An `afterCallback` hook that adds a csrfToken to this SDK's `req.appSession`
+
+```js
+afterCallback: (req, res, session) => {
+    ...
+    const genToken = () => crypto.randomBytes(32).toString('hex');
+    ...
+    const csrfToken = genToken() // Token re-use logic omitted
+    return {
+        ...session,
+        csrfToken
+    }
+}
+```
+
+2. The ability to render the session CSRF token in your HTML forms
+
+```js
+const expectedToken = req.appSession.csrfToken;
+res.send(`Test CSRF-proof form: 
+  <form action="/csrf-test" method="post">
+  <input type="hidden" name="CSRFToken" value="${expectedToken}">
+  <button type="submit">Submit</button>
+  </form>
+  `);
+```
+
+3. The ability to check submitted tokens against expect the session
+
+```js
+const inputToken = req.body['CSRFToken'];
+const expectedToken = req.appSession.csrfToken;
+if (inputToken != expectedToken) {
+  // Block the request!
+}
+```
+
+First run the example at [csrf-token.js](./examples/csrf-token.js), to run it: `npm run start:example -- csrf-token`
+
+Then on a separate website (like the [W3C Schools](https://www.w3schools.com/html/tryit.asp?filename=tryhtml_form_submit)) host this HTML:
+
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    <h2>CSRF Example</h2>
+
+    <p>
+      Log into the sample app at
+      <a target="_blank" href="http://localhost:3000/login"
+        >http://localhost:3000/login</a
+      >
+      (opens in another tab)
+    </p>
+    <p>Test out the test form hosted there, confirm the action executes</p>
+
+    <p>Then come back here and submit the attack form below. It should fail</p>
+
+    <form
+      action="http://localhost:3000/csrf-test"
+      method="post"
+      target="_blank"
+    >
+      <button type="submit">Submit CSRF attack</button>
+    </form>
+  </body>
+</html>
+```
