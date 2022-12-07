@@ -12,7 +12,7 @@
       { "vars": "all", "args": "after-used", "ignoreRestSiblings": true }
     ],
     "no-console": 0,
-    "linebreak-style": ["error", "windows"]
+    "linebreak-style": ["error", "unix"]
   },
   "parserOptions": {
     "ecmaVersion": 2018
