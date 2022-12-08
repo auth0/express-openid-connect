@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.11.0](https://github.com/auth0/express-openid-connect/tree/v2.11.0) (2022-12-08)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.10.0...v2.11.0)
+
+**Added**
+- [SDK-3808] Optionally sign the session store cookie [\#419](https://github.com/auth0/express-openid-connect/pull/419) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Remove dependency on `cb` lib [\#424](https://github.com/auth0/express-openid-connect/pull/424) ([kmannislands](https://github.com/kmannislands))
+
 ## [v2.10.0](https://github.com/auth0/express-openid-connect/tree/v2.10.0) (2022-11-11)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.9.0...v2.10.0)
 
