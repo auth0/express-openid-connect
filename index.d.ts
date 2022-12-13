@@ -655,7 +655,7 @@ interface SessionConfigParams {
    * This is required if you override {@Link genid} and don't use a suitable
    * cryptographically strong random value of sufficient size.
    */
-  signSessionStoreCookie: boolean;
+  signSessionStoreCookie?: boolean;
 
   /**
    * If you enable {@Link signSessionStoreCookie} your existing sessions will
@@ -670,7 +670,7 @@ interface SessionConfigParams {
    *
    * Signed session store cookies will be mandatory in the next major release.
    */
-  requireSignedSessionStoreCookie: boolean;
+  requireSignedSessionStoreCookie?: boolean;
 
   /**
    * If you want your session duration to be rolling, eg reset everytime the
