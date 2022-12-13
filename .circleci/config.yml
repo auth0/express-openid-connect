@@ -18,6 +18,9 @@ jobs:
           name: Run Tests
           command: npm run test:ci
       - run:
+          name: Run TS Tests
+          command: npm run test:types
+      - run:
           name: Run End to End Tests
           command: npm run test:end-to-end
       - run:
