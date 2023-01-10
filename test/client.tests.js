@@ -25,7 +25,7 @@ describe('client initialization', function () {
     });
 
     let client;
-    before(async function () {
+    beforeEach(async function () {
       client = await getClient(config);
     });
 
