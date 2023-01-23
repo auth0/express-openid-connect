@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { assert, expect } = require('chai').use(require('chai-as-promised'));
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
@@ -5,6 +6,7 @@ const wellKnown = require('./fixture/well-known.json');
 const nock = require('nock');
 const pkg = require('../package.json');
 const sinon = require('sinon');
+const jose = require('jose');
 
 describe('client initialization', function () {
   beforeEach(async function () {
@@ -176,6 +178,50 @@ describe('client initialization', function () {
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
         'foo'
       );
+    });
+  });
+
+  describe('client respects clientAssertionSigningAlg configuration', function () {
+    const config = {
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: fs.readFileSync(
+        require('path').join(__dirname, '../examples', 'private-key.pem')
+      ),
+    };
+
+    it('should set default client signing assertion alg', async function () {
+      const handler = sinon.stub().returns([200, {}]);
+      nock('https://op.example.com').post('/oauth/token').reply(handler);
+      const client = await getClient(getConfig(config));
+      await client.grant();
+      const [, body] = handler.firstCall.args;
+      const jwt = new URLSearchParams(body).get('client_assertion');
+      const {
+        header: { alg },
+      } = jose.JWT.decode(jwt, { complete: true });
+      expect(alg).to.eq('RS256');
+    });
+
+    it('should set custom client signing assertion alg', async function () {
+      const handler = sinon.stub().returns([200, {}]);
+      nock('https://op.example.com').post('/oauth/token').reply(handler);
+      const client = await getClient({
+        ...getConfig(config),
+        clientAssertionSigningAlg: 'RS384',
+      });
+      await client.grant();
+      const [, body] = handler.firstCall.args;
+      const jwt = new URLSearchParams(body).get('client_assertion');
+      const {
+        header: { alg },
+      } = jose.JWT.decode(jwt, { complete: true });
+      expect(alg).to.eq('RS384');
     });
   });
 });
