@@ -1206,11 +1206,6 @@ describe('callback response_mode: form_post', () => {
       },
     };
     const router = auth(config);
-    router.get('/callback', (req, res) => {
-      res.oidc.callback({
-        redirectUri: 'http://localhost:3000/callback',
-      });
-    });
 
     router.post('/callback', (req, res) => {
       res.set('foo', 'bar');

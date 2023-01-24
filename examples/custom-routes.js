@@ -37,13 +37,13 @@ app.get('/custom-logout', (req, res) => res.send('Bye!'));
 
 app.get('/callback', (req, res) =>
   res.oidc.callback({
-    redirect_uri: 'http://localhost:3000/callback',
+    redirectUri: 'http://localhost:3000/callback',
   })
 );
 
 app.post('/callback', express.urlencoded({ extended: false }), (req, res) =>
   res.oidc.callback({
-    redirect_uri: 'http://localhost:3000/callback',
+    redirectUri: 'http://localhost:3000/callback',
   })
 );
 
