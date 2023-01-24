@@ -1,17 +1,12 @@
 const express = require('express');
-const createError = require('http-errors');
 
 const debug = require('../lib/debug')('auth');
-const { once } = require('../lib/once');
 const { get: getConfig } = require('../lib/config');
-const { get: getClient } = require('../lib/client');
 const { requiresAuth } = require('./requiresAuth');
 const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
-const { regenerateSessionStoreId, replaceSession } = appSession;
-const { decodeState } = require('../lib/hooks/getLoginState');
 
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
@@ -60,122 +55,16 @@ const auth = function (params) {
   }
 
   // Callback route, configured with routes.callback.
-  {
-    let client;
+  if (config.routes.callback) {
     const path = enforceLeadingSlash(config.routes.callback);
-    const callbackStack = [
-      (req, res, next) => {
-        debug('%s %s called', req.method, path);
-        next();
-      },
-      async (req, res, next) => {
-        next = once(next);
-
-        client =
-          client ||
-          (await getClient(config).catch((err) => {
-            next(err);
-          }));
-
-        if (!client) {
-          return;
-        }
-
-        try {
-          const redirectUri = res.oidc.getRedirectUri();
-
-          let tokenSet;
-
-          try {
-            const callbackParams = client.callbackParams(req);
-            const authVerification = transient.getOnce(
-              config.transactionCookie.name,
-              req,
-              res
-            );
-
-            const { max_age, code_verifier, nonce, state } = authVerification
-              ? JSON.parse(authVerification)
-              : {};
-
-            req.openidState = decodeState(state);
-            const checks = {
-              max_age,
-              code_verifier,
-              nonce,
-              state,
-            };
-
-            let extras;
-            if (config.tokenEndpointParams) {
-              extras = { exchangeBody: config.tokenEndpointParams };
-            }
-
-            tokenSet = await client.callback(
-              redirectUri,
-              callbackParams,
-              checks,
-              extras
-            );
-          } catch (err) {
-            throw createError(400, err.message, {
-              error: err.error,
-              error_description: err.error_description,
-            });
-          }
-
-          let session = Object.assign({}, tokenSet); // Remove non-enumerable methods from the TokenSet
-
-          if (config.afterCallback) {
-            session = await config.afterCallback(
-              req,
-              res,
-              session,
-              req.openidState
-            );
-          }
-
-          if (req.oidc.isAuthenticated()) {
-            if (req.oidc.user.sub === tokenSet.claims().sub) {
-              // If it's the same user logging in again, just update the existing session.
-              Object.assign(req[config.session.name], session);
-            } else {
-              // If it's a different user, replace the session to remove any custom user
-              // properties on the session
-              replaceSession(req, session, config);
-              // And regenerate the session id so the previous user wont know the new user's session id
-              regenerateSessionStoreId(req, config);
-            }
-          } else {
-            // If a new user is replacing an anonymous session, update the existing session to keep
-            // any anonymous session state (eg. checkout basket)
-            Object.assign(req[config.session.name], session);
-            // But update the session store id so a previous anonymous user wont know the new user's session id
-            regenerateSessionStoreId(req, config);
-          }
-          attemptSilentLogin.resumeSilentLogin(req, res);
-
-          next();
-        } catch (err) {
-          // Swallow errors if this is a silentLogin
-          if (req.openidState && req.openidState.attemptingSilentLogin) {
-            next();
-          } else {
-            next(err);
-          }
-        }
-      },
-      (req, res) => res.redirect(req.openidState.returnTo || config.baseURL),
-    ];
-
     debug('adding GET %s route', path);
-    router.get(path, ...callbackStack);
+    router.get(path, (req, res) => res.oidc.callback());
     debug('adding POST %s route', path);
-    router.post(
-      path,
-      express.urlencoded({ extended: false }),
-      ...callbackStack
+    router.post(path, express.urlencoded({ extended: false }), (req, res) =>
+      res.oidc.callback()
     );
+  } else {
+    debug('callback handling route not applied');
   }
 
   if (config.authRequired) {

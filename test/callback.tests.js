@@ -1197,4 +1197,36 @@ describe('callback response_mode: form_post', () => {
     );
     assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });
+
+  it('should allow custom callback route', async () => {
+    const config = {
+      ...defaultConfig,
+      routes: {
+        callback: false,
+      },
+    };
+    const router = auth(config);
+
+    router.post('/callback', (req, res) => {
+      res.set('foo', 'bar');
+      res.oidc.callback({
+        redirectUri: 'http://localhost:3000/callback',
+      });
+    });
+
+    const {
+      response: { headers },
+    } = await setup({
+      router,
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken(),
+      },
+    });
+    assert.equal(headers.foo, 'bar');
+  });
 });
