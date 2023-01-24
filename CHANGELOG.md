@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.12.0](https://github.com/auth0/express-openid-connect/tree/v2.12.0) (2023-01-24)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.11.0...v2.12.0)
+
+**Added**
+- [SDK-3911] Add support for providing a custom callback route [\#438](https://github.com/auth0/express-openid-connect/pull/438) ([ewanharris](https://github.com/ewanharris))
+
+**Fixed**
+- Use custom client assertion signing alg [\#437](https://github.com/auth0/express-openid-connect/pull/437) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.11.0](https://github.com/auth0/express-openid-connect/tree/v2.11.0) (2022-12-08)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.10.0...v2.11.0)
 
