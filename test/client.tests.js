@@ -146,7 +146,7 @@ describe('client initialization', function () {
       mockRequest(1500);
       const client = await getClient({ ...config, httpTimeout: 500 });
       await expect(invokeRequest(client)).to.be.rejectedWith(
-        `Timeout awaiting 'request' for 500ms`
+        `outgoing request timed out after 500ms`
       );
     });
   });
@@ -164,7 +164,7 @@ describe('client initialization', function () {
       const handler = sinon.stub().returns([200]);
       nock('https://op.example.com').get('/foo').reply(handler);
       const client = await getClient({ ...config });
-      await client.requestResource('https://op.example.com/foo');
+      await client.requestResource('https://op.example.com/foo', 'token');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.match(
         /^express-openid-connect\//
       );
@@ -174,7 +174,7 @@ describe('client initialization', function () {
       const handler = sinon.stub().returns([200]);
       nock('https://op.example.com').get('/foo').reply(handler);
       const client = await getClient({ ...config, httpUserAgent: 'foo' });
-      await client.requestResource('https://op.example.com/foo');
+      await client.requestResource('https://op.example.com/foo', 'token');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
         'foo'
       );

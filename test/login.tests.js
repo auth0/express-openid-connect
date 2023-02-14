@@ -563,10 +563,9 @@ describe('auth', () => {
     });
     assert.equal(res.statusCode, 500);
     console.log(res.body.err.message);
-    assert.match(
+    assert.equal(
       res.body.err.message,
-      /^Issuer.discover\(\) failed/,
-      'Should get error json from server error middleware'
+      'expected 200 OK, got: 500 Internal Server Error'
     );
   });
 });

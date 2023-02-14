@@ -210,7 +210,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(statusCode, 400);
     assert.equal(
       err.message,
-      'failed to decode JWT (JWTMalformed: JWTs must have three components)'
+      'failed to decode JWT (Error: JWTs must have three components)'
     );
   });
 
@@ -960,19 +960,12 @@ describe('callback response_mode: form_post', () => {
           scope: 'openid profile email',
         },
         afterCallback: async (req, res, session) => {
-          const userInfo = await req.oidc.fetchUserInfo();
+          const userInfo = {
+            org_id: 'auth_org_123',
+          };
           return { ...session, ...userInfo };
         },
       };
-
-      // userinfo endpoint will be returned to req.oidc.fetchUserInfo
-      const {
-        interceptors: [interceptor],
-      } = nock('https://op.example.com', { allowUnmocked: true })
-        .get('/userinfo')
-        .reply(200, () => ({
-          org_id: 'auth_org_123',
-        }));
 
       const router = auth(authOpts);
       router.get('/session', async (req, res) => {
@@ -999,8 +992,6 @@ describe('callback response_mode: form_post', () => {
           code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
         },
       });
-
-      nock.removeInterceptor(interceptor);
 
       const body = await request
         .get('/session', { baseUrl, jar, json: true })

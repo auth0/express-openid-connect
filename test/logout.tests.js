@@ -95,7 +95,7 @@ describe('logout route', async () => {
     assert.include(
       response.headers,
       {
-        location: `https://op.example.com/session/end?post_logout_redirect_uri=http%3A%2F%2Fexample.org&id_token_hint=${idToken}`,
+        location: `https://op.example.com/session/end?post_logout_redirect_uri=http%3A%2F%2Fexample.org&client_id=__test_client_id__&id_token_hint=${idToken}`,
       },
       'should redirect to the identity provider'
     );
@@ -344,10 +344,9 @@ describe('logout route', async () => {
     });
     assert.equal(res.statusCode, 500);
     console.log(res.body.err.message);
-    assert.match(
+    assert.equal(
       res.body.err.message,
-      /^Issuer.discover\(\) failed/,
-      'Should get error json from server error middleware'
+      'expected 200 OK, got: 500 Internal Server Error'
     );
   });
 });
