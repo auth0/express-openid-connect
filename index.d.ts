@@ -581,6 +581,11 @@ interface ConfigParams {
   tokenEndpointParams?: TokenParameters;
 
   /**
+   * Maximum time (in milliseconds) to wait before fetching the Identity Provider's Discovery document again. Default is 600000 (10 minutes).
+   */
+  discoveryCacheMaxAge?: number;
+
+  /**
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
