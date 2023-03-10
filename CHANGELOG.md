@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.12.1](https://github.com/auth0/express-openid-connect/tree/v2.12.1) (2023-03-10)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.12.0...v2.12.1)
+
+**Fixed**
+- [SDK-3887] Always honor auth0Logout config [\#447](https://github.com/auth0/express-openid-connect/pull/447) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.12.0](https://github.com/auth0/express-openid-connect/tree/v2.12.0) (2023-01-24)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.11.0...v2.12.0)
 
