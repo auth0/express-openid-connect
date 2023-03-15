@@ -432,23 +432,27 @@ describe('client initialization', function () {
 
       const client = await getClient(config);
       expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
     });
 
-    // // TODO: Confirm behaviour of failed concurrent requests
-    // it('should handle concurrent client calls with failures', async function () {
-    //   const spy = sinon.spy(() => wellKnown)
-    //   nock('https://max-age-test.auth0.com')
-    //     .get('/.well-known/openid-configuration')
-    //     .reply(500)
-    //     .get('/.well-known/oauth-authorization-server')
-    //     .reply(500);
-    //   nock('https://max-age-test.auth0.com')
-    //     .persist()
-    //     .get('/.well-known/openid-configuration')
-    //     .reply(200, spy);
+    it('should handle concurrent client calls with failures', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(500);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
 
-    //   await Promise.all([assert.isRejected(getClient(config)), getClient(config), getClient(config)]);
-    //   expect(spy.callCount).to.eq(2);
-    // });
+      await Promise.all([
+        assert.isRejected(getClient(config)),
+        assert.isRejected(getClient(config)),
+        assert.isRejected(getClient(config)),
+      ]);
+      const client = await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
+    });
   });
 });
