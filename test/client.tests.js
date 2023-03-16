@@ -313,4 +313,146 @@ describe('client initialization', function () {
       expect(alg).to.eq('RS384');
     });
   });
+
+  describe('client cache has max age', function () {
+    let config;
+    const mins = 60 * 1000;
+
+    this.beforeEach(() => {
+      config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_cache_max_age_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://max-age-test.auth0.com',
+        baseURL: 'https://example.org',
+      });
+    });
+
+    it('should memoize get client call', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      const client = await getClient(config);
+      await getClient(config);
+      await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
+    });
+
+    it('should handle concurrent client calls', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      await Promise.all([
+        getClient(config),
+        getClient(config),
+        getClient(config),
+      ]);
+      expect(spy.callCount).to.eq(1);
+    });
+
+    it('should make new calls for different config references', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      const client = await getClient(config);
+      await getClient({ ...config });
+      await getClient({ ...config });
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(3);
+    });
+
+    it('should make new calls after max age', async function () {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ['Date'],
+      });
+
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      const client = await getClient(config);
+      clock.tick(10 * mins + 1);
+      await getClient(config);
+      clock.tick(1 * mins);
+      await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(2);
+      clock.restore();
+    });
+
+    it('should honor configured max age', async function () {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ['Date'],
+      });
+
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      config = { ...config, discoveryCacheMaxAge: 20 * mins };
+      const client = await getClient(config);
+      clock.tick(10 * mins + 1);
+      await getClient(config);
+      expect(spy.callCount).to.eq(1);
+      clock.tick(10 * mins);
+      await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(2);
+      clock.restore();
+    });
+
+    it('should not cache failed discoveries', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(500)
+        .get('/.well-known/oauth-authorization-server')
+        .reply(500);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      await assert.isRejected(getClient(config));
+
+      const client = await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
+    });
+
+    it('should handle concurrent client calls with failures', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(500);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      await Promise.all([
+        assert.isRejected(getClient(config)),
+        assert.isRejected(getClient(config)),
+        assert.isRejected(getClient(config)),
+      ]);
+      const client = await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
+    });
+  });
 });
