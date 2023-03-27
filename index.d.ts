@@ -175,6 +175,18 @@ interface ResponseContext {
    * ```
    */
   logout: (opts?: LogoutOptions) => Promise<void>;
+
+  /**
+   * Provided by default via the `/callback` route. Call this to override or have other
+   * callback routes with
+   *
+   * ```js
+   * app.get('/callback', (req, res) => {
+   *  res.oidc.callback({ redirectUri: 'https://example.com/callback' });
+   * });
+   * ```
+   */
+  callback: (opts?: CallbackOptions) => Promise<void>;
 }
 
 /**
@@ -197,7 +209,9 @@ declare global {
  */
 interface LoginOptions {
   /**
-   * Override the default {@link ConfigParams.authorizationParams authorizationParams}
+   * Override the default {@link ConfigParams.authorizationParams authorizationParams}, if also passing a custom callback
+   * route then  {@link AuthorizationParameters.redirect_uri redirect_uri} must be provided here or in
+   * {@link ConfigParams.authorizationParams config}
    */
   authorizationParams?: AuthorizationParameters;
 
@@ -225,6 +239,19 @@ interface LogoutOptions {
    * Additional custom parameters to pass to the logout endpoint.
    */
   logoutParams?: { [key: string]: any };
+}
+
+interface CallbackOptions {
+  /**
+   * This is useful to specify in addition to {@link ConfigParams.baseURL} when your app runs on multiple domains,
+   * it should match {@link LoginOptions.authorizationParams.redirect_uri}
+   */
+  redirectUri: string;
+
+  /**
+   * Additional request body properties to be sent to the `token_endpoint.
+   */
+  tokenEndpointParams?: TokenParameters;
 }
 
 /**
@@ -554,6 +581,11 @@ interface ConfigParams {
   tokenEndpointParams?: TokenParameters;
 
   /**
+   * Maximum time (in milliseconds) to wait before fetching the Identity Provider's Discovery document again. Default is 600000 (10 minutes).
+   */
+  discoveryCacheMaxAge?: number;
+
+  /**
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
@@ -655,7 +687,7 @@ interface SessionConfigParams {
    * This is required if you override {@Link genid} and don't use a suitable
    * cryptographically strong random value of sufficient size.
    */
-  signSessionStoreCookie: boolean;
+  signSessionStoreCookie?: boolean;
 
   /**
    * If you enable {@Link signSessionStoreCookie} your existing sessions will
@@ -670,7 +702,7 @@ interface SessionConfigParams {
    *
    * Signed session store cookies will be mandatory in the next major release.
    */
-  requireSignedSessionStoreCookie: boolean;
+  requireSignedSessionStoreCookie?: boolean;
 
   /**
    * If you want your session duration to be rolling, eg reset everytime the

@@ -86,12 +86,12 @@ describe('get config', () => {
     });
   });
 
-  it('auth0Logout and idpLogout should default to false', () => {
+  it('auth0Logout should default to undefined and idpLogout should default to false', () => {
     const config = getConfig(defaultConfig);
     assert.include(config, {
-      auth0Logout: false,
       idpLogout: false,
     });
+    assert.isUndefined(config.auth0Logout);
   });
 
   it('should not set auth0Logout to true when idpLogout is true', () => {
@@ -100,9 +100,9 @@ describe('get config', () => {
       idpLogout: true,
     });
     assert.include(config, {
-      auth0Logout: false,
       idpLogout: true,
     });
+    assert.isUndefined(config.auth0Logout);
   });
 
   it('should set default route paths', () => {

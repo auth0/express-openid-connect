@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { assert, expect } = require('chai').use(require('chai-as-promised'));
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
@@ -5,6 +6,7 @@ const wellKnown = require('./fixture/well-known.json');
 const nock = require('nock');
 const pkg = require('../package.json');
 const sinon = require('sinon');
+const jose = require('jose');
 
 describe('client initialization', function () {
   beforeEach(async function () {
@@ -25,7 +27,7 @@ describe('client initialization', function () {
     });
 
     let client;
-    before(async function () {
+    beforeEach(async function () {
       client = await getClient(config);
     });
 
@@ -97,6 +99,95 @@ describe('client initialization', function () {
 
       const client = await getClient(config);
       assert.equal(client.id_token_signed_response_alg, 'RS256');
+    });
+  });
+
+  describe('auth0 logout option and discovery', function () {
+    const base = {
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+      idpLogout: true,
+    };
+
+    it('should use discovered logout endpoint by default', async function () {
+      const client = await getClient(getConfig(base));
+      assert.equal(client.endSessionUrl({}), wellKnown.end_session_endpoint);
+    });
+
+    it('should use auth0 logout endpoint if configured', async function () {
+      const client = await getClient(getConfig({ ...base, auth0Logout: true }));
+      assert.equal(
+        client.endSessionUrl({}),
+        'https://op.example.com/v2/logout?client_id=__test_client_id__'
+      );
+    });
+
+    it('should use auth0 logout endpoint if domain is auth0.com', async function () {
+      nock('https://foo.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, { ...wellKnown, issuer: 'https://foo.auth0.com/' });
+      const client = await getClient(
+        getConfig({ ...base, issuerBaseURL: 'https://foo.auth0.com' })
+      );
+      assert.equal(
+        client.endSessionUrl({}),
+        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__'
+      );
+    });
+
+    it('should use auth0 logout endpoint if domain is auth0.com and configured', async function () {
+      nock('https://foo.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, { ...wellKnown, issuer: 'https://foo.auth0.com/' });
+      const client = await getClient(
+        getConfig({
+          ...base,
+          issuerBaseURL: 'https://foo.auth0.com',
+          auth0Logout: true,
+        })
+      );
+      assert.equal(
+        client.endSessionUrl({}),
+        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__'
+      );
+    });
+
+    it('should not use discovered logout endpoint if domain is auth0.com but configured with auth0logout false', async function () {
+      nock('https://foo.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://foo.auth0.com/',
+          end_session_endpoint: 'https://foo.auth0.com/oidc/logout',
+        });
+      const client = await getClient(
+        getConfig({
+          ...base,
+          issuerBaseURL: 'https://foo.auth0.com',
+          auth0Logout: false,
+        })
+      );
+      assert.equal(
+        client.endSessionUrl({}),
+        'https://foo.auth0.com/oidc/logout'
+      );
+    });
+
+    it('should create client with no end_session_endpoint', async function () {
+      nock('https://op2.example.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://op2.example.com',
+          end_session_endpoint: undefined,
+        });
+      const client = await getClient(
+        getConfig({ ...base, issuerBaseURL: 'https://op2.example.com' })
+      );
+      assert.throws(() => client.endSessionUrl({}));
     });
   });
 
@@ -176,6 +267,192 @@ describe('client initialization', function () {
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
         'foo'
       );
+    });
+  });
+
+  describe('client respects clientAssertionSigningAlg configuration', function () {
+    const config = {
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: fs.readFileSync(
+        require('path').join(__dirname, '../examples', 'private-key.pem')
+      ),
+    };
+
+    it('should set default client signing assertion alg', async function () {
+      const handler = sinon.stub().returns([200, {}]);
+      nock('https://op.example.com').post('/oauth/token').reply(handler);
+      const client = await getClient(getConfig(config));
+      await client.grant();
+      const [, body] = handler.firstCall.args;
+      const jwt = new URLSearchParams(body).get('client_assertion');
+      const {
+        header: { alg },
+      } = jose.JWT.decode(jwt, { complete: true });
+      expect(alg).to.eq('RS256');
+    });
+
+    it('should set custom client signing assertion alg', async function () {
+      const handler = sinon.stub().returns([200, {}]);
+      nock('https://op.example.com').post('/oauth/token').reply(handler);
+      const client = await getClient({
+        ...getConfig(config),
+        clientAssertionSigningAlg: 'RS384',
+      });
+      await client.grant();
+      const [, body] = handler.firstCall.args;
+      const jwt = new URLSearchParams(body).get('client_assertion');
+      const {
+        header: { alg },
+      } = jose.JWT.decode(jwt, { complete: true });
+      expect(alg).to.eq('RS384');
+    });
+  });
+
+  describe('client cache has max age', function () {
+    let config;
+    const mins = 60 * 1000;
+
+    this.beforeEach(() => {
+      config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_cache_max_age_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://max-age-test.auth0.com',
+        baseURL: 'https://example.org',
+      });
+    });
+
+    it('should memoize get client call', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      const client = await getClient(config);
+      await getClient(config);
+      await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
+    });
+
+    it('should handle concurrent client calls', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      await Promise.all([
+        getClient(config),
+        getClient(config),
+        getClient(config),
+      ]);
+      expect(spy.callCount).to.eq(1);
+    });
+
+    it('should make new calls for different config references', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      const client = await getClient(config);
+      await getClient({ ...config });
+      await getClient({ ...config });
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(3);
+    });
+
+    it('should make new calls after max age', async function () {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ['Date'],
+      });
+
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      const client = await getClient(config);
+      clock.tick(10 * mins + 1);
+      await getClient(config);
+      clock.tick(1 * mins);
+      await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(2);
+      clock.restore();
+    });
+
+    it('should honor configured max age', async function () {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ['Date'],
+      });
+
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      config = { ...config, discoveryCacheMaxAge: 20 * mins };
+      const client = await getClient(config);
+      clock.tick(10 * mins + 1);
+      await getClient(config);
+      expect(spy.callCount).to.eq(1);
+      clock.tick(10 * mins);
+      await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(2);
+      clock.restore();
+    });
+
+    it('should not cache failed discoveries', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(500)
+        .get('/.well-known/oauth-authorization-server')
+        .reply(500);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      await assert.isRejected(getClient(config));
+
+      const client = await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
+    });
+
+    it('should handle concurrent client calls with failures', async function () {
+      const spy = sinon.spy(() => wellKnown);
+      nock('https://max-age-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(500);
+      nock('https://max-age-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, spy);
+
+      await Promise.all([
+        assert.isRejected(getClient(config)),
+        assert.isRejected(getClient(config)),
+        assert.isRejected(getClient(config)),
+      ]);
+      const client = await getClient(config);
+      expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
+      expect(spy.callCount).to.eq(1);
     });
   });
 });

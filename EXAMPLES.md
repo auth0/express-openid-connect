@@ -74,7 +74,9 @@ Full example at [routes.js](./examples/routes.js), to run it: `npm run start:exa
 
 ## 3. Route customization
 
-If you need to customize the provided login and logout routes, you can disable the default routes and write your own route handler and pass custom paths to mount the handler at that path:
+If you need to customize the provided login, logout, and callback routes, you can disable the default routes and write your own route handler and pass custom paths to mount the handler at that path.
+
+When overriding the callback route you should pass a `authorizationParams.redirect_uri` value on `res.oidc.login` and a `redirectUri` value on your `res.oidc.callback` call.
 
 ```js
 app.use(
@@ -85,13 +87,33 @@ app.use(
       // Pass a custom path to redirect users to a different
       // path after logout.
       postLogoutRedirect: '/custom-logout',
+      // Override the default callback route to use your own callback route as shown below
     },
   })
 );
 
-app.get('/login', (req, res) => res.oidc.login({ returnTo: '/profile' }));
+app.get('/login', (req, res) =>
+  res.oidc.login({
+    returnTo: '/profile',
+    authorizationParams: {
+      redirect_uri: 'http://localhost:3000/callback',
+    },
+  })
+);
 
 app.get('/custom-logout', (req, res) => res.send('Bye!'));
+
+app.get('/callback', (req, res) =>
+  res.oidc.callback({
+    redirectUri: 'http://localhost:3000/callback',
+  })
+);
+
+app.post('/callback', express.urlencoded({ extended: false }), (req, res) =>
+  res.oidc.callback({
+    redirectUri: 'http://localhost:3000/callback',
+  })
+);
 
 module.exports = app;
 ```
