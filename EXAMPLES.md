@@ -10,7 +10,7 @@
 8. [Logout from Identity Provider](#8-logout-from-identity-provider)
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
-11. [Use appSession for CSRF](#11-use-appsession-for-csrf)
+11. [Use appSession for CSRF](#11-use-sdk-session-for-csrf-protection)
 
 ## 1. Basic setup
 

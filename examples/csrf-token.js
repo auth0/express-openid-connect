@@ -5,6 +5,8 @@ const crypto = require('crypto');
 
 const app = express();
 
+const genToken = () => crypto.randomBytes(32).toString('hex');
+
 app.use(
   auth({
     idpLogout: true,
@@ -16,8 +18,7 @@ app.use(
     },
     afterCallback: (req, res, session) => {
       // Replicating some logic from this SDK
-      const { sub: newSub } = jose.JWT.decode(session.id_token);
-      const genToken = () => crypto.randomBytes(32).toString('hex');
+      const { sub: newSub } = jose.JWT.decode(session.id_token);      
       let csrfToken;
       if (req.oidc.isAuthenticated()) {
         if (req.oidc.user.sub === newSub) {
