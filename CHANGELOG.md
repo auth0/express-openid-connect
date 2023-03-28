@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.13.0](https://github.com/auth0/express-openid-connect/tree/v2.13.0) (2023-03-28)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.12.1...v2.13.0)
+
+**Added**
+- [SDK-3873] Discovery cache max age [\#449](https://github.com/auth0/express-openid-connect/pull/449) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.12.1](https://github.com/auth0/express-openid-connect/tree/v2.12.1) (2023-03-10)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.12.0...v2.12.1)
 
