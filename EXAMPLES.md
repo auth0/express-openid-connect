@@ -301,10 +301,15 @@ app.use(
 Full example at [custom-session-store.js](./examples/custom-session-store.js), to run it: `npm run start:example -- custom-session-store`
 
 ## 11. Use SDK session for CSRF protection
+This SDK's main Cross-Site Request Forgery protection comes from the use of `SameSite=Lax` cookies.
 
-This example creates per-session CSRF tokens your app can use to protect stateful operations. It provides [Synchronizer Token](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern) protection **without** needing to add another cookie (which would be managed by a separate [library](https://www.npmjs.com/search?q=express%20csrf) of your choice).
+You can add additional CSRF protection manually, using this SDK's session and a [Synchronizer Token](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern).
 
-There are 3 key pieces to this example:
+If your application uses `SameSite=None` cookies, or if for some reason you are using a [safe HTTP method](https://www.rfc-editor.org/rfc/rfc7231#section-4.2.1) like GET for state changes (please don't), you should add a CSRF token to your state changing requests.
+
+Notably, at the time of this writing you cannot use additional cookies with this SDK (keeping your own CSRF token there), nor can you read the raw appSession cookie (using a hash of this cookie as the token, for stateless-ish CSRF). Using the appSession to store a Synchronizer Token seems to be the only valid option.
+
+There are 3 key pieces to this Synchronizer Token example:
 
 1. An `afterCallback` hook that adds a csrfToken to this SDK's `req.appSession`
 
