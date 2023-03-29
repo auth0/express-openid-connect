@@ -7,7 +7,10 @@
   "extends": "eslint:recommended",
   "rules": {
     "no-useless-escape": 1,
-    "no-unused-vars": ["error", { "vars": "all", "args": "after-used", "ignoreRestSiblings": true }],
+    "no-unused-vars": [
+      "error",
+      { "vars": "all", "args": "after-used", "ignoreRestSiblings": true }
+    ],
     "no-console": 0,
     "linebreak-style": ["error", "unix"]
   },

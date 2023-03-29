@@ -771,6 +771,7 @@ interface CookieConfigParams {
    * Value of the SameSite Set-Cookie attribute.
    * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `samesite`.
    * Defaults to "Lax" but will be adjusted based on {@link AuthorizationParameters.response_type}.
+   * When setting to 'None' (uncommon), you should implement CSRF protection on your own routes
    */
   sameSite?: string;
 }

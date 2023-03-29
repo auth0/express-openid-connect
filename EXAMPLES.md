@@ -6,10 +6,10 @@
 4. [Obtaining access tokens to call external APIs](#4-obtaining-access-tokens-to-call-external-apis)
 5. [Obtaining and using refresh tokens](#5-obtaining-and-using-refresh-tokens)
 6. [Calling userinfo](#6-calling-userinfo)
-7. [Protect a route based on specific claims](#6-protect-a-route-based-on-specific-claims)
-8. [Logout from Identity Provider](#7-logout-from-identity-provider)
-9. [Validate Claims from an ID token before logging a user in](#8-validate-claims-from-an-id-token-before-logging-a-user-in)
-10. [Use a custom session store](#9-use-a-custom-session-store)
+7. [Protect a route based on specific claims](#7-protect-a-route-based-on-specific-claims)
+8. [Logout from Identity Provider](#8-logout-from-identity-provider)
+9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
+10. [Use a custom session store](#10-use-a-custom-session-store)
 
 ## 1. Basic setup
 
@@ -195,7 +195,7 @@ app.get('/', async (req, res) => {
 
 Full example at [userinfo.js](./examples/userinfo.js), to run it: `npm run start:example -- userinfo`
 
-## 6. Protect a route based on specific claims
+## 7. Protect a route based on specific claims
 
 You can check a user's specific claims to determine if they can access a route:
 
@@ -235,7 +235,7 @@ app.get(
 );
 ```
 
-## 7. Logout from Identity Provider
+## 8. Logout from Identity Provider
 
 When using an IDP, such as Auth0, the default configuration will only log the user out of your application session. When the user logs in again, they will be automatically logged back in to the IDP session. To have the user additionally logged out of the IDP session you will need to add `idpLogout: true` to the middleware configuration.
 
@@ -250,7 +250,7 @@ app.use(
 );
 ```
 
-## 8. Validate Claims from an ID token before logging a user in
+## 9. Validate Claims from an ID token before logging a user in
 
 The `afterCallback` hook can be used to do validation checks on claims after the ID token has been received in the callback phase.
 
@@ -272,7 +272,7 @@ In this example, the application is validating the `org_id` to verify that the I
 
 If you don't know the Organization upfront, then your application should validate the claim to ensure that the value received is expected or known and that it corresponds to an entity your application trusts, such as a paying customer. If the claim cannot be validated, then the application should deem the token invalid. See https://auth0.com/docs/organizations/using-tokens for more info.
 
-## 9. Use a custom session store
+## 10. Use a custom session store
 
 By default the session is stored in an encrypted cookie. But when the session gets too large it can bump up against the limits of the platform's max header size (16KB for Node >= 14, 8KB for Node <14). In these instances you can use a custom session store. The store should have `get`, `set` and `destroy` methods, making it compatible with [express-session stores](https://github.com/expressjs/session#session-store-implementation).
 
