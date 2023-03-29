@@ -10,7 +10,6 @@
 8. [Logout from Identity Provider](#8-logout-from-identity-provider)
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
-11. [Use appSession for CSRF](#11-use-sdk-session-for-csrf-protection)
 
 ## 1. Basic setup
 
@@ -299,83 +298,3 @@ app.use(
 ```
 
 Full example at [custom-session-store.js](./examples/custom-session-store.js), to run it: `npm run start:example -- custom-session-store`
-
-## 11. Use SDK session for CSRF protection
-This SDK's main Cross-Site Request Forgery protection comes from the use of `SameSite=Lax` cookies.
-
-You can add additional CSRF protection manually, using this SDK's session and a [Synchronizer Token](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern).
-
-If your application uses `SameSite=None` cookies, or if for some reason you are using a [safe HTTP method](https://www.rfc-editor.org/rfc/rfc7231#section-4.2.1) like GET for state changes (please don't), you should add a CSRF token to your state changing requests.
-
-Notably, at the time of this writing you cannot use additional cookies with this SDK (keeping your own CSRF token there), nor can you read the raw appSession cookie (using a hash of this cookie as the token, for stateless-ish CSRF). Using the appSession to store a Synchronizer Token seems to be the only valid option.
-
-There are 3 key pieces to this Synchronizer Token example:
-
-1. An `afterCallback` hook that adds a csrfToken to this SDK's `req.appSession`
-
-```js
-afterCallback: (req, res, session) => {
-    ...
-    const genToken = () => crypto.randomBytes(32).toString('hex');
-    ...
-    const csrfToken = genToken() // Token re-use logic omitted
-    return {
-        ...session,
-        csrfToken
-    }
-}
-```
-
-2. The ability to render the session CSRF token in your HTML forms
-
-```js
-const expectedToken = req.appSession.csrfToken;
-res.send(`Test CSRF-proof form: 
-  <form action="/csrf-test" method="post">
-  <input type="hidden" name="CSRFToken" value="${expectedToken}">
-  <button type="submit">Submit</button>
-  </form>
-  `);
-```
-
-3. The ability to check submitted tokens against expect the session
-
-```js
-const inputToken = req.body['CSRFToken'];
-const expectedToken = req.appSession.csrfToken;
-if (inputToken != expectedToken) {
-  // Block the request!
-}
-```
-
-First run the example at [csrf-token.js](./examples/csrf-token.js), to run it: `npm run start:example -- csrf-token`
-
-Then on a separate website (like the [W3C Schools](https://www.w3schools.com/html/tryit.asp?filename=tryhtml_form_submit)) host this HTML:
-
-```html
-<!DOCTYPE html>
-<html>
-  <body>
-    <h2>CSRF Example</h2>
-
-    <p>
-      Log into the sample app at
-      <a target="_blank" href="http://localhost:3000/login"
-        >http://localhost:3000/login</a
-      >
-      (opens in another tab)
-    </p>
-    <p>Test out the test form hosted there, confirm the action executes</p>
-
-    <p>Then come back here and submit the attack form below. It should fail</p>
-
-    <form
-      action="http://localhost:3000/csrf-test"
-      method="post"
-      target="_blank"
-    >
-      <button type="submit">Submit CSRF attack</button>
-    </form>
-  </body>
-</html>
-```
