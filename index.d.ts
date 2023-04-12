@@ -1,5 +1,7 @@
 // Type definitions for express-openid-connect
 
+import type { Agent as HttpAgent } from 'http';
+import type { Agent as HttpsAgent } from 'https';
 import {
   AuthorizationParameters,
   IdTokenClaims,
@@ -589,6 +591,22 @@ interface ConfigParams {
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;
+
+  /**
+   * Specify an Agent or Agents to pass to the underlying http client https://github.com/sindresorhus/got/
+   *
+   * An object representing `http`, `https` and `http2` keys for [`http.Agent`](https://nodejs.org/api/http.html#http_class_http_agent),
+   * [`https.Agent`](https://nodejs.org/api/https.html#https_class_https_agent) and [`http2wrapper.Agent`](https://github.com/szmarczak/http2-wrapper#new-http2agentoptions) instance.
+   *
+   * See https://github.com/sindresorhus/got/blob/v11.8.6/readme.md#agent
+   *
+   * For a proxy agent see https://www.npmjs.com/package/proxy-agent
+   */
+  httpAgent?: {
+    http?: HttpAgent | false;
+    https?: HttpsAgent | false;
+    http2?: unknown | false;
+  };
 
   /**
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
