@@ -270,6 +270,43 @@ describe('client initialization', function () {
     });
   });
 
+  describe('client respects pushedAuthorizationRequests configuration', function () {
+    it('should fail if configured with PAR and issuer has no PAR endpoint', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://par-test.auth0.com',
+        baseURL: 'https://example.org',
+        pushedAuthorizationRequests: true,
+      });
+      const { pushed_authorization_request_endpoint, ...rest } = wellKnown;
+      nock('https://par-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, rest);
+      await expect(getClient(config)).to.be.rejectedWith(
+        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`
+      );
+    });
+
+    it('should succeed if configured with PAR and issuer has PAR endpoint', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://par-test.auth0.com',
+        baseURL: 'https://example.org',
+        pushedAuthorizationRequests: true,
+      });
+      nock('https://par-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, wellKnown);
+      await expect(getClient(config)).to.be.fulfilled;
+    });
+  });
+
   describe('client respects clientAssertionSigningAlg configuration', function () {
     const config = {
       secret: '__test_session_secret__',
