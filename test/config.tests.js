@@ -857,4 +857,18 @@ describe('get config', () => {
       });
     }
   });
+
+  it('should get config with custom function for preLogoutMiddleware', () => {
+    const customMiddleware = (req, res, next) => {
+      console.log('pre-logout test');
+      next();
+    };
+    const config = getConfig({
+      ...defaultConfig,
+      preLogoutMiddleware: customMiddleware,
+    });
+    assert.deepInclude(config, {
+      preLogoutMiddleware: customMiddleware,
+    });
+  });
 });

@@ -49,7 +49,9 @@ const auth = function (params) {
   if (config.routes.logout) {
     const path = enforceLeadingSlash(config.routes.logout);
     debug('adding GET %s route', path);
-    router.get(path, (req, res) => res.oidc.logout());
+    router.get(path, config.preLogoutMiddleware, (req, res) =>
+      res.oidc.logout()
+    );
   } else {
     debug('logout handling route not applied');
   }
