@@ -480,6 +480,28 @@ interface ConfigParams {
   authRequired?: boolean;
 
   /**
+   * Custom middleware function that will be called before logout.
+   * This can be used for deleting application-level session from storage upon logout,
+   * notifying other services about the user's logout in a multi-service architecture, etc.
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   preLogoutMiddleware: async (req, res, next) => {
+   *     const userInfo = req.oidc.user
+   *     // Use the user session before it is destroyed.
+   *     next()
+   *   }
+   * }))
+   * ``
+   */
+  preLogoutMiddleware?: (
+    req: OpenidRequest,
+    res: OpenidResponse,
+    next: Function
+  ) => Promise<void> | void;
+
+  /**
    * Configuration for the login, logout, callback and postLogoutRedirect routes.
    */
   routes?: {
