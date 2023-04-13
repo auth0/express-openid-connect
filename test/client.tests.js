@@ -1,3 +1,5 @@
+const { Agent } = require('https');
+const { custom } = require('openid-client');
 const fs = require('fs');
 const { assert, expect } = require('chai').use(require('chai-as-promised'));
 const { get: getConfig } = require('../lib/config');
@@ -267,6 +269,26 @@ describe('client initialization', function () {
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
         'foo'
       );
+    });
+  });
+
+  describe('client respects httpAgent configuration', function () {
+    const agent = new Agent();
+
+    const config = getConfig({
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+      httpAgent: { https: agent },
+    });
+
+    it('should pass agent argument', async function () {
+      const handler = sinon.stub().returns([200]);
+      nock('https://op.example.com').get('/foo').reply(handler);
+      const client = await getClient({ ...config });
+      expect(client[custom.http_options]({}).agent.https).to.eq(agent);
     });
   });
 
