@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.14.0](https://github.com/auth0/express-openid-connect/tree/v2.14.0) (2023-04-13)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.13.0...v2.14.0)
+
+**Added**
+- Add httpAgent option [\#458](https://github.com/auth0/express-openid-connect/pull/458) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.13.0](https://github.com/auth0/express-openid-connect/tree/v2.13.0) (2023-03-28)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.12.1...v2.13.0)
 

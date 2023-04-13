@@ -20,7 +20,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">CookieConfigParams</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L737">index.d.ts:737</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L755">index.d.ts:755</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -44,7 +44,7 @@
 Passed to the <a href="https://expressjs.com/en/api.html#res.cookie">Response cookie</a> as <code>domain</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L742">index.d.ts:742</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L760">index.d.ts:760</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="httpOnly" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>http<wbr/>Only</span><a href="#httpOnly" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">http<wbr/>Only<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -53,7 +53,7 @@ Passed to the <a href="https://expressjs.com/en/api.html#res.cookie">Response co
 Defaults to <code>true</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L761">index.d.ts:761</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L779">index.d.ts:779</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="path" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>path</span><a href="#path" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">path<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
@@ -61,16 +61,17 @@ Defaults to <code>true</code>.</p>
 Passed to the <a href="https://expressjs.com/en/api.html#res.cookie">Response cookie</a> as <code>path</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L748">index.d.ts:748</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L766">index.d.ts:766</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="sameSite" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>same<wbr/>Site</span><a href="#sameSite" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">same<wbr/>Site<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Value of the SameSite Set-Cookie attribute.
 Passed to the <a href="https://expressjs.com/en/api.html#res.cookie">Response cookie</a> as <code>samesite</code>.
-Defaults to &quot;Lax&quot; but will be adjusted based on AuthorizationParameters.response_type.</p>
+Defaults to &quot;Lax&quot; but will be adjusted based on AuthorizationParameters.response_type.
+When setting to &#39;None&#39; (uncommon), you should implement CSRF protection on your own routes</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L775">index.d.ts:775</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L794">index.d.ts:794</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="secure" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>secure</span><a href="#secure" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">secure<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -79,7 +80,7 @@ Passed to the <a href="https://expressjs.com/en/api.html#res.cookie">Response co
 Defaults to the protocol of <a href="ConfigParams.html#baseURL">baseURL</a>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L768">index.d.ts:768</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L786">index.d.ts:786</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface"><a id="transient" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagOptional">Optional</code> <span>transient</span><a href="#transient" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">transient<span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -87,7 +88,7 @@ Defaults to the protocol of <a href="ConfigParams.html#baseURL">baseURL</a>.</p>
 Default is <code>false</code></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/f0ea1e5/index.d.ts#L754">index.d.ts:754</a></li></ul></aside></section></section></div>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/74acf4d/index.d.ts#L772">index.d.ts:772</a></li></ul></aside></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
