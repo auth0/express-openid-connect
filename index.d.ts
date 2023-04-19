@@ -696,7 +696,7 @@ interface SessionConfigParams {
    * cryptographically strong random value of sufficient size or sign the cookie
    * by setting {@Link signSessionStoreCookie} to `true`.
    */
-  genid?: (req: OpenidRequest) => Promise<string>;
+  genid?: (req: OpenidRequest) => Promise<string> | string;
 
   /**
    * Sign the session store cookies to reduce the chance of collisions
