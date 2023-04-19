@@ -219,7 +219,7 @@ describe('appSession custom store', () => {
   it('uses custom session id generator when provided', async () => {
     const immId = 'apple';
     await setup({
-      session: { genid: () => immId },
+      session: { genid: () => Promise.resolve(immId) },
     });
     const jar = await login({
       sub: '__foo_user__',
