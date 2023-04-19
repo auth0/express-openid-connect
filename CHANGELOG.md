@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.15.0](https://github.com/auth0/express-openid-connect/tree/v2.15.0) (2023-04-19)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.14.0...v2.15.0)
+
+**Added**
+- Make genid async [\#464](https://github.com/auth0/express-openid-connect/pull/464) ([Will956](https://github.com/Will956))
+
 ## [v2.14.0](https://github.com/auth0/express-openid-connect/tree/v2.14.0) (2023-04-13)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.13.0...v2.14.0)
 
