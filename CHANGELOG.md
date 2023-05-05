@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.16.0](https://github.com/auth0/express-openid-connect/tree/v2.16.0) (2023-05-05)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.15.0...v2.16.0)
+
+**Added**
+- [SDK-4135] Add Pushed Authorization Requests [\#470](https://github.com/auth0/express-openid-connect/pull/470) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.15.0](https://github.com/auth0/express-openid-connect/tree/v2.15.0) (2023-04-19)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.14.0...v2.15.0)
 
