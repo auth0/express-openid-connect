@@ -480,6 +480,11 @@ interface ConfigParams {
   authRequired?: boolean;
 
   /**
+   * Perform a Pushed Authorization Request at the issuer's pushed_authorization_request_endpoint at login.
+   */
+  pushedAuthorizationRequests?: boolean;
+
+  /**
    * Configuration for the login, logout, callback and postLogoutRedirect routes.
    */
   routes?: {
