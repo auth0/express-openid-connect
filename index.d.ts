@@ -226,6 +226,25 @@ interface LoginOptions {
    *  Used by {@link ConfigParams.attemptSilentLogin} to swallow callback errors on silent login.
    */
   silent?: boolean;
+
+  /**
+   * Function for custom redirect response handling.
+   * This can be used for handling login redirection response different from default 302 response
+   *
+   * ```js
+   * app.get('/login', (req, res) => {
+   *  res.oidc.login({ loginRedirectCallback: async (res, authorizationUrl) => {
+   *    res.set('x-custom-header', 'custom-header-value');
+   *    res.set('x-custom-authorization-url', authorizationUrl);
+   *    res.status(204).send();
+   *  });
+   * });
+   * ```
+   */
+  loginRedirectCallback?: (
+    res: Response,
+    authorizationUrl: string
+  ) => Promise<void>;
 }
 
 /**

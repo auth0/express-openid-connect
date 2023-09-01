@@ -476,6 +476,42 @@ describe('auth', () => {
     );
   });
 
+  it('should use loginRedirectCallback to handle redirect', async () => {
+    const router = auth({
+      ...defaultConfig,
+      routes: { login: false },
+    });
+    router.get('/login', (req, res) => {
+      res.oidc.login({
+        returnTo: 'https://example.org/custom-redirect',
+        loginRedirectCallback: async (res, authorizationUrl) => {
+          res.set('x-custom-header', 'custom-header-value');
+          res.set('x-custom-authorization-url', authorizationUrl);
+          res.status(204).send();
+        },
+      });
+    });
+    server = await createServer(router);
+
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 204);
+    assert.equal(res.headers['x-custom-header'], 'custom-header-value');
+
+    const parsed = url.parse(res.headers['x-custom-authorization-url'], true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+
+    const decodedState = decodeState(parsed.query.state);
+
+    assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
+  });
+
   it('should use a custom state builder', async () => {
     server = await createServer(
       auth({
