@@ -340,7 +340,7 @@ app.use(
 
 ### This will:
 
-- Create the handler `/backchannel-logout` that you can register with your ISP.
+- Create the handler `/backchannel-logout` that you can register with your Identity Provider.
 - On receipt of a valid Logout Token, the SDK will store an entry by `sid` (Session ID) and an entry by `sub` (User ID) in the `backchannelLogout.store` - the expiry of the entry will be set to the duration of the session (this is customisable using the [onLogoutToken](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogoutToken) config hook)
 - On all authenticated requests, the SDK will check the store for an entry that corresponds with the session's ID token's `sid` or `sub`. If it finds a corresponding entry it will invalidate the session and clear the session cookie. (This is customisable using the [isLoggedOut](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#isLoggedOut) config hook)
 - If the user logs in again, the SDK will remove any stale `sub` entry in the Back-Channel Logout store to ensure they are not logged out immediately (this is customisable using the [onLogin](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogin) config hook)
