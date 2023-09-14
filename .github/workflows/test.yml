@@ -97,7 +97,7 @@ jobs:
           node-version: 14
           cache: npm
 
-      - run: npm ci --with=dev
+      - run: npm install --no-package-lock
 
       - run: npm run test:end-to-end
 
