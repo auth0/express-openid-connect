@@ -55,8 +55,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v3
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
@@ -79,8 +78,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v3
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
@@ -88,8 +86,6 @@ jobs:
       - run: npm run test:types
 
   mocha:
-    needs: build # Require build to complete before running tests
-
     name: Run End-to-End Tests
     runs-on: ubuntu-latest
 
@@ -98,14 +94,10 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 14
           cache: npm
 
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v3
-        with:
-          path: .
-          key: ${{ env.CACHE_KEY }}
+      - run: npm ci --with=dev
 
       - run: npm run test:end-to-end
 
@@ -123,8 +115,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - name: Restore build artifacts
-        uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v3
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
