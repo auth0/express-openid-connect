@@ -30,8 +30,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build package
-        uses: ./.github/actions/build
+      - uses: ./.github/actions/build
         with:
           node: ${{ env.NODE_VERSION }}
 
@@ -86,6 +85,8 @@ jobs:
       - run: npm run test:types
 
   mocha:
+    needs: build # Require build to complete before running tests
+
     name: Run End-to-End Tests
     runs-on: ubuntu-latest
 
@@ -94,12 +95,22 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 14
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm install --no-package-lock
+      - uses: actions/cache/restore@v3
+        with:
+          path: .
+          key: ${{ env.CACHE_KEY }}
 
-      - run: npm run test:end-to-end
+      - id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - run: |
+          echo Installed chromium version: ${{ steps.setup-chrome.outputs.chrome-version }}
+          ${{ steps.setup-chrome.outputs.chrome-path }} --version
+
+      - run: CHROMIUM_BIN=$(which chrome) npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests
