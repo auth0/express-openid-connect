@@ -34,6 +34,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - run: npm ci
+
       - run: npm run test:ci
 
       - uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # pin@3.1.4
@@ -50,6 +52,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - run: npm ci
+
       - run: npm run test:types
 
   mocha:
@@ -64,6 +68,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - run: npm ci
+
       - run: npm run test:end-to-end
 
   lint:
@@ -77,5 +83,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+
+      - run: npm ci
 
       - run: npm run lint
