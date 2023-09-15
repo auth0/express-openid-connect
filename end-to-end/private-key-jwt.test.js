@@ -27,9 +27,11 @@ describe('private key jwt', async () => {
   });
 
   it('should login with private key jwt client auth method', async () => {
-    const browser = await puppeteer.launch({
-      args: ['no-sandbox', 'disable-setuid-sandbox'],
-    });
+    const args = puppeteer.defaultArgs();
+    args.set('--no-sandbox');
+    args.set('--disable-setuid-sandbox');
+
+    const browser = await puppeteer.launch(args);
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:3000/);

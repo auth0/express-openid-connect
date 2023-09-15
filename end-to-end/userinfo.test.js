@@ -26,9 +26,11 @@ describe('fetch userinfo', async () => {
   });
 
   it('should login with hybrid flow and fetch userinfo', async () => {
-    const browser = await puppeteer.launch({
-      args: ['no-sandbox', 'disable-setuid-sandbox'],
-    });
+    const args = puppeteer.defaultArgs();
+    args.set('--no-sandbox');
+    args.set('--disable-setuid-sandbox');
+
+    const browser = await puppeteer.launch(args);
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(

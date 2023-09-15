@@ -26,9 +26,11 @@ describe('attempt silent login', async () => {
   });
 
   it('should attempt silent login and swallow failures', async () => {
-    const browser = await puppeteer.launch({
-      args: ['no-sandbox', 'disable-setuid-sandbox'],
-    });
+    const args = puppeteer.defaultArgs();
+    args.set('--no-sandbox');
+    args.set('--disable-setuid-sandbox');
+
+    const browser = await puppeteer.launch(args);
     const page = await browser.newPage();
     await goto(baseUrl, page);
     await page.waitForNavigation();
@@ -43,9 +45,11 @@ describe('attempt silent login', async () => {
   });
 
   it('should login silently if there is an active session on the IDP', async () => {
-    const browser = await puppeteer.launch({
-      args: ['no-sandbox', 'disable-setuid-sandbox'],
-    });
+    const args = puppeteer.defaultArgs();
+    args.set('--no-sandbox');
+    args.set('--disable-setuid-sandbox');
+
+    const browser = await puppeteer.launch(args);
     const page = await browser.newPage();
     await goto(`${baseUrl}/login`, page);
     assert.match(
