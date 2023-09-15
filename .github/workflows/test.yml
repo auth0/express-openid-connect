@@ -20,7 +20,6 @@ concurrency:
 env:
   NODE_VERSION: 18
   CACHE_KEY: '${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}'
-  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true # Conflicts with Mocha Puppeteer tests.
 
 jobs:
   build:

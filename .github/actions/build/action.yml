@@ -10,6 +10,9 @@ inputs:
 runs:
   using: composite
 
+  env:
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true # Conflicts with Mocha Puppeteer tests.
+
   steps:
     - name: Setup Node
       uses: actions/setup-node@v3
