@@ -19,7 +19,6 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: npm i
+      run: npm ci
       env:
         NODE_ENV: development
-        PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true # Conflicts with Mocha Puppeteer tests.
