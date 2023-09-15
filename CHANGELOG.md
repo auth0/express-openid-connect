@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.17.0](https://github.com/auth0/express-openid-connect/tree/v2.17.0) (2023-09-15)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.16.0...v2.17.0)
+
+**Added**
+- OIDC Back-Channel Logout [\#484](https://github.com/auth0/express-openid-connect/pull/484) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.16.0](https://github.com/auth0/express-openid-connect/tree/v2.16.0) (2023-05-05)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.15.0...v2.16.0)
 
