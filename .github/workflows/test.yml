@@ -84,26 +84,28 @@ jobs:
 
       - run: npm run test:types
 
-  # mocha:
-  #   needs: build # Require build to complete before running tests
+  mocha:
+    needs: build # Require build to complete before running tests
 
-  #   name: Run End-to-End Tests
-  #   runs-on: ubuntu-latest
+    name: Run End-to-End Tests
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #         cache: npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-  #     - uses: actions/cache/restore@v3
-  #       with:
-  #         path: .
-  #         key: ${{ env.CACHE_KEY }}
+      - run: node node_modules/puppeteer/install.js
 
-  #     - run: npm run test:end-to-end
+      - uses: actions/cache/restore@v3
+        with:
+          path: .
+          key: ${{ env.CACHE_KEY }}
+
+      - run: npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests
