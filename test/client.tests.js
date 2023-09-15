@@ -30,7 +30,7 @@ describe('client initialization', function () {
 
     let client;
     beforeEach(async function () {
-      client = await getClient(config);
+      ({ client } = await getClient(config));
     });
 
     it('should save the passed values', async function () {
@@ -99,7 +99,7 @@ describe('client initialization', function () {
           })
         );
 
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       assert.equal(client.id_token_signed_response_alg, 'RS256');
     });
   });
@@ -115,12 +115,14 @@ describe('client initialization', function () {
     };
 
     it('should use discovered logout endpoint by default', async function () {
-      const client = await getClient(getConfig(base));
+      const { client } = await getClient(getConfig(base));
       assert.equal(client.endSessionUrl({}), wellKnown.end_session_endpoint);
     });
 
     it('should use auth0 logout endpoint if configured', async function () {
-      const client = await getClient(getConfig({ ...base, auth0Logout: true }));
+      const { client } = await getClient(
+        getConfig({ ...base, auth0Logout: true })
+      );
       assert.equal(
         client.endSessionUrl({}),
         'https://op.example.com/v2/logout?client_id=__test_client_id__'
@@ -131,7 +133,7 @@ describe('client initialization', function () {
       nock('https://foo.auth0.com')
         .get('/.well-known/openid-configuration')
         .reply(200, { ...wellKnown, issuer: 'https://foo.auth0.com/' });
-      const client = await getClient(
+      const { client } = await getClient(
         getConfig({ ...base, issuerBaseURL: 'https://foo.auth0.com' })
       );
       assert.equal(
@@ -144,7 +146,7 @@ describe('client initialization', function () {
       nock('https://foo.auth0.com')
         .get('/.well-known/openid-configuration')
         .reply(200, { ...wellKnown, issuer: 'https://foo.auth0.com/' });
-      const client = await getClient(
+      const { client } = await getClient(
         getConfig({
           ...base,
           issuerBaseURL: 'https://foo.auth0.com',
@@ -165,7 +167,7 @@ describe('client initialization', function () {
           issuer: 'https://foo.auth0.com/',
           end_session_endpoint: 'https://foo.auth0.com/oidc/logout',
         });
-      const client = await getClient(
+      const { client } = await getClient(
         getConfig({
           ...base,
           issuerBaseURL: 'https://foo.auth0.com',
@@ -186,7 +188,7 @@ describe('client initialization', function () {
           issuer: 'https://op2.example.com',
           end_session_endpoint: undefined,
         });
-      const client = await getClient(
+      const { client } = await getClient(
         getConfig({ ...base, issuerBaseURL: 'https://op2.example.com' })
       );
       assert.throws(() => client.endSessionUrl({}));
@@ -221,21 +223,21 @@ describe('client initialization', function () {
 
     it('should not timeout for default', async function () {
       mockRequest(0);
-      const client = await getClient({ ...config });
+      const { client } = await getClient({ ...config });
       const response = await invokeRequest(client);
       assert.equal(response.statusCode, 200);
     });
 
     it('should not timeout for delay < httpTimeout', async function () {
       mockRequest(1000);
-      const client = await getClient({ ...config, httpTimeout: 1500 });
+      const { client } = await getClient({ ...config, httpTimeout: 1500 });
       const response = await invokeRequest(client);
       assert.equal(response.statusCode, 200);
     });
 
     it('should timeout for delay > httpTimeout', async function () {
       mockRequest(1500);
-      const client = await getClient({ ...config, httpTimeout: 500 });
+      const { client } = await getClient({ ...config, httpTimeout: 500 });
       await expect(invokeRequest(client)).to.be.rejectedWith(
         `Timeout awaiting 'request' for 500ms`
       );
@@ -254,7 +256,7 @@ describe('client initialization', function () {
     it('should send default UA header', async function () {
       const handler = sinon.stub().returns([200]);
       nock('https://op.example.com').get('/foo').reply(handler);
-      const client = await getClient({ ...config });
+      const { client } = await getClient({ ...config });
       await client.requestResource('https://op.example.com/foo');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.match(
         /^express-openid-connect\//
@@ -264,7 +266,7 @@ describe('client initialization', function () {
     it('should send custom UA header', async function () {
       const handler = sinon.stub().returns([200]);
       nock('https://op.example.com').get('/foo').reply(handler);
-      const client = await getClient({ ...config, httpUserAgent: 'foo' });
+      const { client } = await getClient({ ...config, httpUserAgent: 'foo' });
       await client.requestResource('https://op.example.com/foo');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
         'foo'
@@ -287,7 +289,7 @@ describe('client initialization', function () {
     it('should pass agent argument', async function () {
       const handler = sinon.stub().returns([200]);
       nock('https://op.example.com').get('/foo').reply(handler);
-      const client = await getClient({ ...config });
+      const { client } = await getClient({ ...config });
       expect(client[custom.http_options]({}).agent.https).to.eq(agent);
     });
   });
@@ -346,7 +348,7 @@ describe('client initialization', function () {
     it('should set default client signing assertion alg', async function () {
       const handler = sinon.stub().returns([200, {}]);
       nock('https://op.example.com').post('/oauth/token').reply(handler);
-      const client = await getClient(getConfig(config));
+      const { client } = await getClient(getConfig(config));
       await client.grant();
       const [, body] = handler.firstCall.args;
       const jwt = new URLSearchParams(body).get('client_assertion');
@@ -359,7 +361,7 @@ describe('client initialization', function () {
     it('should set custom client signing assertion alg', async function () {
       const handler = sinon.stub().returns([200, {}]);
       nock('https://op.example.com').post('/oauth/token').reply(handler);
-      const client = await getClient({
+      const { client } = await getClient({
         ...getConfig(config),
         clientAssertionSigningAlg: 'RS384',
       });
@@ -394,7 +396,7 @@ describe('client initialization', function () {
         .get('/.well-known/openid-configuration')
         .reply(200, spy);
 
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       await getClient(config);
       await getClient(config);
       expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
@@ -423,7 +425,7 @@ describe('client initialization', function () {
         .get('/.well-known/openid-configuration')
         .reply(200, spy);
 
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       await getClient({ ...config });
       await getClient({ ...config });
       expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
@@ -442,7 +444,7 @@ describe('client initialization', function () {
         .get('/.well-known/openid-configuration')
         .reply(200, spy);
 
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       clock.tick(10 * mins + 1);
       await getClient(config);
       clock.tick(1 * mins);
@@ -465,7 +467,7 @@ describe('client initialization', function () {
         .reply(200, spy);
 
       config = { ...config, discoveryCacheMaxAge: 20 * mins };
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       clock.tick(10 * mins + 1);
       await getClient(config);
       expect(spy.callCount).to.eq(1);
@@ -489,7 +491,7 @@ describe('client initialization', function () {
 
       await assert.isRejected(getClient(config));
 
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
       expect(spy.callCount).to.eq(1);
     });
@@ -509,7 +511,7 @@ describe('client initialization', function () {
         assert.isRejected(getClient(config)),
         assert.isRejected(getClient(config)),
       ]);
-      const client = await getClient(config);
+      const { client } = await getClient(config);
       expect(client.client_id).to.eq('__test_cache_max_age_client_id__');
       expect(spy.callCount).to.eq(1);
     });
