@@ -32,11 +32,11 @@ describe('access an api', async () => {
   });
 
   it('should get an access token and access an api', async () => {
-    const args = puppeteer.defaultArgs();
-    args.set('--no-sandbox');
-    args.set('--disable-setuid-sandbox');
-
-    const browser = await puppeteer.launch(args);
+    const browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
 
     const clock = sinon.useFakeTimers({

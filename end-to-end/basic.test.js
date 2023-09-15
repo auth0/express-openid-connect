@@ -28,11 +28,11 @@ describe('basic login and logout', async () => {
   });
 
   it('should login and logout with default configuration', async () => {
-    const args = puppeteer.defaultArgs();
-    args.set('--no-sandbox');
-    args.set('--disable-setuid-sandbox');
-
-    const browser = await puppeteer.launch(args);
+    const browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(
