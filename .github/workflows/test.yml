@@ -103,16 +103,7 @@ jobs:
           path: .
           key: ${{ env.CACHE_KEY }}
 
-      - id: setup-chrome
-        uses: browser-actions/setup-chrome@c485fa3bab6be59dce18dbc18ef6ab7cbc8ff5f1 # pin@1.2.0
-        with:
-          chrome-version: 1108766
-
-      - run: |
-          echo Installed chromium version: ${{ steps.setup-chrome.outputs.chrome-version }}
-          ${{ steps.setup-chrome.outputs.chrome-path }} --version
-
-      - run: CHROMIUM_BIN=$(which chrome) npm run test:end-to-end
+      - run: npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests
