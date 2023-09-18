@@ -64,7 +64,7 @@
     "sinon": "^7.5.0",
     "tsd": "^0.25.0",
     "typedoc": "^0.23.18",
-    "typescript": "^4.8.4"
+    "typescript": "^5.2.2"
   },
   "peerDependencies": {
     "express": ">= 4.17.0"
