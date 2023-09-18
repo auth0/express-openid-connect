@@ -33,7 +33,9 @@ describe('access an api', async () => {
 
   it('should get an access token and access an api', async () => {
     const browser = await puppeteer.launch({
-      args: ['no-sandbox', 'disable-setuid-sandbox'],
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
 
