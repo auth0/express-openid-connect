@@ -30,7 +30,7 @@ describe('back-channel logout', async () => {
 
   const runTest = async (example) => {
     appServer = await runExample(example);
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
@@ -77,7 +77,7 @@ describe('back-channel logout', async () => {
     await runTest('backchannel-logout');
 
     await browser.close();
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
