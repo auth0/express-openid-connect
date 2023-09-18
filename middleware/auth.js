@@ -7,6 +7,7 @@ const attemptSilentLogin = require('./attemptSilentLogin');
 const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
+const isLoggedOut = require('../lib/hooks/backchannelLogout/isLoggedOut');
 
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
@@ -65,6 +66,33 @@ const auth = function (params) {
     );
   } else {
     debug('callback handling route not applied');
+  }
+
+  if (config.backchannelLogout) {
+    const path = enforceLeadingSlash(config.routes.backchannelLogout);
+    debug('adding POST %s route', path);
+    router.post(path, express.urlencoded({ extended: false }), (req, res) =>
+      res.oidc.backchannelLogout()
+    );
+
+    if (config.backchannelLogout.isLoggedOut !== false) {
+      const isLoggedOutFn = config.backchannelLogout.isLoggedOut || isLoggedOut;
+      router.use(async (req, res, next) => {
+        if (!req.oidc.isAuthenticated()) {
+          next();
+          return;
+        }
+        try {
+          const loggedOut = await isLoggedOutFn(req, config);
+          if (loggedOut) {
+            req[config.session.name] = undefined;
+          }
+          next();
+        } catch (e) {
+          next(e);
+        }
+      });
+    }
   }
 
   if (config.authRequired) {

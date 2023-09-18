@@ -343,7 +343,6 @@ describe('logout route', async () => {
       json: true,
     });
     assert.equal(res.statusCode, 500);
-    console.log(res.body.err.message);
     assert.match(
       res.body.err.message,
       /^Issuer.discover\(\) failed/,

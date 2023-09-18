@@ -1,4 +1,3 @@
-const { promisify } = require('util');
 const express = require('express');
 const { assert } = require('chai').use(require('chai-as-promised'));
 const request = require('request-promise-native').defaults({
@@ -9,9 +8,8 @@ const request = require('request-promise-native').defaults({
 const appSession = require('../lib/appSession');
 const { get: getConfig } = require('../lib/config');
 const { create: createServer } = require('./fixture/server');
-const redis = require('redis-mock');
 const { getKeyStore, signCookie } = require('../lib/crypto');
-const RedisStore = require('connect-redis')({ Store: class Store {} });
+const getRedisStore = require('./fixture/store');
 
 const defaultConfig = {
   clientID: '__test_client_id__',
@@ -58,12 +56,8 @@ describe('appSession custom store', () => {
   let signedCookieValue;
 
   const setup = async (config) => {
-    redisClient = redis.createClient();
-    const store = new RedisStore({ client: redisClient, prefix: '' });
-    redisClient.asyncSet = promisify(redisClient.set).bind(redisClient);
-    redisClient.asyncGet = promisify(redisClient.get).bind(redisClient);
-    redisClient.asyncDbsize = promisify(redisClient.dbsize).bind(redisClient);
-    redisClient.asyncTtl = promisify(redisClient.ttl).bind(redisClient);
+    const { client, store } = getRedisStore();
+    redisClient = client;
 
     const conf = getConfig({
       ...defaultConfig,
@@ -232,8 +226,7 @@ describe('appSession custom store', () => {
       json: true,
     });
     assert.equal(res.statusCode, 200);
-    const storedSessionJson = await redisClient.asyncGet(immId);
-    const { data: sessionValues } = JSON.parse(storedSessionJson);
+    const { data: sessionValues } = await redisClient.asyncGet(immId);
     assert.deepEqual(sessionValues, {
       sub: '__foo_user__',
       role: 'test',
@@ -278,9 +271,9 @@ describe('appSession custom store', () => {
   it('should not throw if another mw writes the header', async () => {
     const app = express();
 
-    redisClient = redis.createClient();
-    const store = new RedisStore({ client: redisClient, prefix: '' });
-    await promisify(redisClient.set).bind(redisClient)('foo', sessionData());
+    const { client, store } = getRedisStore();
+    redisClient = client;
+    await redisClient.set('foo', sessionData());
 
     const conf = getConfig({
       ...defaultConfig,
