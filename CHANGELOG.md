@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.17.1](https://github.com/auth0/express-openid-connect/tree/v2.17.1) (2023-11-02)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.17.0...v2.17.1)
+
+**Fixed**
+- Honor params passed to logout over defaults [\#533](https://github.com/auth0/express-openid-connect/pull/533) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.17.0](https://github.com/auth0/express-openid-connect/tree/v2.17.0) (2023-09-15)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.16.0...v2.17.0)
 
