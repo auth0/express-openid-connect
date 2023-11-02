@@ -95,7 +95,7 @@ describe('logout route', async () => {
     assert.include(
       response.headers,
       {
-        location: `https://op.example.com/session/end?post_logout_redirect_uri=http%3A%2F%2Fexample.org&id_token_hint=${idToken}`,
+        location: `https://op.example.com/session/end?id_token_hint=${idToken}&post_logout_redirect_uri=http%3A%2F%2Fexample.org`,
       },
       'should redirect to the identity provider'
     );
@@ -295,6 +295,53 @@ describe('logout route', async () => {
       new URL(location).searchParams.get('post_logout_redirect_uri')
     );
     assert.equal(url.hostname, 'foo.com');
+  });
+
+  it('should honor logout url arguments over logout params', async () => {
+    const router = auth({
+      ...defaultConfig,
+      idpLogout: true,
+      routes: { logout: false },
+    });
+    server = await createServer(router);
+    router.get('/logout', (req, res) =>
+      res.oidc.logout({
+        logoutParams: { post_logout_redirect_uri: 'http://bar.com' },
+      })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(
+      new URL(location).searchParams.get('post_logout_redirect_uri')
+    );
+    assert.equal(url.hostname, 'bar.com');
+  });
+
+  it('should honor logout id_token_hint arguments over default', async () => {
+    const router = auth({
+      ...defaultConfig,
+      idpLogout: true,
+      routes: { logout: false },
+    });
+    server = await createServer(router);
+    router.get('/logout', (req, res) =>
+      res.oidc.logout({
+        logoutParams: { id_token_hint: null },
+      })
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    assert.notOk(new URL(location).searchParams.get('id_token_hint'));
   });
 
   it('should ignore undefined or null logout params', async () => {
