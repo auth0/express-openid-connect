@@ -29,7 +29,7 @@
   "dependencies": {
     "base64url": "^3.0.1",
     "clone": "^2.1.2",
-    "cookie": "^0.5.0",
+    "cookie": "^0.6.0",
     "debug": "^4.3.4",
     "futoin-hkdf": "^1.5.1",
     "http-errors": "^1.8.1",
