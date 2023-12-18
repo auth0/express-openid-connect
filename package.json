@@ -63,7 +63,7 @@
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
     "sinon": "^7.5.0",
-    "tsd": "^0.29.0",
+    "tsd": "^0.30.0",
     "typedoc": "^0.25.1",
     "typescript": "^4.8.4"
   },
