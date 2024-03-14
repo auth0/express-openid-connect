@@ -23,7 +23,7 @@ const enforceLeadingSlash = (path) => {
 const auth = function (params) {
   const config = getConfig(params);
   debug('configuration object processed, resulting configuration: %O', config);
-  const router = new express.Router();
+  const router = new express();
   const transient = new TransientCookieHandler(config);
 
   router.use(appSession(config));
