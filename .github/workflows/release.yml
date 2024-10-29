@@ -19,7 +19,7 @@ jobs:
     uses: ./.github/workflows/rl-secure.yml
     with:
       node-version: 18 ## depends if build requires node else we can remove this.
-      artifact-name: 'nextjs-auth0.tgz' ## Will change respective to Repository 
+      artifact-name: 'express-openid-connect.tgz' ## Will change respective to Repository 
     secrets:
       RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
       RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
