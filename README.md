@@ -6,6 +6,7 @@
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 ![CircleCI](https://img.shields.io/circleci/build/github/auth0/express-openid-connect)
 
+
 📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
 ## Documentation
