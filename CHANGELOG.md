@@ -9,6 +9,7 @@
 - Update automated release process to latest version [\#557](https://github.com/auth0/express-openid-connect/pull/557) ([frederikprijck](https://github.com/frederikprijck))
 - build(deps): bump github/codeql-action from 2 to 3 [\#556](https://github.com/auth0/express-openid-connect/pull/556) ([dependabot[bot]](https://github.com/apps/dependabot))
 - build(deps): bump actions/github-script from 6 to 7 [\#540](https://github.com/auth0/express-openid-connect/pull/540) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Use a single client assertion audience [\#641](https://github.com/auth0/express-openid-connect/pull/641) 
 
 **Security**
 - Update dependencies cookie and express [\#643](https://github.com/auth0/express-openid-connect/pull/643) ([nandan-bhat](https://github.com/nandan-bhat))
