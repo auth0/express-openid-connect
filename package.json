@@ -29,12 +29,12 @@
   "dependencies": {
     "base64url": "^3.0.1",
     "clone": "^2.1.2",
-    "cookie": "^0.7.0",
+    "cookie": "^0.7.1",
     "debug": "^4.3.4",
     "futoin-hkdf": "^1.5.1",
     "http-errors": "^1.8.1",
     "joi": "^17.7.0",
-    "jose": "^2.0.6",
+    "jose": "^2.0.7",
     "on-headers": "^1.0.2",
     "openid-client": "^4.9.1",
     "url-join": "^4.0.1"
@@ -47,7 +47,7 @@
     "connect-redis": "^5.1.0",
     "dotenv": "^8.2.0",
     "eslint": "^5.16.0",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "express-oauth2-jwt-bearer": "^1.5.0",
     "husky": "^4.2.5",
     "lodash": "^4.17.15",
