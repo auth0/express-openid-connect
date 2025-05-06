@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.18.1](https://github.com/auth0/express-openid-connect/tree/v2.18.1) (2025-05-06)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.18.0...v2.18.1)
+
+**Fixed**
+- fix: clear backchannel logout tokens [\#649](https://github.com/auth0/express-openid-connect/pull/649) ([kushalshit27](https://github.com/kushalshit27))
+
 ## [v2.18.0](https://github.com/auth0/express-openid-connect/tree/v2.18.0) (2025-03-18)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.17.1...v2.18.0)
 
