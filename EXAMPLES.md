@@ -215,14 +215,14 @@ app.use(
 );
 
 // claimEquals checks if a claim equals the given value
-app.get('/admin', claimEquals('isAdmin', true), (req, res) =>
+app.get('/admin', claimEquals({ claim: 'isAdmin', value: true }), (req, res) =>
   res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
 );
 
 // claimIncludes checks if a claim includes all the given values
 app.get(
   '/sales-managers',
-  claimIncludes('roles', 'sales', 'manager'),
+  claimIncludes({ claim: 'roles', values: ['sales', 'manager'] }),
   (req, res) =>
     res.send(`Hello ${req.oidc.user.sub}, this is the sales managers section.`)
 );
@@ -230,7 +230,7 @@ app.get(
 // claimCheck takes a function that checks the claims and returns true to allow access
 app.get(
   '/payroll',
-  claimCheck(({ isAdmin, roles }) => isAdmin || roles.includes('payroll')),
+  claimCheck({ predicate: ({ isAdmin, roles }) => isAdmin || roles.includes('payroll') }),
   (req, res) =>
     res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`)
 );

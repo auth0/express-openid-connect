@@ -3,8 +3,8 @@
 import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
 import {
-  AuthorizationParameters,
   IdTokenClaims,
+  TokenSetParameters,
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
@@ -69,6 +69,14 @@ interface OpenidResponse extends Response {
   oidc: ResponseContext;
 }
 
+interface AuthorizationParameters {
+  audience?: string;
+  scope?: string;
+  organization?: string;
+
+  [x: string]: unknown;
+}
+
 /**
  * The request authentication context found on the Express request when
  * OpenID Connect auth middleware is added to your application.
@@ -86,7 +94,11 @@ interface RequestContext {
   /**
    * Method to check the user's authenticated state, returns `true` if logged in.
    */
-  isAuthenticated: () => boolean;
+  isAuthenticated: (
+    params?: {
+      authorizationParams?: AuthorizationParameters;
+    },
+  ) => boolean;
 
   /**
    * The OpenID Connect ID Token.
@@ -954,6 +966,34 @@ interface TokenParameters {
  */
 export function auth(params?: ConfigParams): RequestHandler;
 
+type RequiresLoginCheck = (req: Request) => boolean;
+
+/**
+ *
+ * Set {@link ConfigParams.authRequired authRequired} to `false` then require authentication
+ * on specific routes.
+ *
+ * ```js
+ * const { auth, requiresAuth } = require('express-openid-connect');
+ *
+ * app.use(
+ *   auth({
+ *      ...
+ *      authRequired: false
+ *   })
+ * );
+ *
+ * app.get('/profile', requiresAuth(), (req, res) => {
+ *   res.send(`hello ${req.oidc.user.name}`);
+ * });
+ *
+ * ```
+ * 
+ */
+export function requiresAuth(
+  requiresLoginCheck: RequiresLoginCheck,
+): RequestHandler;
+
 /**
  * Set {@link ConfigParams.authRequired authRequired} to `false` then require authentication
  * on specific routes.
@@ -975,7 +1015,10 @@ export function auth(params?: ConfigParams): RequestHandler;
  * ```
  */
 export function requiresAuth(
-  requiresLoginCheck?: (req: OpenidRequest) => boolean
+  params?: {
+    requiresLoginCheck?: RequiresLoginCheck;
+    authorizationParams?: AuthorizationParameters,
+  },
 ): RequestHandler;
 
 /**
@@ -999,6 +1042,29 @@ export function claimEquals(
 ): RequestHandler;
 
 /**
+ * Use this MW to protect a route based on the value of a specific claim.
+ *
+ * ```js
+ * const { claimEquals } = require('express-openid-connect');
+ *
+ * app.get('/admin', claimEquals('isAdmin', true), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ *
+ * @param claim The name of the claim
+ * @param value The value of the claim, should be a primitive
+ */
+export function claimEquals(
+  params: {
+    claim: string;
+    value: boolean | number | string | null;
+    authorizationParams?: AuthorizationParameters;
+  },
+): RequestHandler;
+
+/**
  * Use this MW to protect a route, checking that _all_ values are in a claim.
  *
  * ```js
@@ -1019,6 +1085,52 @@ export function claimIncludes(
 ): RequestHandler;
 
 /**
+ * Use this MW to protect a route, checking that _all_ values are in a claim.
+ *
+ * ```js
+ * const { claimIncludes } = require('express-openid-connect');
+ *
+ * app.get('/admin/delete', claimIncludes('roles', 'admin', 'superadmin'), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ *
+ * @param claim The name of the claim
+ * @param args Claim values that must all be included
+ */
+export function claimIncludes(
+  params: {
+    claim: string;
+    value: boolean | number | string | null;
+    authorizationParams?: AuthorizationParameters;
+  },
+): RequestHandler;
+
+/**
+ * Use this MW to protect a route, checking that _all_ values are in a claim.
+ *
+ * ```js
+ * const { claimIncludes } = require('express-openid-connect');
+ *
+ * app.get('/admin/delete', claimIncludes('roles', 'admin', 'superadmin'), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ *
+ * @param claim The name of the claim
+ * @param args Claim values that must all be included
+ */
+export function claimIncludes(
+  params: {
+    claim: string;
+    values: (boolean | number | string | null)[];
+    authorizationParams?: AuthorizationParameters;
+  },
+): RequestHandler;
+
+/**
  * Use this MW to protect a route, providing a custom function to check.
  *
  * ```js
@@ -1033,7 +1145,28 @@ export function claimIncludes(
  * ```
  */
 export function claimCheck(
-  checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean
+  predicate: (req: OpenidRequest, claims: IdTokenClaims) => boolean
+): RequestHandler;
+
+/**
+ * Use this MW to protect a route, providing a custom function to check.
+ *
+ * ```js
+ * const { claimCheck } = require('express-openid-connect');
+ *
+ * app.get('/admin/community', claimCheck((req, claims) => {
+ *   return claims.isAdmin && claims.roles.includes('community');
+ * }), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ */
+export function claimCheck(
+  params: {
+    predicate: (req: OpenidRequest, claims: IdTokenClaims) => boolean;
+    authorizationParams?: AuthorizationParameters;
+  },
 ): RequestHandler;
 
 /**
@@ -1052,4 +1185,8 @@ export function claimCheck(
  *
  * ```
  */
-export function attemptSilentLogin(): RequestHandler;
+export function attemptSilentLogin(
+  params: {
+    authorizationParams?: AuthorizationParameters;
+  },
+): RequestHandler;

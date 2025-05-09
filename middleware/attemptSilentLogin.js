@@ -1,6 +1,6 @@
 const debug = require('../lib/debug')('attemptSilentLogin');
 const COOKIES = require('../lib/cookies');
-const weakRef = require('../lib/weakCache');
+const { weakRef } = require('../lib/weakCache');
 
 const COOKIE_NAME = 'skipSilentLogin';
 
@@ -38,7 +38,7 @@ const resumeSilentLogin = (req, res) => {
   });
 };
 
-module.exports = function attemptSilentLogin() {
+module.exports = function attemptSilentLogin({ authorizationParams } = {}) {
   return (req, res, next) => {
     if (!req.oidc) {
       next(
@@ -51,7 +51,7 @@ module.exports = function attemptSilentLogin() {
 
     if (
       !silentLoginAttempted &&
-      !req.oidc.isAuthenticated() &&
+      !req.oidc.isAuthenticated({ authorizationParams }) &&
       req.accepts('html')
     ) {
       debug('Attempting silent login');
