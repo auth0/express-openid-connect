@@ -30,9 +30,7 @@ function forceLogin(params, req, res, next) {
   debug(
     'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
   );
-  next(
-    createError.Unauthorized('Authentication is required for this route.')
-  );
+  next(createError.Unauthorized('Authentication is required for this route.'));
   return;
 }
 
@@ -40,7 +38,7 @@ function forceLogin(params, req, res, next) {
  * Returns a middleware that checks whether an end-user is authenticated.
  * If end-user is not authenticated `res.oidc.login()` is triggered for an HTTP
  * request that can perform a redirect.
- * 
+ *
  * @param {RequiresLoginMiddlewareParams} params
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -54,15 +52,28 @@ async function requiresLoginMiddleware(params, req, res, next) {
     return;
   }
 
-  const compatibleTokenSet = await TokenSets.findCompatible(req, params.authorizationParams);
+  const compatibleTokenSet = await TokenSets.findCompatible(
+    req,
+    params.authorizationParams
+  );
 
   if (compatibleTokenSet) {
     TokenSets.setCurrent(req, compatibleTokenSet);
+
+    try {
+      await TokenSets.maybeRefreshCurrent(req);
+    } catch (_err) {
+      // If auto-refresh is tried but fails, fall back to an authorization
+      // since that means we ended up getting an expired tokenset without RT,
+      // which is not useful or salvageable at this point.
+      return forceLogin(params, req, res, next);
+    }
   } else {
     return forceLogin(params, req, res, next);
   }
 
-  const requiresLoginCheck = params.requiresLoginCheck || defaultRequiresLoginCheck;
+  const requiresLoginCheck =
+    params.requiresLoginCheck || defaultRequiresLoginCheck;
 
   if (requiresLoginCheck(req)) {
     return forceLogin(params, req, res, next);
@@ -83,12 +94,13 @@ async function requiresLoginMiddleware(params, req, res, next) {
  * @param {import('..').RequiresLoginCheck | RequiresAuthParams} [authCheckOrParams]
  */
 module.exports.requiresAuth = function requiresAuth(authCheckOrParams) {
-  const {
+  const { requiresLoginCheck, authorizationParams } =
+    legacyArgs.requiresAuth.normalize(authCheckOrParams);
+
+  return requiresLoginMiddleware.bind(undefined, {
     requiresLoginCheck,
     authorizationParams,
-  } = legacyArgs.requiresAuth.normalize(authCheckOrParams);
-
-  return requiresLoginMiddleware.bind(undefined, { requiresLoginCheck, authorizationParams });
+  });
 };
 
 function checkJSONprimitive(value) {
@@ -142,7 +154,10 @@ module.exports.claimEquals = function claimEquals(claimOrParams, value) {
 
     return false;
   };
-  return requiresLoginMiddleware.bind(undefined, { requiresLoginCheck, authorizationParams });
+  return requiresLoginMiddleware.bind(undefined, {
+    requiresLoginCheck,
+    authorizationParams,
+  });
 };
 
 /**
@@ -205,7 +220,10 @@ module.exports.claimIncludes = function claimIncludes(claimOrParams, ...args) {
 
     return !expected.every(Set.prototype.has.bind(actual));
   };
-  return requiresLoginMiddleware.bind(undefined, { requiresLoginCheck, authorizationParams });
+  return requiresLoginMiddleware.bind(undefined, {
+    requiresLoginCheck,
+    authorizationParams,
+  });
 };
 
 /**
@@ -222,10 +240,8 @@ module.exports.claimIncludes = function claimIncludes(claimOrParams, ...args) {
  * @param {ClaimCheckFunction | ClaimCheckParams} predicateOrParams
  */
 module.exports.claimCheck = function claimCheck(predicateOrParams) {
-  const {
-    predicate: func,
-    authorizationParams,
-  } = legacyArgs.claimCheck.normalize(predicateOrParams);
+  const { predicate: func, authorizationParams } =
+    legacyArgs.claimCheck.normalize(predicateOrParams);
 
   // check that func is a function
   if (typeof func !== 'function' || func.constructor.name !== 'Function') {
@@ -240,5 +256,8 @@ module.exports.claimCheck = function claimCheck(predicateOrParams) {
 
     return !func(req, idTokenClaims);
   };
-  return requiresLoginMiddleware.bind(undefined, { requiresLoginCheck, authorizationParams });
+  return requiresLoginMiddleware.bind(undefined, {
+    requiresLoginCheck,
+    authorizationParams,
+  });
 };

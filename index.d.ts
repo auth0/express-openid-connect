@@ -702,6 +702,11 @@ interface ConfigParams {
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
+
+  /**
+   * Try to refresh access tokens if expired before being made available in the {@link RequestContext}.
+   */
+  autoRefreshIfExpired?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {

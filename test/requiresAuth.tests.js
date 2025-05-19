@@ -11,6 +11,7 @@ const {
   claimIncludes,
   claimCheck,
 } = require('./..');
+const nock = require('nock');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -559,5 +560,59 @@ describe('requiresAuth', () => {
     const { body: newSession } = await request({ baseUrl, jar, json: true, url: '/session' });
 
     assert.equal(newSession.audience, audience1);
+  });
+
+  it('should refresh tokenset if expired and autorefresh enabled', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+        autoRefreshIfExpired: true,
+      }),
+      requiresAuth(),
+    );
+
+    const jar = await login();
+
+    // simulate a previously existing expired token in the session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: makeIdToken(),
+        access_token: '__old_access_token__',
+        refresh_token: '__old_refresh_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor((Date.now() - 86400) / 1000), // expired yesterday
+      },
+    });
+
+    // simulate a successful refresh token flow response from the issuer
+    const interceptor = nock(defaultConfig.issuerBaseURL, { allowUnmocked: false })
+      .post('/oauth/token', (body) => body.grant_type === 'refresh_token');
+
+    interceptor.reply(200, {
+      id_token: makeIdToken(),
+      access_token: '__new_access_token__',
+      refresh_token: '__new_refresh_token__',
+      token_type: 'Bearer',
+      expires_in: 86400,
+    });
+
+    // make a request that triggers the autorefresh
+    const res = await request({ baseUrl, jar, url: '/protected' });
+
+    assert.equal(res.statusCode, 200);
+
+    const { body: newSession } = await request({ baseUrl, jar, json: true, url: '/session' });
+
+    assert.isTrue(newSession.expires_at > 0);
+
+    assert.deepInclude(newSession, {
+      access_token: '__new_access_token__',
+      refresh_token: '__new_refresh_token__',
+    });
+
+    nock.removeInterceptor(interceptor);
   });
 });
