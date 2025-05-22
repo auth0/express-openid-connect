@@ -26,17 +26,22 @@ const defaultConfig = {
   issuerBaseURL: 'https://op.example.com',
 };
 
+const baseTokenSet = {
+  id_token: makeIdToken(),
+  access_token: '__test_access_token__',
+  refresh_token: '__test_refresh_token__',
+  token_type: 'Bearer',
+  expires_at: Math.floor(Date.now() + 86400 / 1000),
+};
+
 const login = async (claims) => {
   const jar = request.jar();
   await request.post('/session', {
     baseUrl,
     jar,
     json: {
+      ...baseTokenSet,
       id_token: makeIdToken(claims),
-      access_token: '__test_access_token__',
-      refresh_token: '__test_refresh_token__',
-      token_type: 'Bearer',
-      expires_at: Math.floor(Date.now() + 86400 / 1000),
     },
   });
   return jar;
@@ -447,31 +452,29 @@ describe('requiresAuth', () => {
     assert.isTrue(response.headers.location.includes('foo=bar'));
   });
 
-  it('should use the current tokenset if compatible found', async () => {
-    const audience = 'foo';
-    const organization = 'bar';
-    const scope = 'openid read:widgets';
-
-    const initialSession = {
-      id_token: makeIdToken(),
-      access_token: '__test_access_token__',
-      refresh_token: '__test_refresh_token__',
-      token_type: 'Bearer',
-      expires_at: Math.floor(Date.now() + 86400 / 1000),
-      audience,
-      organization,
-      scope,
-    };
+  it('should use current tokenset if compatible', async () => {
+    const audience = 'test_audience';
+    const organization = 'test_organization';
+    const scope = 'openid profile email __test_scope__';
 
     server = await createServer(
       auth({
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth({ authorizationParams: { audience, organization, scope } }),
+      requiresAuth({
+        authorizationParams: { audience, organization, scope },
+      }),
     );
 
     const jar = await login();
+
+    const initialSession = {
+      ...baseTokenSet,
+      audience,
+      organization,
+      scope,
+    };
 
     // simulate a previously existing compatible token in the session
     await request.post('/session', {
@@ -490,12 +493,14 @@ describe('requiresAuth', () => {
   });
 
   it('should force login if not compatible tokenset found', async () => {
+    const audience = 'test_audience';
+
     server = await createServer(
       auth({
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth({ authorizationParams: { audience: 'test_audience' } }),
+      requiresAuth({ authorizationParams: { audience } }),
     );
 
     const jar = await login();
@@ -505,14 +510,54 @@ describe('requiresAuth', () => {
       baseUrl,
       jar,
       json: {
-        id_token: makeIdToken(),
-        access_token: 'x',
-        audience: 'something_else',
+        ...baseTokenSet,
+        audience: audience + 'x',
       },
     });
 
     const res = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(res.statusCode, 302); // user is NOT authenticated
+  });
+
+  it('should set the compatible tokenset in the list as current', async () => {
+    const audience1 = 'test_audience_1';
+    const audience2 = 'test_audience_2';
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      requiresAuth({
+        authorizationParams: { audience: audience1 }
+      }),
+    );
+
+    const jar = await login();
+
+    // simulate a previously existing incompatible token in the session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: { ...baseTokenSet, audience: audience2 },
+    });
+
+    // simulate a previously existing compatible token in the list
+    await request.post('/tokensets', {
+      baseUrl,
+      jar,
+      json: {
+        tokenSets: [{ ...baseTokenSet, audience: audience1 }]
+      },
+    });
+
+    const res = await request({ baseUrl, jar, url: '/protected' });
+
+    assert.equal(res.statusCode, 200); // user is properly authenticated
+
+    const { body: newSession } = await request({ baseUrl, jar, json: true, url: '/session' });
+
+    assert.equal(newSession.audience, audience1);
   });
 });

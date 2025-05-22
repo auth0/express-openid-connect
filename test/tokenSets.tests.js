@@ -12,6 +12,41 @@ function newReq() {
 }
 
 describe('tokenSets', () => {
+  describe('attach()', () => {
+    it('attaches the tokensets to the request', () => {
+      const req = newReq();
+      const tokenSets = [];
+
+      TokenSets.attach(req, tokenSets);
+
+      assert.strictEqual(TokenSets.getAll(req), tokenSets);
+    });
+  });
+
+  describe('getAll()', () => {
+    it('returns an empty array if not attached', () => {
+      const req = newReq();
+
+      assert.deepEqual(TokenSets.getAll(req), []);
+    });
+  });
+
+  describe('append()', () => {
+    it('appends a tokenset to the list', () => {
+      const req = newReq();
+
+      const tokenSet1 = { access_token: 'one' };
+      const tokenSet2 = { access_token: 'two' };
+
+      const tokenSets = [tokenSet1];
+      TokenSets.attach(req, tokenSets);
+
+      TokenSets.append(req, tokenSet2);
+
+      assert.deepEqual(TokenSets.getAll(req), [tokenSet1, tokenSet2]);
+    });
+  });
+
   describe('_areScopesCompatible', () => {
     describe('yes', () => {
       it('returns true when scopes are enough plus some extra', () => {

@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { TokenSets } = require('../../lib/tokenSets');
 
 module.exports.create = function (router, protect, path) {
   const app = express();
@@ -21,6 +22,15 @@ module.exports.create = function (router, protect, path) {
     });
     Object.assign(req.appSession, req.body);
     res.json();
+  });
+
+  app.get('/tokensets', (req, res) => {
+    res.json({ tokenSets: TokenSets.getAll(req) });
+  });
+
+  app.post('/tokensets', (req, res) => {
+    req.body.tokenSets.forEach((ts) => TokenSets.append(req, ts));
+    res.json({ tokenSets: TokenSets.getAll(req) });
   });
 
   app.get('/user', (req, res) => {
