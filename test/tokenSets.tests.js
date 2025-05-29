@@ -14,9 +14,13 @@ function newReq(props = {}) {
   return props;
 }
 
-const authorizationParams = { audience: 'aud', scope: 'read:foo', organization: 'org' };
+const authorizationParams = {
+  audience: 'aud',
+  scope: 'read:foo',
+  organization: 'org',
+};
 
-const YESTERDAY = Math.round(Date.now() / 1000) - 86400
+const YESTERDAY = Math.round(Date.now() / 1000) - 86400;
 const TOMORROW = Math.round(Date.now() / 1000) + 86400;
 
 /** @type {import('..').TokenSetParameters[]} */
@@ -25,16 +29,31 @@ const tokenSets = [
   { ...authorizationParams, expires_at: TOMORROW },
   // active + compatible + refreshable + mrrt-able
   { ...authorizationParams, expires_at: TOMORROW, refresh_token: 'rt123' },
-  // active + incompatible 
+  // active + incompatible
   { ...authorizationParams, expires_at: TOMORROW, audience: 'bad' },
   // active + incompatible
   { ...authorizationParams, expires_at: TOMORROW, scope: 'bad' },
   // active + incompatible
-  { ...authorizationParams, expires_at: TOMORROW, refresh_token: 'rt123', organization: 'bad' },
+  {
+    ...authorizationParams,
+    expires_at: TOMORROW,
+    refresh_token: 'rt123',
+    organization: 'bad',
+  },
   // active + incompatible + mrrt-able
-  { ...authorizationParams, expires_at: TOMORROW, refresh_token: 'rt123', audience: 'bad' },
+  {
+    ...authorizationParams,
+    expires_at: TOMORROW,
+    refresh_token: 'rt123',
+    audience: 'bad',
+  },
   // active + incompatible + mrrt-able
-  { ...authorizationParams, expires_at: TOMORROW, refresh_token: 'rt123', scope: 'bad' },
+  {
+    ...authorizationParams,
+    expires_at: TOMORROW,
+    refresh_token: 'rt123',
+    scope: 'bad',
+  },
   // active + incompatible
   { ...authorizationParams, expires_at: TOMORROW, organization: 'bad' },
   // expired + compatible
@@ -82,26 +101,24 @@ describe('tokenSets', () => {
   describe('_areScopesCompatible', () => {
     it('returns true when scopes are enough plus some extra', () => {
       assert.isTrue(
-        TokenSets._areScopesCompatible({ scope: 'a b' }, { scope: 'b c a' }),
+        TokenSets._areScopesCompatible({ scope: 'a b' }, { scope: 'b c a' })
       );
     });
 
     it('returns false when scopes are not enough', () => {
       assert.isFalse(
-        TokenSets._areScopesCompatible({ scope: 'a b' }, { scope: 'b' }),
+        TokenSets._areScopesCompatible({ scope: 'a b' }, { scope: 'b' })
       );
     });
 
     it('falls back to default SDK scope when no scope is requested', () => {
       assert.isTrue(
-        TokenSets._areScopesCompatible({}, { scope: 'openid profile email' }),
+        TokenSets._areScopesCompatible({}, { scope: 'openid profile email' })
       );
     });
 
     it('returns false when no scope is available', () => {
-      assert.isFalse(
-        TokenSets._areScopesCompatible({ scope: 'a b' }, {}),
-      );
+      assert.isFalse(TokenSets._areScopesCompatible({ scope: 'a b' }, {}));
     });
   });
 
@@ -122,8 +139,8 @@ describe('tokenSets', () => {
           expected,
           TokenSets._areAudiencesCompatible(
             { audience: requested },
-            { audience: available },
-          ),
+            { audience: available }
+          )
         );
       });
     });
@@ -146,8 +163,8 @@ describe('tokenSets', () => {
           expected,
           TokenSets._areOrganizationsCompatible(
             { organization: requested },
-            { organization: available },
-          ),
+            { organization: available }
+          )
         );
       });
     });
@@ -190,7 +207,9 @@ describe('tokenSets', () => {
         const cachedTokenSet = { value: {} };
         sinon.stub(weakCache, 'weakRef').returns(cachedTokenSet);
 
-        TokenSets._invalidateTokenSetIfNeeded(session, { refresh_token: 'RT2' });
+        TokenSets._invalidateTokenSetIfNeeded(session, {
+          refresh_token: 'RT2',
+        });
 
         assert.isUndefined(cachedTokenSet.value);
 
@@ -244,7 +263,10 @@ describe('tokenSets', () => {
     it('returns first compatible active tokenset', () => {
       sinon.stub(TokenSets, 'getAll').returns(tokenSets);
 
-      const output = TokenSets._findCompatibleActive(newReq(), authorizationParams);
+      const output = TokenSets._findCompatibleActive(
+        newReq(),
+        authorizationParams
+      );
 
       assert.strictEqual(output, tokenSets[0]);
 
@@ -256,7 +278,10 @@ describe('tokenSets', () => {
     it('returns first compatible refreshable tokenset', () => {
       sinon.stub(TokenSets, 'getAll').returns(tokenSets);
 
-      const output = TokenSets._findCompatibleRefreshable(newReq(), authorizationParams);
+      const output = TokenSets._findCompatibleRefreshable(
+        newReq(),
+        authorizationParams
+      );
 
       assert.strictEqual(output, tokenSets[1]);
 
@@ -268,7 +293,10 @@ describe('tokenSets', () => {
     it('returns first compatible expired tokenset', () => {
       sinon.stub(TokenSets, 'getAll').returns(tokenSets);
 
-      const output = TokenSets._findCompatibleExpired(newReq(), authorizationParams);
+      const output = TokenSets._findCompatibleExpired(
+        newReq(),
+        authorizationParams
+      );
 
       assert.strictEqual(output, tokenSets[8]);
 
@@ -286,14 +314,20 @@ describe('tokenSets', () => {
         /** @type {import('..').TokenParameters | undefined} */
         const foundTokenSet = {};
 
-        const findSpy = sinon.stub(TokenSets, '_findCompatibleActive').returns(foundTokenSet);
+        const findSpy = sinon
+          .stub(TokenSets, '_findCompatibleActive')
+          .returns(foundTokenSet);
 
         sinon.stub(TokenSets, '_findCompatibleRefreshable').throws();
         sinon.stub(TokenSets, '_findCompatibleExpired').throws();
+        sinon.stub(TokenSets, '_findMrrtable').throws();
 
         sinon.stub(weakCache, 'weakRef').returns({ config });
 
-        const result = await TokenSets.findCompatible(req, routeAuthorizationParams);
+        const result = await TokenSets.findCompatible(
+          req,
+          routeAuthorizationParams
+        );
 
         assert.isTrue(findSpy.calledWith(req, { foo: 1, bar: 2 }));
         assert.strictEqual(result, foundTokenSet);
@@ -307,13 +341,22 @@ describe('tokenSets', () => {
         /** @type {(import('..').TokenParameters & { refresh_token: string }) | undefined} */
         const foundTokenSet = { refresh_token: 'rt_123xyz' };
 
-        const findSpy = sinon.stub(TokenSets, '_findCompatibleRefreshable').returns(foundTokenSet);
+        const findSpy = sinon
+          .stub(TokenSets, '_findCompatibleRefreshable')
+          .returns(foundTokenSet);
 
         sinon.stub(TokenSets, '_findCompatibleActive').returns(undefined);
+        sinon.stub(TokenSets, '_findCompatibleExpired').throws();
+        sinon.stub(TokenSets, '_findMrrtable').throws();
 
-        sinon.stub(weakCache, 'weakRef').returns({ config: { ...config, autoRefreshIfExpired: true } });
+        sinon
+          .stub(weakCache, 'weakRef')
+          .returns({ config: { ...config, autoRefreshIfExpired: true } });
 
-        const result = await TokenSets.findCompatible(req, routeAuthorizationParams);
+        const result = await TokenSets.findCompatible(
+          req,
+          routeAuthorizationParams
+        );
 
         assert.isTrue(findSpy.calledWith(req, { foo: 1, bar: 2 }));
         assert.strictEqual(result, foundTokenSet);
@@ -327,16 +370,54 @@ describe('tokenSets', () => {
         /** @type {import('..').TokenParameters | undefined} */
         const foundTokenSet = {};
 
-        const findSpy = sinon.stub(TokenSets, '_findCompatibleExpired').returns(foundTokenSet);
+        const findSpy = sinon
+          .stub(TokenSets, '_findCompatibleExpired')
+          .returns(foundTokenSet);
 
         sinon.stub(TokenSets, '_findCompatibleActive').returns(undefined);
         sinon.stub(TokenSets, '_findCompatibleRefreshable').returns(undefined);
+        sinon.stub(TokenSets, '_findMrrtable').throws();
 
-        sinon.stub(weakCache, 'weakRef').returns({ config: { ...config, autoRefreshIfExpired: true } });
+        sinon
+          .stub(weakCache, 'weakRef')
+          .returns({ config: { ...config, autoRefreshIfExpired: true } });
 
-        const result = await TokenSets.findCompatible(req, routeAuthorizationParams);
+        const result = await TokenSets.findCompatible(
+          req,
+          routeAuthorizationParams
+        );
 
         assert.isTrue(findSpy.calledWith(req, { foo: 1, bar: 2 }));
+        assert.strictEqual(result, foundTokenSet);
+
+        sinon.restore();
+      });
+    });
+
+    describe('compatible mrrt-able tokenset found', () => {
+      it('merges params and returns the result from _findMrrtable()', async () => {
+        /** @type {import('..').TokenParameters | undefined} */
+        const foundTokenSet = {};
+
+        const findSpy = sinon
+          .stub(TokenSets, '_findMrrtable')
+          .resolves(foundTokenSet);
+
+        sinon.stub(TokenSets, '_findCompatibleActive').returns(undefined);
+        sinon.stub(TokenSets, '_findCompatibleRefreshable').returns(undefined);
+        sinon.stub(TokenSets, '_findCompatibleExpired').returns(undefined);
+
+        const appendSpy = sinon.stub(TokenSets, 'append');
+
+        sinon.stub(weakCache, 'weakRef').returns({ config });
+
+        const result = await TokenSets.findCompatible(
+          req,
+          routeAuthorizationParams
+        );
+
+        assert.isTrue(findSpy.calledWith(req, { foo: 1, bar: 2 }));
+        assert.isTrue(appendSpy.calledWith(foundTokenSet));
         assert.strictEqual(result, foundTokenSet);
 
         sinon.restore();
