@@ -77,6 +77,12 @@ interface AuthorizationParameters {
   [x: string]: unknown;
 }
 
+interface TokenSetParameters extends TokenSetParameters {
+  audience?: string;
+  scope?: string;
+  organization?: string;
+}
+
 /**
  * The request authentication context found on the Express request when
  * OpenID Connect auth middleware is added to your application.
@@ -974,7 +980,6 @@ export function auth(params?: ConfigParams): RequestHandler;
 type RequiresLoginCheck = (req: Request) => boolean;
 
 /**
- *
  * Set {@link ConfigParams.authRequired authRequired} to `false` then require authentication
  * on specific routes.
  *
@@ -993,7 +998,6 @@ type RequiresLoginCheck = (req: Request) => boolean;
  * });
  *
  * ```
- * 
  */
 export function requiresAuth(
   requiresLoginCheck: RequiresLoginCheck,

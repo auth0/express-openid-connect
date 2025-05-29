@@ -33,6 +33,7 @@ const baseTokenSet = {
   refresh_token: '__test_refresh_token__',
   token_type: 'Bearer',
   expires_at: Math.floor(Date.now() + 86400 / 1000),
+  scope: 'openid profile email',
 };
 
 const login = async (claims) => {
@@ -584,6 +585,7 @@ describe('requiresAuth', () => {
         refresh_token: '__old_refresh_token__',
         token_type: 'Bearer',
         expires_at: Math.floor((Date.now() - 86400) / 1000), // expired yesterday
+        scope: 'openid profile email',
       },
     });
 
