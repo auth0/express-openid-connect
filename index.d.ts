@@ -330,7 +330,7 @@ interface ConfigParams {
   /**
    * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a stateless session cookie,
    * to sign the transient cookies used by the login callback and to sign the custom session store cookies if
-   * {@Link signSessionStoreCookie} is `true`. Use a single string key or array of keys.
+   * {@Link signSessionStoreCookie} is `true`. Use a single string key or array of keys. Secrets must be at least 8 characters long.
    * If an array of secrets is provided, only the first element will be used to sign or encrypt the values, while all
    * the elements will be considered when decrypting or verifying the values.
    *
