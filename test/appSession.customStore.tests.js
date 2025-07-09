@@ -385,4 +385,42 @@ describe('appSession custom store', () => {
       value: signedCookieValue,
     });
   });
+
+  it('should handle null/undefined session data gracefully', async () => {
+    // This test simulates the scenario where store.get() returns null/undefined
+    // due to Redis replication lag or race conditions in multi-instance deployments
+    const store = {
+      get(id, cb) {
+        // Simulate store.get() returning null/undefined due to replication lag
+        process.nextTick(() => cb(null, null));
+      },
+      set(id, val, cb) {
+        process.nextTick(() => cb());
+      },
+      destroy(id, cb) {
+        process.nextTick(() => cb());
+      },
+    };
+
+    const conf = getConfig({
+      ...defaultConfig,
+      session: { ...defaultConfig.session, store },
+    });
+
+    server = await createServer(appSession(conf));
+
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: `appSession=${signedCookieValue}`,
+      },
+    });
+
+    // Should not crash with destructuring error, should create new empty session
+    assert.equal(res.statusCode, 200);
+    assert.isEmpty(res.body);
+  });
 });
