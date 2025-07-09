@@ -547,7 +547,7 @@ describe('appSession custom store', () => {
           const data = store.get(key);
           return data ? JSON.parse(data) : null;
         },
-        async set(key, value, options) {
+        async set(key, value) {
           store.set(key, JSON.stringify(value));
           return 'OK';
         },
