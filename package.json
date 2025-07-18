@@ -35,7 +35,7 @@
     "http-errors": "^1.8.1",
     "joi": "^17.13.3",
     "jose": "^2.0.7",
-    "on-headers": "^1.0.2",
+    "on-headers": "^1.1.0",
     "openid-client": "^4.9.1",
     "url-join": "^4.0.1"
   },
@@ -58,7 +58,7 @@
     "oidc-provider": "^6.31.1",
     "prettier": "^2.0.5",
     "pretty-quick": "^2.0.2",
-    "puppeteer": "^24.13.0",
+    "puppeteer": "^24.14.0",
     "redis-mock": "^0.56.3",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.9",
