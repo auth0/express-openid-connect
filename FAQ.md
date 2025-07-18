@@ -14,7 +14,7 @@ To resolve this, you should [run your local development server over https](https
 
 ## Login calls are failing with 'RequestError: The "listener" argument must be of type function. Received an instance of Object'
 
-This module depends indirectly on a newer version of the `agent-base` module. If an unrelated module is depends on a version of the `agent-base` older than 5.0, that older dependency is monkeypatching the gobal `http.request` object, causing this this module to fail. You can check if you have this problem by running this check:
+This module depends indirectly on a newer version of the `agent-base` module. If an unrelated module depends on a version of the `agent-base` older than 5.0, that older dependency is monkeypatching the global `http.request` object, causing this module to fail. You can check if you have this problem by running this check:
 
 ```
 npm list agent-base
