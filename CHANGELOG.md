@@ -1,5 +1,25 @@
 # Change Log
 
+## [v2.18.1](https://github.com/auth0/express-openid-connect/tree/v2.18.1) (2025-05-06)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.18.0...v2.18.1)
+
+**Fixed**
+- fix: clear backchannel logout tokens [\#649](https://github.com/auth0/express-openid-connect/pull/649) ([kushalshit27](https://github.com/kushalshit27))
+
+## [v2.18.0](https://github.com/auth0/express-openid-connect/tree/v2.18.0) (2025-03-18)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.17.1...v2.18.0)
+
+**Changed**
+- build(deps): bump codecov/codecov-action from 3.1.4 to 3.1.5 [\#578](https://github.com/auth0/express-openid-connect/pull/578) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): bump actions/cache from 3 to 4 [\#574](https://github.com/auth0/express-openid-connect/pull/574) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Update automated release process to latest version [\#557](https://github.com/auth0/express-openid-connect/pull/557) ([frederikprijck](https://github.com/frederikprijck))
+- build(deps): bump github/codeql-action from 2 to 3 [\#556](https://github.com/auth0/express-openid-connect/pull/556) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): bump actions/github-script from 6 to 7 [\#540](https://github.com/auth0/express-openid-connect/pull/540) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Use a single client assertion audience [\#641](https://github.com/auth0/express-openid-connect/pull/641) 
+
+**Security**
+- Update dependencies cookie and express [\#643](https://github.com/auth0/express-openid-connect/pull/643) ([nandan-bhat](https://github.com/nandan-bhat))
+
 ## [v2.17.1](https://github.com/auth0/express-openid-connect/tree/v2.17.1) (2023-11-02)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.17.0...v2.17.1)
 
