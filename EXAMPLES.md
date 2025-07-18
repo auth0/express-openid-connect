@@ -88,6 +88,7 @@ app.use(
       // path after logout.
       postLogoutRedirect: '/custom-logout',
       // Override the default callback route to use your own callback route as shown below
+      callback: false,
     },
   })
 );
