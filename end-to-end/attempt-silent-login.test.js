@@ -40,8 +40,8 @@ describe('attempt silent login', async () => {
     const cookies = await context.cookies('http://localhost:3000');
     assert.ok(
       cookies.find(
-        ({ name, value }) => name === 'skipSilentLogin' && value === 'true'
-      )
+        ({ name, value }) => name === 'skipSilentLogin' && value === 'true',
+      ),
     );
     assert.isNotOk(cookies.find(({ name }) => name === 'appSession'));
 
@@ -61,13 +61,13 @@ describe('attempt silent login', async () => {
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await context.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -75,17 +75,25 @@ describe('attempt silent login', async () => {
     // Delete cookies using BrowserContext API
     const cookiesToDelete = await context.cookies(baseUrl);
     const appSessionCookie = cookiesToDelete.find(
-      ({ name }) => name === 'appSession'
+      ({ name }) => name === 'appSession',
     );
     const skipSilentLoginCookie = cookiesToDelete.find(
-      ({ name }) => name === 'skipSilentLogin'
+      ({ name }) => name === 'skipSilentLogin',
     );
 
     if (appSessionCookie) {
-      await context.deleteCookie(appSessionCookie);
+      await page.deleteCookie({
+        name: appSessionCookie.name,
+        domain: appSessionCookie.domain,
+        path: appSessionCookie.path,
+      });
     }
     if (skipSilentLoginCookie) {
-      await context.deleteCookie(skipSilentLoginCookie);
+      await page.deleteCookie({
+        name: skipSilentLoginCookie.name,
+        domain: skipSilentLoginCookie.domain,
+        path: skipSilentLoginCookie.path,
+      });
     }
 
     const loggedOutCookies = await context.cookies(baseUrl);
