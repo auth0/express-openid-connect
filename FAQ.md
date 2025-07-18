@@ -20,4 +20,4 @@ This module depends indirectly on a newer version of the `agent-base` module. If
 npm list agent-base
 ```
 
-The solution is to upgrade the other dependencies which depend on `agent-base` to at least versiono 5 to resovle the issue.
+The solution is to upgrade the other dependencies which depend on `agent-base` to at least version 5 to resolve the issue.
