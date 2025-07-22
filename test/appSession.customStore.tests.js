@@ -240,8 +240,8 @@ describe('appSession custom store', () => {
       get(id, cb) {
         process.nextTick(() => cb(null, JSON.parse(sessionData())));
       },
-      async set(id, val, cb) {
-        process.nextTick(() => cb(new Error('storage error')));
+      async set() {
+        throw new Error('storage error');
       },
       async destroy(id, cb) {
         process.nextTick(() => cb());
@@ -309,7 +309,7 @@ describe('appSession custom store', () => {
         },
         resolveWithFullResponse: false,
       }),
-      { sub: '__test_sub__' }
+      { sub: '__test_sub__' },
     );
   });
 
@@ -383,6 +383,240 @@ describe('appSession custom store', () => {
     assert.deepInclude(cookie, {
       key: 'appSession',
       value: signedCookieValue,
+    });
+  });
+
+  it('should handle null/undefined session data gracefully', async () => {
+    // This test simulates the scenario where store.get() returns null/undefined
+    // due to Redis replication lag or race conditions in multi-instance deployments
+    const store = {
+      get(id, cb) {
+        // Simulate store.get() returning null/undefined due to replication lag
+        process.nextTick(() => cb(null, null));
+      },
+      set(id, val, cb) {
+        process.nextTick(() => cb());
+      },
+      destroy(id, cb) {
+        process.nextTick(() => cb());
+      },
+    };
+
+    const conf = getConfig({
+      ...defaultConfig,
+      session: { ...defaultConfig.session, store },
+    });
+
+    server = await createServer(appSession(conf));
+
+    const jar = request.jar();
+    const res = await request.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+      headers: {
+        cookie: `appSession=${signedCookieValue}`,
+      },
+    });
+
+    // Should not crash with destructuring error, should create new empty session
+    assert.equal(res.statusCode, 200);
+    assert.isEmpty(res.body);
+  });
+
+  describe('safePromisify backward compatibility', () => {
+    it('should work with callback-based stores (legacy)', async () => {
+      const store = new Map();
+      const callbackStore = {
+        get(id, cb) {
+          process.nextTick(() => {
+            const data = store.get(id);
+            cb(null, data ? JSON.parse(data) : null);
+          });
+        },
+        set(id, val, cb) {
+          process.nextTick(() => {
+            store.set(id, JSON.stringify(val));
+            cb(null);
+          });
+        },
+        destroy(id, cb) {
+          process.nextTick(() => {
+            store.delete(id);
+            cb(null);
+          });
+        },
+      };
+
+      const conf = getConfig({
+        ...defaultConfig,
+        session: { store: callbackStore },
+      });
+
+      server = await createServer(appSession(conf));
+      const jar = await login({ sub: '__callback_user__' });
+
+      const res = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(res.body, { sub: '__callback_user__' });
+    });
+
+    it('should work with Promise-based stores (modern)', async () => {
+      const store = new Map();
+      const promiseStore = {
+        async get(id) {
+          const data = store.get(id);
+          return data ? JSON.parse(data) : null;
+        },
+        async set(id, val) {
+          store.set(id, JSON.stringify(val));
+          return;
+        },
+        async destroy(id) {
+          store.delete(id);
+          return;
+        },
+      };
+
+      const conf = getConfig({
+        ...defaultConfig,
+        session: { store: promiseStore },
+      });
+
+      server = await createServer(appSession(conf));
+      const jar = await login({ sub: '__promise_user__' });
+
+      const res = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(res.body, { sub: '__promise_user__' });
+    });
+
+    it('should work with stores that return Promises directly', async () => {
+      const store = new Map();
+      const directPromiseStore = {
+        get(id) {
+          const data = store.get(id);
+          return Promise.resolve(data ? JSON.parse(data) : null);
+        },
+        set(id, val) {
+          store.set(id, JSON.stringify(val));
+          return Promise.resolve();
+        },
+        destroy(id) {
+          store.delete(id);
+          return Promise.resolve();
+        },
+      };
+
+      const conf = getConfig({
+        ...defaultConfig,
+        session: { store: directPromiseStore },
+      });
+
+      server = await createServer(appSession(conf));
+      const jar = await login({ sub: '__direct_promise_user__' });
+
+      const res = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(res.body, { sub: '__direct_promise_user__' });
+    });
+
+    it('should work with mixed callback/Promise stores', async () => {
+      const store = new Map();
+      const mixedStore = {
+        // Async method
+        async get(id) {
+          const data = store.get(id);
+          return data ? JSON.parse(data) : null;
+        },
+        // Callback method
+        set(id, val, cb) {
+          process.nextTick(() => {
+            store.set(id, JSON.stringify(val));
+            cb(null);
+          });
+        },
+        // Promise-returning method
+        destroy(id) {
+          store.delete(id);
+          return Promise.resolve();
+        },
+      };
+
+      const conf = getConfig({
+        ...defaultConfig,
+        session: { store: mixedStore },
+      });
+
+      server = await createServer(appSession(conf));
+      const jar = await login({ sub: '__mixed_user__' });
+
+      const res = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(res.body, { sub: '__mixed_user__' });
+    });
+
+    it('should not cause Node.js deprecation warnings', async () => {
+      // This test ensures our solution doesn't trigger deprecation warnings
+      // by using a store that would previously cause issues with util.promisify
+      const store = new Map();
+      const modernRedisLikeStore = {
+        async get(key) {
+          const data = store.get(key);
+          return data ? JSON.parse(data) : null;
+        },
+        async set(key, value) {
+          store.set(key, JSON.stringify(value));
+          return 'OK';
+        },
+        async del(key) {
+          const existed = store.has(key);
+          store.delete(key);
+          return existed ? 1 : 0;
+        },
+        // Alias destroy to del (common in Redis clients)
+        destroy(key) {
+          return this.del(key);
+        },
+      };
+
+      const conf = getConfig({
+        ...defaultConfig,
+        session: { store: modernRedisLikeStore },
+      });
+
+      // This should not trigger any deprecation warnings in Node.js v21.6.0+
+      server = await createServer(appSession(conf));
+      const jar = await login({ sub: '__modern_redis_user__' });
+
+      const res = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(res.body, { sub: '__modern_redis_user__' });
     });
   });
 });
