@@ -43,6 +43,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
+          config: |
+            paths-ignore:
+              - "docs/**"
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
