@@ -240,7 +240,7 @@ describe('appSession custom store', () => {
       get(id, cb) {
         process.nextTick(() => cb(null, JSON.parse(sessionData())));
       },
-      async set(id, val) {
+      async set() {
         throw new Error('storage error');
       },
       async destroy(id, cb) {
