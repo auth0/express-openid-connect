@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.19.1](https://github.com/auth0/express-openid-connect/tree/v2.19.1) (2025-07-22)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.0...v2.19.1)
+
+**Fixed**
+- refactor: optimize async function handling in session store and promise utilities [\#675](https://github.com/auth0/express-openid-connect/pull/675) ([kushalshit27](https://github.com/kushalshit27))
+
 ## [v2.19.0](https://github.com/auth0/express-openid-connect/tree/v2.19.0) (2025-07-22)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.18.1...v2.19.0)
 
