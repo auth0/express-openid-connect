@@ -36,7 +36,7 @@
     "joi": "^17.13.3",
     "jose": "^2.0.7",
     "on-headers": "^1.1.0",
-    "openid-client": "^4.9.1",
+    "openid-client": "^6.6.3",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
