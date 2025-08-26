@@ -394,7 +394,7 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth({ requiresLoginCheck, authorizationParams }),
+      requiresAuth({ requiresLoginCheck, authorizationParams })
     );
 
     const response = await request({ baseUrl, url: '/protected' });
@@ -411,7 +411,7 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      claimEquals({ claim: 'role', value: 'admin', authorizationParams }),
+      claimEquals({ claim: 'role', value: 'admin', authorizationParams })
     );
 
     const response = await request({ baseUrl, url: '/protected' });
@@ -428,7 +428,11 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      claimIncludes({ claim: 'role', values: ['admin', 'manager'], authorizationParams }),
+      claimIncludes({
+        claim: 'role',
+        values: ['admin', 'manager'],
+        authorizationParams,
+      })
     );
 
     const response = await request({ baseUrl, url: '/protected' });
@@ -445,7 +449,7 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      claimCheck({ predicate: () => false, authorizationParams }),
+      claimCheck({ predicate: () => false, authorizationParams })
     );
 
     const response = await request({ baseUrl, url: '/protected' });
@@ -466,7 +470,7 @@ describe('requiresAuth', () => {
       }),
       requiresAuth({
         authorizationParams: { audience, organization, scope },
-      }),
+      })
     );
 
     const jar = await login();
@@ -489,7 +493,12 @@ describe('requiresAuth', () => {
 
     assert.equal(res.statusCode, 200); // user is properly authenticated
 
-    const { body: newSession } = await request({ baseUrl, jar, json: true, url: '/session' });
+    const { body: newSession } = await request({
+      baseUrl,
+      jar,
+      json: true,
+      url: '/session',
+    });
 
     assert.deepEqual(newSession, initialSession);
   });
@@ -502,7 +511,7 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth({ authorizationParams: { audience } }),
+      requiresAuth({ authorizationParams: { audience } })
     );
 
     const jar = await login();
@@ -532,8 +541,8 @@ describe('requiresAuth', () => {
         authRequired: false,
       }),
       requiresAuth({
-        authorizationParams: { audience: audience1 }
-      }),
+        authorizationParams: { audience: audience1 },
+      })
     );
 
     const jar = await login();
@@ -550,7 +559,7 @@ describe('requiresAuth', () => {
       baseUrl,
       jar,
       json: {
-        tokenSets: [{ ...baseTokenSet, audience: audience1 }]
+        tokenSets: [{ ...baseTokenSet, audience: audience1 }],
       },
     });
 
@@ -558,7 +567,12 @@ describe('requiresAuth', () => {
 
     assert.equal(res.statusCode, 200); // user is properly authenticated
 
-    const { body: newSession } = await request({ baseUrl, jar, json: true, url: '/session' });
+    const { body: newSession } = await request({
+      baseUrl,
+      jar,
+      json: true,
+      url: '/session',
+    });
 
     assert.equal(newSession.audience, audience1);
   });
@@ -568,9 +582,9 @@ describe('requiresAuth', () => {
       auth({
         ...defaultConfig,
         authRequired: false,
-        autoRefreshIfExpired: true,
+        autoRefreshExpired: true,
       }),
-      requiresAuth(),
+      requiresAuth()
     );
 
     const jar = await login();
@@ -590,8 +604,9 @@ describe('requiresAuth', () => {
     });
 
     // simulate a successful refresh token flow response from the issuer
-    const interceptor = nock(defaultConfig.issuerBaseURL, { allowUnmocked: false })
-      .post('/oauth/token', (body) => body.grant_type === 'refresh_token');
+    const interceptor = nock(defaultConfig.issuerBaseURL, {
+      allowUnmocked: false,
+    }).post('/oauth/token', (body) => body.grant_type === 'refresh_token');
 
     interceptor.reply(200, {
       id_token: makeIdToken(),
@@ -606,7 +621,12 @@ describe('requiresAuth', () => {
 
     assert.equal(res.statusCode, 200);
 
-    const { body: newSession } = await request({ baseUrl, jar, json: true, url: '/session' });
+    const { body: newSession } = await request({
+      baseUrl,
+      jar,
+      json: true,
+      url: '/session',
+    });
 
     assert.isTrue(newSession.expires_at > 0);
 

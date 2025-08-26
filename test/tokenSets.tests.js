@@ -351,7 +351,7 @@ describe('tokenSets', () => {
 
         sinon
           .stub(weakCache, 'weakRef')
-          .returns({ config: { ...config, autoRefreshIfExpired: true } });
+          .returns({ config: { ...config, autoRefreshExpired: true } });
 
         const result = await TokenSets.findCompatible(
           req,
@@ -380,7 +380,7 @@ describe('tokenSets', () => {
 
         sinon
           .stub(weakCache, 'weakRef')
-          .returns({ config: { ...config, autoRefreshIfExpired: true } });
+          .returns({ config: { ...config, autoRefreshExpired: true } });
 
         const result = await TokenSets.findCompatible(
           req,
@@ -426,10 +426,10 @@ describe('tokenSets', () => {
   });
 
   describe('maybeRefreshCurrent()', async () => {
-    describe('autoRefreshIfExpired disabled', async () => {
+    describe('autoRefreshExpired disabled', async () => {
       it('does not refresh the token', async () => {
         const context = {
-          config: { autoRefreshIfExpired: false },
+          config: { autoRefreshExpired: false },
         };
 
         sinon.stub(weakCache, 'weakRef').returns(context);
@@ -446,10 +446,10 @@ describe('tokenSets', () => {
       });
     });
 
-    describe('autoRefreshIfExpired enabled + token expired', async () => {
+    describe('autoRefreshExpired enabled + token expired', async () => {
       it('refreshes the token', async () => {
         const context = {
-          config: { autoRefreshIfExpired: true },
+          config: { autoRefreshExpired: true },
         };
 
         sinon.stub(weakCache, 'weakRef').returns(context);
@@ -471,10 +471,10 @@ describe('tokenSets', () => {
       });
     });
 
-    describe('autoRefreshIfExpired enabled + token active', async () => {
+    describe('autoRefreshExpired enabled + token active', async () => {
       it('does not refresh the token', async () => {
         const context = {
-          config: { autoRefreshIfExpired: true },
+          config: { autoRefreshExpired: true },
         };
 
         sinon.stub(weakCache, 'weakRef').returns(context);

@@ -709,8 +709,10 @@ interface ConfigParams {
 
   /**
    * Try to refresh access tokens if expired before being made available in the {@link RequestContext}.
+   *
+   * Default is `false`.
    */
-  autoRefreshIfExpired?: boolean;
+  autoRefreshExpired?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
