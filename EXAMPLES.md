@@ -88,6 +88,7 @@ app.use(
       // path after logout.
       postLogoutRedirect: '/custom-logout',
       // Override the default callback route to use your own callback route as shown below
+      callback: false,
     },
   })
 );
@@ -230,7 +231,9 @@ app.get(
 // claimCheck takes a function that checks the claims and returns true to allow access
 app.get(
   '/payroll',
-  claimCheck({ predicate: ({ isAdmin, roles }) => isAdmin || roles.includes('payroll') }),
+  claimCheck({
+    predicate: ({ isAdmin, roles }) => isAdmin || roles.includes('payroll'),
+  }),
   (req, res) =>
     res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`)
 );

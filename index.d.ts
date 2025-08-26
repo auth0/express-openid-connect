@@ -100,11 +100,9 @@ interface RequestContext {
   /**
    * Method to check the user's authenticated state, returns `true` if logged in.
    */
-  isAuthenticated: (
-    params?: {
-      authorizationParams?: AuthorizationParameters;
-    },
-  ) => boolean;
+  isAuthenticated: (params?: {
+    authorizationParams?: AuthorizationParameters;
+  }) => boolean;
 
   /**
    * The OpenID Connect ID Token.
@@ -348,7 +346,7 @@ interface ConfigParams {
   /**
    * REQUIRED. The secret(s) used to derive an encryption key for the user identity in a stateless session cookie,
    * to sign the transient cookies used by the login callback and to sign the custom session store cookies if
-   * {@Link signSessionStoreCookie} is `true`. Use a single string key or array of keys.
+   * {@Link signSessionStoreCookie} is `true`. Use a single string key or array of keys. Secrets must be at least 8 characters long.
    * If an array of secrets is provided, only the first element will be used to sign or encrypt the values, while all
    * the elements will be considered when decrypting or verifying the values.
    *
@@ -1000,7 +998,7 @@ type RequiresLoginCheck = (req: Request) => boolean;
  * ```
  */
 export function requiresAuth(
-  requiresLoginCheck: RequiresLoginCheck,
+  requiresLoginCheck: RequiresLoginCheck
 ): RequestHandler;
 
 /**
@@ -1023,12 +1021,10 @@ export function requiresAuth(
  *
  * ```
  */
-export function requiresAuth(
-  params?: {
-    requiresLoginCheck?: RequiresLoginCheck;
-    authorizationParams?: AuthorizationParameters,
-  },
-): RequestHandler;
+export function requiresAuth(params?: {
+  requiresLoginCheck?: RequiresLoginCheck;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to protect a route based on the value of a specific claim.
@@ -1065,13 +1061,11 @@ export function claimEquals(
  * @param claim The name of the claim
  * @param value The value of the claim, should be a primitive
  */
-export function claimEquals(
-  params: {
-    claim: string;
-    value: boolean | number | string | null;
-    authorizationParams?: AuthorizationParameters;
-  },
-): RequestHandler;
+export function claimEquals(params: {
+  claim: string;
+  value: boolean | number | string | null;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to protect a route, checking that _all_ values are in a claim.
@@ -1108,13 +1102,11 @@ export function claimIncludes(
  * @param claim The name of the claim
  * @param args Claim values that must all be included
  */
-export function claimIncludes(
-  params: {
-    claim: string;
-    value: boolean | number | string | null;
-    authorizationParams?: AuthorizationParameters;
-  },
-): RequestHandler;
+export function claimIncludes(params: {
+  claim: string;
+  value: boolean | number | string | null;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to protect a route, checking that _all_ values are in a claim.
@@ -1131,13 +1123,11 @@ export function claimIncludes(
  * @param claim The name of the claim
  * @param args Claim values that must all be included
  */
-export function claimIncludes(
-  params: {
-    claim: string;
-    values: (boolean | number | string | null)[];
-    authorizationParams?: AuthorizationParameters;
-  },
-): RequestHandler;
+export function claimIncludes(params: {
+  claim: string;
+  values: (boolean | number | string | null)[];
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to protect a route, providing a custom function to check.
@@ -1171,12 +1161,10 @@ export function claimCheck(
  *
  * ```
  */
-export function claimCheck(
-  params: {
-    predicate: (req: OpenidRequest, claims: IdTokenClaims) => boolean;
-    authorizationParams?: AuthorizationParameters;
-  },
-): RequestHandler;
+export function claimCheck(params: {
+  predicate: (req: OpenidRequest, claims: IdTokenClaims) => boolean;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to attempt silent login (`prompt=none`) but not require authentication.
@@ -1194,8 +1182,6 @@ export function claimCheck(
  *
  * ```
  */
-export function attemptSilentLogin(
-  params: {
-    authorizationParams?: AuthorizationParameters;
-  },
-): RequestHandler;
+export function attemptSilentLogin(params: {
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;

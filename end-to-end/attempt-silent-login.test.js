@@ -32,16 +32,20 @@ describe('attempt silent login', async () => {
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
+    const context = page.browserContext();
+
     await goto(baseUrl, page);
     await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
-    const cookies = await page.cookies('http://localhost:3000');
+    const cookies = await context.cookies('http://localhost:3000');
     assert.ok(
       cookies.find(
         ({ name, value }) => name === 'skipSilentLogin' && value === 'true'
       )
     );
     assert.isNotOk(cookies.find(({ name }) => name === 'appSession'));
+
+    await browser.close();
   });
 
   it('should login silently if there is an active session on the IDP', async () => {
@@ -51,6 +55,8 @@ describe('attempt silent login', async () => {
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
+    const context = page.browserContext();
+
     await goto(`${baseUrl}/login`, page);
     assert.match(
       page.url(),
@@ -63,20 +69,42 @@ describe('attempt silent login', async () => {
       `${baseUrl}/`,
       'User is returned to the original page'
     );
-    const loggedInCookies = await page.cookies(baseUrl);
+    const loggedInCookies = await context.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
-    await page.deleteCookie(
-      { name: 'appSession' },
-      { name: 'skipSilentLogin' }
+    // Delete cookies using BrowserContext API
+    const cookiesToDelete = await context.cookies(baseUrl);
+    const appSessionCookie = cookiesToDelete.find(
+      ({ name }) => name === 'appSession'
     );
-    const loggedOutCookies = await page.cookies(baseUrl);
+    const skipSilentLoginCookie = cookiesToDelete.find(
+      ({ name }) => name === 'skipSilentLogin'
+    );
+
+    if (appSessionCookie) {
+      await page.deleteCookie({
+        name: appSessionCookie.name,
+        domain: appSessionCookie.domain,
+        path: appSessionCookie.path,
+      });
+    }
+    if (skipSilentLoginCookie) {
+      await page.deleteCookie({
+        name: skipSilentLoginCookie.name,
+        domain: skipSilentLoginCookie.domain,
+        path: skipSilentLoginCookie.path,
+      });
+    }
+
+    const loggedOutCookies = await context.cookies(baseUrl);
     assert.isNotOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
 
     await goto(baseUrl, page);
     await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
-    const cookies = await page.cookies('http://localhost:3000');
+    const cookies = await context.cookies('http://localhost:3000');
     assert.ok(cookies.find(({ name }) => name === 'appSession'));
+
+    await browser.close();
   });
 });
