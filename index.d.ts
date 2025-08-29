@@ -713,6 +713,22 @@ interface ConfigParams {
    * Default is `false`.
    */
   autoRefreshExpired?: boolean;
+
+  /**
+   * When this option is enabled, every time a new token is issued the previous one will be stored along with the user's session. This increases the likelihood of having a valid token available, reducing the need to redirect the user to the authorization server.
+   *
+   * Note that enabling this option will *significantly* increase session size. Only enable it if you're using a `session.store` that can handle the size.
+   *
+   * Default is `false`.
+   */
+  tokenHistory?: boolean;
+
+  /**
+   * When this option is enabled, the Multi-Resource Refresh Token (MRRT) flow is leveraged to use a single refresh token to get access tokens for multiple resource servers.
+   *
+   * Default is `false`. Requires `tokenHistory` to be enabled.
+   */
+  useMrrt?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
