@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 const sinon = require('sinon');
 const weakCache = require('../lib/weakCache');
-const { TokenSets } = require('../lib/tokenSets');
+const { TokenHistory } = require('../lib/tokenHistory');
 
 /**
  * @param {Record<string, unknown>} [props]
@@ -68,9 +68,9 @@ describe('tokenSets', () => {
       const req = newReq();
       const tokenSets = [];
 
-      TokenSets.attach(req, tokenSets);
+      TokenHistory.attach(req, tokenSets);
 
-      assert.strictEqual(TokenSets.getAll(req), tokenSets);
+      assert.strictEqual(TokenHistory.getAll(req), tokenSets);
     });
   });
 
@@ -78,7 +78,7 @@ describe('tokenSets', () => {
     it('returns an empty array if not attached', () => {
       const req = newReq();
 
-      assert.deepEqual(TokenSets.getAll(req), []);
+      assert.deepEqual(TokenHistory.getAll(req), []);
     });
   });
 
@@ -90,35 +90,35 @@ describe('tokenSets', () => {
       const tokenSet2 = { access_token: 'two' };
 
       const tokenSets = [tokenSet1];
-      TokenSets.attach(req, tokenSets);
+      TokenHistory.attach(req, tokenSets);
 
-      TokenSets.append(req, tokenSet2);
+      TokenHistory.append(req, tokenSet2);
 
-      assert.deepEqual(TokenSets.getAll(req), [tokenSet1, tokenSet2]);
+      assert.deepEqual(TokenHistory.getAll(req), [tokenSet1, tokenSet2]);
     });
   });
 
   describe('_areScopesCompatible', () => {
     it('returns true when scopes are enough plus some extra', () => {
       assert.isTrue(
-        TokenSets._areScopesCompatible({ scope: 'a b' }, { scope: 'b c a' })
+        TokenHistory._areScopesCompatible({ scope: 'a b' }, { scope: 'b c a' })
       );
     });
 
     it('returns false when scopes are not enough', () => {
       assert.isFalse(
-        TokenSets._areScopesCompatible({ scope: 'a b' }, { scope: 'b' })
+        TokenHistory._areScopesCompatible({ scope: 'a b' }, { scope: 'b' })
       );
     });
 
     it('falls back to default SDK scope when no scope is requested', () => {
       assert.isTrue(
-        TokenSets._areScopesCompatible({}, { scope: 'openid profile email' })
+        TokenHistory._areScopesCompatible({}, { scope: 'openid profile email' })
       );
     });
 
     it('returns false when no scope is available', () => {
-      assert.isFalse(TokenSets._areScopesCompatible({ scope: 'a b' }, {}));
+      assert.isFalse(TokenHistory._areScopesCompatible({ scope: 'a b' }, {}));
     });
   });
 
@@ -137,7 +137,7 @@ describe('tokenSets', () => {
       it(`returns ${expected} for (${requested}, ${available})`, () => {
         assert.strictEqual(
           expected,
-          TokenSets._areAudiencesCompatible(
+          TokenHistory._areAudiencesCompatible(
             { audience: requested },
             { audience: available }
           )
@@ -161,7 +161,7 @@ describe('tokenSets', () => {
       it(`returns ${expected} for (${requested}, ${available})`, () => {
         assert.strictEqual(
           expected,
-          TokenSets._areOrganizationsCompatible(
+          TokenHistory._areOrganizationsCompatible(
             { organization: requested },
             { organization: available }
           )
@@ -173,16 +173,16 @@ describe('tokenSets', () => {
   describe('_isExpired', () => {
     it('returns true when token is expired', () => {
       const expiredToken = { expires_at: Math.floor(Date.now() / 1000) - 100 };
-      assert.isTrue(TokenSets._isExpired(expiredToken));
+      assert.isTrue(TokenHistory._isExpired(expiredToken));
     });
 
     it('returns false when token is not expired', () => {
       const validToken = { expires_at: Math.floor(Date.now() / 1000) + 100 };
-      assert.isFalse(TokenSets._isExpired(validToken));
+      assert.isFalse(TokenHistory._isExpired(validToken));
     });
 
     it('returns true when expires_at is not present', () => {
-      assert.isTrue(TokenSets._isExpired({}));
+      assert.isTrue(TokenHistory._isExpired({}));
     });
   });
 
@@ -194,7 +194,9 @@ describe('tokenSets', () => {
         const cachedTokenSet = { value: {} };
         sinon.stub(weakCache, 'weakRef').returns(cachedTokenSet);
 
-        TokenSets._invalidateTokenSetIfNeeded(session, { access_token: 'AT2' });
+        TokenHistory._invalidateTokenSetIfNeeded(session, {
+          access_token: 'AT2',
+        });
 
         assert.isUndefined(cachedTokenSet.value);
 
@@ -207,7 +209,7 @@ describe('tokenSets', () => {
         const cachedTokenSet = { value: {} };
         sinon.stub(weakCache, 'weakRef').returns(cachedTokenSet);
 
-        TokenSets._invalidateTokenSetIfNeeded(session, {
+        TokenHistory._invalidateTokenSetIfNeeded(session, {
           refresh_token: 'RT2',
         });
 
@@ -221,7 +223,7 @@ describe('tokenSets', () => {
       it('does not touch the cache', () => {
         const weakRefSpy = sinon.spy(weakCache, 'weakRef');
 
-        TokenSets._invalidateTokenSetIfNeeded(session, {
+        TokenHistory._invalidateTokenSetIfNeeded(session, {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         });
@@ -249,7 +251,7 @@ describe('tokenSets', () => {
 
       const newTokenSet = { access_token: 'foo2', refresh_token: 'qux' };
 
-      TokenSets.setCurrent(req, newTokenSet);
+      TokenHistory.setCurrent(req, newTokenSet);
 
       assert.equal(req[sessName].access_token, 'foo2'); // overwritten
       assert.equal(req[sessName].refresh_token, 'qux'); // new prop
@@ -261,9 +263,9 @@ describe('tokenSets', () => {
 
   describe('_findCompatibleActive()', () => {
     it('returns first compatible active tokenset', () => {
-      sinon.stub(TokenSets, 'getAll').returns(tokenSets);
+      sinon.stub(TokenHistory, 'getAll').returns(tokenSets);
 
-      const output = TokenSets._findCompatibleActive(
+      const output = TokenHistory._findCompatibleActive(
         newReq(),
         authorizationParams
       );
@@ -276,9 +278,9 @@ describe('tokenSets', () => {
 
   describe('_findCompatibleRefreshable()', () => {
     it('returns first compatible refreshable tokenset', () => {
-      sinon.stub(TokenSets, 'getAll').returns(tokenSets);
+      sinon.stub(TokenHistory, 'getAll').returns(tokenSets);
 
-      const output = TokenSets._findCompatibleRefreshable(
+      const output = TokenHistory._findCompatibleRefreshable(
         newReq(),
         authorizationParams
       );
@@ -291,9 +293,9 @@ describe('tokenSets', () => {
 
   describe('_findCompatibleExpired()', () => {
     it('returns first compatible expired tokenset', () => {
-      sinon.stub(TokenSets, 'getAll').returns(tokenSets);
+      sinon.stub(TokenHistory, 'getAll').returns(tokenSets);
 
-      const output = TokenSets._findCompatibleExpired(
+      const output = TokenHistory._findCompatibleExpired(
         newReq(),
         authorizationParams
       );
@@ -315,16 +317,16 @@ describe('tokenSets', () => {
         const foundTokenSet = {};
 
         const findSpy = sinon
-          .stub(TokenSets, '_findCompatibleActive')
+          .stub(TokenHistory, '_findCompatibleActive')
           .returns(foundTokenSet);
 
-        sinon.stub(TokenSets, '_findCompatibleRefreshable').throws();
-        sinon.stub(TokenSets, '_findCompatibleExpired').throws();
-        sinon.stub(TokenSets, '_findMrrtable').throws();
+        sinon.stub(TokenHistory, '_findCompatibleRefreshable').throws();
+        sinon.stub(TokenHistory, '_findCompatibleExpired').throws();
+        sinon.stub(TokenHistory, '_findMrrtable').throws();
 
         sinon.stub(weakCache, 'weakRef').returns({ config });
 
-        const result = await TokenSets.findCompatible(
+        const result = await TokenHistory.findCompatible(
           req,
           routeAuthorizationParams
         );
@@ -342,18 +344,18 @@ describe('tokenSets', () => {
         const foundTokenSet = { refresh_token: 'rt_123xyz' };
 
         const findSpy = sinon
-          .stub(TokenSets, '_findCompatibleRefreshable')
+          .stub(TokenHistory, '_findCompatibleRefreshable')
           .returns(foundTokenSet);
 
-        sinon.stub(TokenSets, '_findCompatibleActive').returns(undefined);
-        sinon.stub(TokenSets, '_findCompatibleExpired').throws();
-        sinon.stub(TokenSets, '_findMrrtable').throws();
+        sinon.stub(TokenHistory, '_findCompatibleActive').returns(undefined);
+        sinon.stub(TokenHistory, '_findCompatibleExpired').throws();
+        sinon.stub(TokenHistory, '_findMrrtable').throws();
 
         sinon
           .stub(weakCache, 'weakRef')
           .returns({ config: { ...config, autoRefreshExpired: true } });
 
-        const result = await TokenSets.findCompatible(
+        const result = await TokenHistory.findCompatible(
           req,
           routeAuthorizationParams
         );
@@ -371,18 +373,20 @@ describe('tokenSets', () => {
         const foundTokenSet = {};
 
         const findSpy = sinon
-          .stub(TokenSets, '_findCompatibleExpired')
+          .stub(TokenHistory, '_findCompatibleExpired')
           .returns(foundTokenSet);
 
-        sinon.stub(TokenSets, '_findCompatibleActive').returns(undefined);
-        sinon.stub(TokenSets, '_findCompatibleRefreshable').returns(undefined);
-        sinon.stub(TokenSets, '_findMrrtable').throws();
+        sinon.stub(TokenHistory, '_findCompatibleActive').returns(undefined);
+        sinon
+          .stub(TokenHistory, '_findCompatibleRefreshable')
+          .returns(undefined);
+        sinon.stub(TokenHistory, '_findMrrtable').throws();
 
         sinon
           .stub(weakCache, 'weakRef')
           .returns({ config: { ...config, autoRefreshExpired: true } });
 
-        const result = await TokenSets.findCompatible(
+        const result = await TokenHistory.findCompatible(
           req,
           routeAuthorizationParams
         );
@@ -400,18 +404,20 @@ describe('tokenSets', () => {
         const foundTokenSet = {};
 
         const findSpy = sinon
-          .stub(TokenSets, '_findMrrtable')
+          .stub(TokenHistory, '_findMrrtable')
           .resolves(foundTokenSet);
 
-        sinon.stub(TokenSets, '_findCompatibleActive').returns(undefined);
-        sinon.stub(TokenSets, '_findCompatibleRefreshable').returns(undefined);
-        sinon.stub(TokenSets, '_findCompatibleExpired').returns(undefined);
+        sinon.stub(TokenHistory, '_findCompatibleActive').returns(undefined);
+        sinon
+          .stub(TokenHistory, '_findCompatibleRefreshable')
+          .returns(undefined);
+        sinon.stub(TokenHistory, '_findCompatibleExpired').returns(undefined);
 
-        const appendSpy = sinon.stub(TokenSets, 'append');
+        const appendSpy = sinon.stub(TokenHistory, 'append');
 
         sinon.stub(weakCache, 'weakRef').returns({ config });
 
-        const result = await TokenSets.findCompatible(
+        const result = await TokenHistory.findCompatible(
           req,
           routeAuthorizationParams
         );
@@ -438,7 +444,7 @@ describe('tokenSets', () => {
           oidc: { accessToken: { refresh: sinon.spy() } },
         };
 
-        await TokenSets.maybeRefreshCurrent(newReq(reqProps));
+        await TokenHistory.maybeRefreshCurrent(newReq(reqProps));
 
         assert.isFalse(reqProps.oidc.accessToken.refresh.called);
 
@@ -463,7 +469,7 @@ describe('tokenSets', () => {
           },
         };
 
-        await TokenSets.maybeRefreshCurrent(newReq(reqProps));
+        await TokenHistory.maybeRefreshCurrent(newReq(reqProps));
 
         assert.isTrue(reqProps.oidc.accessToken.refresh.called);
 
@@ -488,7 +494,7 @@ describe('tokenSets', () => {
           },
         };
 
-        await TokenSets.maybeRefreshCurrent(newReq(reqProps));
+        await TokenHistory.maybeRefreshCurrent(newReq(reqProps));
 
         assert.isFalse(reqProps.oidc.accessToken.refresh.called);
 

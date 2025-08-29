@@ -3,7 +3,7 @@
 const createError = require('http-errors');
 const debug = require('../lib/debug')('requiresAuth');
 const legacyArgs = require('./requiresAuthLegacyArgs');
-const { TokenSets } = require('../lib/tokenSets');
+const { TokenHistory } = require('../lib/tokenHistory');
 
 /** @type {import('..').RequiresLoginCheck} */
 const defaultRequiresLoginCheck = (req) => !req.oidc.isAuthenticated();
@@ -52,16 +52,16 @@ async function requiresLoginMiddleware(params, req, res, next) {
     return;
   }
 
-  const compatibleTokenSet = await TokenSets.findCompatible(
+  const compatibleTokenSet = await TokenHistory.findCompatible(
     req,
     params.authorizationParams
   );
 
   if (compatibleTokenSet) {
-    TokenSets.setCurrent(req, compatibleTokenSet);
+    TokenHistory.setCurrent(req, compatibleTokenSet);
 
     try {
-      await TokenSets.maybeRefreshCurrent(req);
+      await TokenHistory.maybeRefreshCurrent(req);
     } catch (_err) {
       // If auto-refresh is tried but fails, fall back to an authorization
       // since that means we ended up getting an expired tokenset without RT,
