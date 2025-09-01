@@ -3,7 +3,8 @@
 const createError = require('http-errors');
 const debug = require('../lib/debug')('requiresAuth');
 const legacyArgs = require('./requiresAuthLegacyArgs');
-const { TokenHistory } = require('../lib/tokenHistory');
+const { TokenSetUtils } = require('../lib/tokenSetUtils');
+const { TokenSets } = require('../lib/tokenSets');
 
 /** @type {import('..').RequiresLoginCheck} */
 const defaultRequiresLoginCheck = (req) => !req.oidc.isAuthenticated();
@@ -47,21 +48,22 @@ function forceLogin(params, req, res, next) {
 async function requiresLoginMiddleware(params, req, res, next) {
   if (!req.oidc) {
     next(
-      new Error('req.oidc is not found, did you include the auth middleware?')
+      new Error('req.oidc is not found, did you include the auth middleware?'),
     );
     return;
   }
 
-  const compatibleTokenSet = await TokenHistory.findCompatible(
+  const compatibleTokenSet = await TokenSets.findCompatible(
     req,
-    params.authorizationParams
+    params.authorizationParams,
   );
 
   if (compatibleTokenSet) {
-    TokenHistory.setCurrent(req, compatibleTokenSet);
+    TokenSetUtils.setCurrent(req, compatibleTokenSet);
 
     try {
-      await TokenHistory.maybeRefreshCurrent(req);
+      await TokenSetUtils.maybeRefreshCurrentIfNeeded(req);
+    // eslint-disable-next-line no-unused-vars
     } catch (_err) {
       // If auto-refresh is tried but fails, fall back to an authorization
       // since that means we ended up getting an expired tokenset without RT,
