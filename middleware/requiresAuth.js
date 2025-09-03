@@ -24,12 +24,12 @@ const defaultRequiresLoginCheck = (req) => !req.oidc.isAuthenticated();
 function forceLogin(params, req, res, next) {
   if (!res.oidc.errorOnRequiredAuth && req.accepts('html')) {
     debug(
-      'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
+      'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()',
     );
     return res.oidc.login({ authorizationParams: params.authorizationParams });
   }
   debug(
-    'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
+    'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error',
   );
   next(createError.Unauthorized('Authentication is required for this route.'));
   return;
@@ -48,7 +48,7 @@ function forceLogin(params, req, res, next) {
 async function requiresLoginMiddleware(params, req, res, next) {
   if (!req.oidc) {
     next(
-      new Error('req.oidc is not found, did you include the auth middleware?'),
+      new Error('req.oidc is not found, did you include the auth middleware?')
     );
     return;
   }
@@ -58,19 +58,19 @@ async function requiresLoginMiddleware(params, req, res, next) {
     params.authorizationParams,
   );
 
-  if (compatibleTokenSet) {
-    TokenSetUtils.setCurrent(req, compatibleTokenSet);
+  if (!compatibleTokenSet) {
+    return forceLogin(params, req, res, next);
+  }
 
-    try {
-      await TokenSetUtils.maybeRefreshCurrentIfNeeded(req);
+  TokenSetUtils.setCurrent(req, compatibleTokenSet);
+
+  try {
+    await TokenSetUtils.maybeRefreshCurrentIfNeeded(req);
     // eslint-disable-next-line no-unused-vars
-    } catch (_err) {
-      // If auto-refresh is tried but fails, fall back to an authorization
-      // since that means we ended up getting an expired tokenset without RT,
-      // which is not useful or salvageable at this point.
-      return forceLogin(params, req, res, next);
-    }
-  } else {
+  } catch (_err) {
+    // If auto-refresh is tried but fails, fall back to an authorization
+    // since that means we ended up getting an expired tokenset without RT,
+    // which is not useful or salvageable at this point.
     return forceLogin(params, req, res, next);
   }
 

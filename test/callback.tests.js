@@ -846,7 +846,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'longeLiveToken=true&force=true' + 
+      'longeLiveToken=true&force=true' +
       '&audience=https%3A%2F%2Fother-api.example.com%2F' +
       '&organization=other_test_organization' +
       '&grant_type=refresh_token&refresh_token=__test_refresh_token__'

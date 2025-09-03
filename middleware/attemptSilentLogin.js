@@ -38,7 +38,7 @@ const resumeSilentLogin = (req, res) => {
   });
 };
 
-module.exports = function attemptSilentLogin({ authorizationParams } = {}) {
+module.exports = function attemptSilentLogin() {
   return (req, res, next) => {
     if (!req.oidc) {
       next(
@@ -51,7 +51,7 @@ module.exports = function attemptSilentLogin({ authorizationParams } = {}) {
 
     if (
       !silentLoginAttempted &&
-      !req.oidc.isAuthenticated({ authorizationParams }) &&
+      !req.oidc.isAuthenticated() &&
       req.accepts('html')
     ) {
       debug('Attempting silent login');

@@ -4,7 +4,7 @@ import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
 import {
   IdTokenClaims,
-  TokenSetParameters,
+  TokenSetParameters as OpenIdTokenSetParameters,
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
@@ -77,7 +77,7 @@ interface AuthorizationParameters {
   [x: string]: unknown;
 }
 
-interface TokenSetParameters extends TokenSetParameters {
+interface TokenSetParameters extends OpenIdTokenSetParameters {
   audience?: string;
   scope?: string;
   organization?: string;

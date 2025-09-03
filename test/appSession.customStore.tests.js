@@ -309,7 +309,7 @@ describe('appSession custom store', () => {
         },
         resolveWithFullResponse: false,
       }),
-      { sub: '__test_sub__' }
+      { sub: '__test_sub__' },
     );
   });
 

@@ -5,7 +5,7 @@
  * arguments to be an object with properties. But since we're doing this
  * in a minor release we have to keep backwards compatibility. This file
  * contains helpers to "normalize" these arguments to their new form.
- * 
+ *
  * If you're doing a major release and a breaking change is expected, feel
  * free to stop supporting the old arguments form and remove this file.
  */
