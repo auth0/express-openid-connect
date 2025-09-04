@@ -1076,8 +1076,9 @@ export function claimEquals(
  *
  * ```
  *
- * @param claim The name of the claim
- * @param value The value of the claim, should be a primitive
+ * @param params
+ * @param params.claim The name of the claim
+ * @param params.value The value of the claim, should be a primitive
  */
 export function claimEquals(params: {
   claim: string;
@@ -1117,8 +1118,9 @@ export function claimIncludes(
  *
  * ```
  *
- * @param claim The name of the claim
- * @param args Claim values that must all be included
+ * @param params
+ * @param params.claim The name of the claim
+ * @param params.value Claim value that must be included
  */
 export function claimIncludes(params: {
   claim: string;
@@ -1138,8 +1140,9 @@ export function claimIncludes(params: {
  *
  * ```
  *
- * @param claim The name of the claim
- * @param args Claim values that must all be included
+ * @param params
+ * @param params.claim The name of the claim
+ * @param params.values Claim values that must all be included
  */
 export function claimIncludes(params: {
   claim: string;
