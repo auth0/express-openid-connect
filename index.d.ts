@@ -100,9 +100,7 @@ interface RequestContext {
   /**
    * Method to check the user's authenticated state, returns `true` if logged in.
    */
-  isAuthenticated: (params?: {
-    authorizationParams?: AuthorizationParameters;
-  }) => boolean;
+  isAuthenticated: () => boolean;
 
   /**
    * The OpenID Connect ID Token.
