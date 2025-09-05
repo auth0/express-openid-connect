@@ -66,8 +66,7 @@ async function requiresLoginMiddleware(params, req, res, next) {
 
   try {
     await TokenSetUtils.maybeRefreshCurrentIfNeeded(req);
-    // eslint-disable-next-line no-unused-vars
-  } catch (_err) {
+  } catch {
     // If auto-refresh is tried but fails, fall back to an authorization
     // since that means we ended up getting an expired tokenset without RT,
     // which is not useful or salvageable at this point.
