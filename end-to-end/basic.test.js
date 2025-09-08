@@ -35,6 +35,8 @@ describe('basic login and logout', async () => {
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
+    const context = page.browserContext();
+
     await goto(baseUrl, page);
     assert.match(
       page.url(),
@@ -64,7 +66,7 @@ describe('basic login and logout', async () => {
      * verify their content since they're encrypted, so at least let's check it's
      * small enough that a token can't possibly fit inside.
      */
-    const loggedOutCookies = await page.cookies('http://localhost:3000');
+    const loggedOutCookies = await context.cookies();
     assert.isTrue(loggedOutCookies.find(({ name }) => name === 'appSession').size < 200);
   });
 });

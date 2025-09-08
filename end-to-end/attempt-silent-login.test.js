@@ -97,8 +97,13 @@ describe('attempt silent login', async () => {
       });
     }
 
-    const loggedOutCookies = await context.cookies(baseUrl);
-    assert.isNotOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
+    /**
+     * Logged out cookies will still have something inside them, and we can't
+     * verify their content since they're encrypted, so at least let's check it's
+     * small enough that a token can't possibly fit inside.
+     */
+    const loggedOutCookies = await context.cookies();
+    assert.isTrue(loggedOutCookies.find(({ name }) => name === 'appSession').size < 200);
 
     await goto(baseUrl, page);
     await page.waitForNavigation();

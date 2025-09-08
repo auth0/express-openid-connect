@@ -37,6 +37,7 @@ describe('back-channel logout', async () => {
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
+    const context = page.browserContext();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
@@ -67,8 +68,9 @@ describe('back-channel logout', async () => {
     assert.equal(res.statusCode, 204);
 
     await goto(baseUrl, page);
-    const loggedOutCookies = await page.cookies('http://localhost:3000');
-    assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
+
+    const loggedOutCookies = await context.cookies();
+    assert.isNotOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   };
 
   it('should logout via back-channel logout', () =>

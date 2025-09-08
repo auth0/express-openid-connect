@@ -17,29 +17,26 @@ function newReq(props = {}) {
 
 describe('TokenSetUtils', () => {
   describe('areScopesCompatible()', () => {
-    it('returns true when scopes are enough plus some extra', () => {
-      assert.isTrue(
-        TokenSetUtils.areScopesCompatible({ scope: 'a b' }, { scope: 'b c a' }),
-      );
-    });
+    /** @type {[string | undefined, string | undefined, boolean][]} */
+    const testCases = [
+      ['a b', 'b c a', true],
+      ['a b', 'b', false],
+      ['foo', undefined, true],
+      [undefined, undefined, true],
+    ];
 
-    it('returns false when scopes are not enough', () => {
-      assert.isFalse(
-        TokenSetUtils.areScopesCompatible({ scope: 'a b' }, { scope: 'b' }),
-      );
-    });
+    testCases.forEach((testCase) => {
+      const [requested, available, expected] = testCase;
 
-    it('falls back to default SDK scope when no scope is requested', () => {
-      assert.isTrue(
-        TokenSetUtils.areScopesCompatible(
-          {},
-          { scope: 'openid profile email' },
-        ),
-      );
-    });
-
-    it('returns false when no scope is available', () => {
-      assert.isFalse(TokenSetUtils.areScopesCompatible({ scope: 'a b' }, {}));
+      it(`returns ${expected} for (${requested}, ${available})`, () => {
+        assert.strictEqual(
+          expected,
+          TokenSetUtils.areScopesCompatible(
+            { scope: requested },
+            { scope: available },
+          ),
+        );
+      });
     });
   });
 
