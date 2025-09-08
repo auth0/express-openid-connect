@@ -8,6 +8,7 @@ const {
   runExample,
   stubEnv,
   goto,
+  password,
 } = require('./fixture/helpers');
 
 describe('attempt silent login', async () => {
@@ -63,7 +64,7 @@ describe('attempt silent login', async () => {
       /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,

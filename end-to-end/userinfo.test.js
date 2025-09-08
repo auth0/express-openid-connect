@@ -8,6 +8,7 @@ const {
   stubEnv,
   goto,
   login,
+  password,
 } = require('./fixture/helpers');
 
 describe('fetch userinfo', async () => {
@@ -38,7 +39,7 @@ describe('fetch userinfo', async () => {
       /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login'
     );
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,

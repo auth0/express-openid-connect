@@ -10,6 +10,7 @@ const {
   goto,
   login,
   logout,
+  password,
 } = require('./fixture/helpers');
 
 describe('basic login and logout', async () => {
@@ -40,7 +41,7 @@ describe('basic login and logout', async () => {
       /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login'
     );
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,

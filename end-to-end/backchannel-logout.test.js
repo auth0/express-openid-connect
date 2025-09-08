@@ -10,6 +10,7 @@ const {
   checkContext,
   goto,
   login,
+  password,
 } = require('./fixture/helpers');
 
 describe('back-channel logout', async () => {
@@ -39,7 +40,7 @@ describe('back-channel logout', async () => {
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
@@ -86,7 +87,7 @@ describe('back-channel logout', async () => {
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,

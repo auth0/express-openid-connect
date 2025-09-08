@@ -11,6 +11,7 @@ const {
   checkContext,
   goto,
   login,
+  password,
 } = require('./fixture/helpers');
 
 describe('access an api', async () => {
@@ -46,7 +47,7 @@ describe('access an api', async () => {
 
     await goto(baseUrl, page);
 
-    await login('username', 'password', page);
+    await login('username', password, page);
 
     assert.equal(
       page.url(),
