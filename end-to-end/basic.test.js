@@ -59,7 +59,12 @@ describe('basic login and logout', async () => {
     );
     await logout(page);
 
+    /**
+     * Logged out cookies will still have something inside them, and we can't
+     * verify their content since they're encrypted, so at least let's check it's
+     * small enough that a token can't possibly fit inside.
+     */
     const loggedOutCookies = await page.cookies('http://localhost:3000');
-    assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
+    assert.isTrue(loggedOutCookies.find(({ name }) => name === 'appSession').size < 200);
   });
 });
