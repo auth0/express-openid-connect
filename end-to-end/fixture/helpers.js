@@ -9,7 +9,7 @@ const request = require('request-promise-native').defaults({ json: true });
 const baseUrl = 'http://localhost:3000';
 
 // Avoid breached password warnings from Chrome that make tests flaky.
-const password = `rnd-pwd-${Math.random()}`;
+const password = `rnd-pwd-${crypto.randomUUID()}`;
 
 const start = (app, port) =>
   new Promise((resolve, reject) => {
