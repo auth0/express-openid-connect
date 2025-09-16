@@ -37,7 +37,6 @@ describe('back-channel logout', async () => {
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
-    const context = page.browserContext();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
@@ -45,7 +44,7 @@ describe('back-channel logout', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -68,9 +67,8 @@ describe('back-channel logout', async () => {
     assert.equal(res.statusCode, 204);
 
     await goto(baseUrl, page);
-
-    const loggedOutCookies = await context.cookies();
-    assert.isNotOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
+    const loggedOutCookies = await page.cookies('http://localhost:3000');
+    assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   };
 
   it('should logout via back-channel logout', () =>
@@ -93,7 +91,7 @@ describe('back-channel logout', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
 
     const loggedInCookies = await page.cookies('http://localhost:3000');

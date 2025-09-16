@@ -35,19 +35,17 @@ describe('basic login and logout', async () => {
         .concat(['--no-sandbox', '--disable-setuid-sandbox']),
     });
     const page = await browser.newPage();
-    const context = page.browserContext();
-
     await goto(baseUrl, page);
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
     await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -57,16 +55,11 @@ describe('basic login and logout', async () => {
     assert.equal(response.user.sub, 'username');
     assert.empty(
       response.accessToken,
-      "default response_type doesn't include code"
+      "default response_type doesn't include code",
     );
     await logout(page);
 
-    /**
-     * Logged out cookies will still have something inside them, and we can't
-     * verify their content since they're encrypted, so at least let's check it's
-     * small enough that a token can't possibly fit inside.
-     */
-    const loggedOutCookies = await context.cookies();
-    assert.isTrue(loggedOutCookies.find(({ name }) => name === 'appSession').size < 200);
+    const loggedOutCookies = await page.cookies('http://localhost:3000');
+    assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   });
 });
