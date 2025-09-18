@@ -5,7 +5,7 @@ import type { Agent as HttpsAgent } from 'https';
 import {
   AuthorizationParameters,
   IdTokenClaims,
-  UserinfoResponse,
+  UserInfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
 import type { JSONWebKey, KeyInput } from 'jose';
@@ -133,7 +133,7 @@ interface RequestContext {
    * ```
    *
    */
-  fetchUserInfo(): Promise<UserinfoResponse>;
+  fetchUserInfo(): Promise<UserInfoResponse>;
 }
 
 /**
@@ -281,7 +281,7 @@ interface BackchannelLogoutOptions {
    */
   onLogoutToken?: (
     decodedToken: object,
-    config: ConfigParams
+    config: ConfigParams,
   ) => Promise<void> | void;
 
   /**
@@ -496,7 +496,7 @@ interface ConfigParams {
     req: OpenidRequest,
     res: OpenidResponse,
     session: Session,
-    decodedState: { [key: string]: any }
+    decodedState: { [key: string]: any },
   ) => Promise<Session> | Session;
 
   /**
@@ -729,7 +729,7 @@ interface SessionStore<Data = Session> {
    */
   get(
     sid: string,
-    callback: (err: any, session?: SessionStorePayload<Data> | null) => void
+    callback: (err: any, session?: SessionStorePayload<Data> | null) => void,
   ): void;
 
   /**
@@ -738,7 +738,7 @@ interface SessionStore<Data = Session> {
   set(
     sid: string,
     session: SessionStorePayload<Data>,
-    callback?: (err?: any) => void
+    callback?: (err?: any) => void,
   ): void;
 
   /**
@@ -975,7 +975,7 @@ export function auth(params?: ConfigParams): RequestHandler;
  * ```
  */
 export function requiresAuth(
-  requiresLoginCheck?: (req: OpenidRequest) => boolean
+  requiresLoginCheck?: (req: OpenidRequest) => boolean,
 ): RequestHandler;
 
 /**
@@ -995,7 +995,7 @@ export function requiresAuth(
  */
 export function claimEquals(
   claim: string,
-  value: boolean | number | string | null
+  value: boolean | number | string | null,
 ): RequestHandler;
 
 /**
@@ -1033,7 +1033,7 @@ export function claimIncludes(
  * ```
  */
 export function claimCheck(
-  checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean
+  checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean,
 ): RequestHandler;
 
 /**
