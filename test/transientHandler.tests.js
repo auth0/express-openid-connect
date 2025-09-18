@@ -18,25 +18,36 @@ describe('transientHandler', function () {
       secret,
       legacySameSiteCookie: true,
     });
-    generateSignature = (cookie, value) =>
-      JWS.sign.flattened(
-        Buffer.from(`${cookie}=${value}`),
+    // Updated signature generation for jose v4+/v5+/v6+
+    generateSignature = (cookie, value) => {
+      // Use JWS.sign.flattened with correct input and output
+      const payload = Buffer.from(`${cookie}=${value}`);
+      const { signature } = JWS.sign.flattened(
+        payload,
         transientHandler.keyStore,
-        { alg: 'HS256', b64: false, crit: ['b64'] }
-      ).signature;
+        {
+          alg: 'HS256',
+          b64: false,
+          crit: ['b64'],
+        },
+      );
+      // signature is base64url encoded, so regex should match that
+      return signature;
+    };
     res = { cookie: sinon.spy(), clearCookie: sinon.spy() };
   });
 
   describe('store()', function () {
     it('should use the passed-in key to set the cookie', function () {
-      transientHandler.store('test_key', {}, res);
+      transientHandler.store('test_key', {}, res, {});
       sinon.assert.calledWith(res.cookie, 'test_key');
       sinon.assert.calledWith(res.cookie, '_test_key');
     });
 
     it('should return the same nonce as the cookie value', function () {
       const value = transientHandler.store('test_key', {}, res, {});
-      const re = new RegExp(`^${value}\\.`);
+      // Fixed regex: escape dot correctly
+      const re = new RegExp(`^${value}\\.[A-Za-z0-9_-]+$`);
       sinon.assert.calledWithMatch(res.cookie, 'test_key', re);
       sinon.assert.calledWithMatch(res.cookie, '_test_key', re);
     });
@@ -59,29 +70,39 @@ describe('transientHandler', function () {
         sameSite: 'Lax',
       });
 
-      sinon.assert.calledWithMatch(res.cookie.firstCall, 'test_key', '', {
+      sinon.assert.calledWithMatch(res.cookie.firstCall, 'test_key', /^.*\./, {
         sameSite: 'Lax',
         secure: true,
       });
-      sinon.assert.calledWithMatch(res.cookie.secondCall, 'test_key', '', {
+      sinon.assert.calledWithMatch(res.cookie.secondCall, 'test_key', /^.*\./, {
         sameSite: 'Lax',
         secure: false,
       });
     });
 
     it('should set SameSite=None, secure, and fallback cookie by default', function () {
-      transientHandler.store('test_key', {}, res);
-
-      sinon.assert.calledWithMatch(res.cookie, 'test_key', '', {
-        sameSite: 'None',
-        secure: true,
-        httpOnly: true,
-      });
-      sinon.assert.calledWithMatch(res.cookie, '_test_key', '', {
-        sameSite: undefined,
-        secure: undefined,
-        httpOnly: true,
-      });
+      transientHandler.store('test_key', {}, res, {});
+      // Fixed regex: escape dot correctly
+      sinon.assert.calledWithMatch(
+        res.cookie,
+        'test_key',
+        /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/,
+        {
+          sameSite: 'None',
+          secure: true,
+          httpOnly: true,
+        },
+      );
+      sinon.assert.calledWithMatch(
+        res.cookie,
+        '_test_key',
+        /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/,
+        {
+          sameSite: undefined,
+          secure: undefined,
+          httpOnly: true,
+        },
+      );
     });
 
     it('should turn off fallback', function () {
@@ -89,7 +110,7 @@ describe('transientHandler', function () {
         secret,
         legacySameSiteCookie: false,
       });
-      transientHandler.store('test_key', {}, res);
+      transientHandler.store('test_key', {}, res, {});
 
       sinon.assert.calledWith(res.cookie, 'test_key');
       sinon.assert.calledOnce(res.cookie);
@@ -98,7 +119,7 @@ describe('transientHandler', function () {
     it('should set custom SameSite with no fallback', function () {
       transientHandler.store('test_key', {}, res, { sameSite: 'Lax' });
 
-      sinon.assert.calledWithMatch(res.cookie, 'test_key', '', {
+      sinon.assert.calledWithMatch(res.cookie, 'test_key', /^.*\./, {
         sameSite: 'Lax',
       });
       sinon.assert.calledOnce(res.cookie);
@@ -109,7 +130,8 @@ describe('transientHandler', function () {
         value: '__test_value__',
       });
       assert.equal('__test_value__', value);
-      const re = /^__test_value__\./;
+      // Fixed regex: escape dot correctly
+      const re = /^__test_value__\.[A-Za-z0-9_-]+$/;
       sinon.assert.calledWithMatch(res.cookie, 'test_key', re);
       sinon.assert.calledWithMatch(res.cookie, '_test_key', re);
     });
@@ -118,7 +140,7 @@ describe('transientHandler', function () {
   describe('getOnce()', function () {
     it('should return undefined if there are no cookies', function () {
       assert.isUndefined(
-        transientHandler.getOnce('test_key', reqWithCookies(), res)
+        transientHandler.getOnce('test_key', reqWithCookies(), res),
       );
     });
 

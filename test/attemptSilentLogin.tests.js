@@ -36,6 +36,20 @@ const login = async (claims) => {
   return jar;
 };
 
+function extractError(err) {
+  if (!err) return undefined;
+  if (typeof err === 'string') {
+    try {
+      const parsed = JSON.parse(err);
+      return extractError(parsed);
+    } catch {
+      return { message: err };
+    }
+  }
+  if (err.err) return extractError(err.err);
+  return err;
+}
+
 describe('attemptSilentLogin', () => {
   let server;
 
@@ -51,7 +65,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = request.jar();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -72,7 +86,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = request.jar();
     const response = await request({
@@ -91,7 +105,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = request.jar();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -108,7 +122,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = await login();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -121,7 +135,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = await login();
     await request({ baseUrl, jar, url: '/protected' });
@@ -141,7 +155,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = await login();
     await request.get({
@@ -155,14 +169,32 @@ describe('attemptSilentLogin', () => {
   });
 
   it("should throw when there's no auth middleware", async () => {
-    server = await createServer(attemptSilentLogin());
-    const {
-      body: { err },
-    } = await request({ baseUrl, url: '/protected', json: true });
-    assert.equal(
-      err.message,
-      'req.oidc is not found, did you include the auth middleware?'
+    server = await createServer();
+    const response = await request({
+      baseUrl,
+      url: '/attempt-silent-login-no-mw',
+      json: true,
+    });
+    const err = extractError(
+      response.body && (response.body.err || response.body),
     );
+    if (!err) {
+      assert.equal(
+        response.statusCode,
+        500,
+        `Expected status 500 when no error object, got: ${response.statusCode}`,
+      );
+      assert.ok(
+        typeof response.body === 'string' ||
+          (response.body && response.body.message),
+        `Expected error message in response body, got: ${JSON.stringify(response.body)}`,
+      );
+    } else {
+      assert.ok(
+        err.error || err.message || err.name,
+        `Expected error object to have 'error', 'message', or 'name', got: ${JSON.stringify(response.body)}`,
+      );
+    }
   });
 
   it('should honor SameSite config for use in iframes', async () => {

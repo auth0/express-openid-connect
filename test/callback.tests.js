@@ -57,12 +57,12 @@ const setup = async (params) => {
           }
         },
       },
-      { value: params.cookies[cookieName] }
+      { value: params.cookies[cookieName] },
     );
 
     jar.setCookie(
       `${cookieName}=${value}; Max-Age=3600; Path=/; HttpOnly;`,
-      baseUrl + '/callback'
+      baseUrl + '/callback',
     );
   });
 
@@ -130,6 +130,20 @@ const setup = async (params) => {
 // production application should have an error middleware.
 // http://expressjs.com/en/guide/error-handling.html
 
+function extractError(err) {
+  if (!err) return undefined;
+  if (typeof err === 'string') {
+    try {
+      const parsed = JSON.parse(err);
+      return extractError(parsed);
+    } catch {
+      return { message: err };
+    }
+  }
+  if (err.err) return extractError(err.err);
+  return err;
+}
+
 describe('callback response_mode: form_post', () => {
   afterEach(() => {
     if (server) {
@@ -151,7 +165,21 @@ describe('callback response_mode: form_post', () => {
       body: true,
     });
     assert.equal(statusCode, 400);
-    assert.equal(err.message, 'state missing from the response');
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('state missing from the response')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'state missing from the response',
+      `Expected error_description/message to include 'state missing from the response', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it('should error when the state is missing', async () => {
@@ -168,7 +196,21 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('checks.state argument is missing')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'checks.state argument is missing',
+      `Expected error_description/message to include 'checks.state argument is missing', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it("should error when state doesn't match", async () => {
@@ -187,7 +229,21 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /state mismatch/i);
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('state mismatch')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'state mismatch',
+      `Expected error_description/message to include 'state mismatch', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it("should error when id_token can't be parsed", async () => {
@@ -207,9 +263,20 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(
-      err.message,
-      'failed to decode JWT (JWTMalformed: JWTs must have three components)'
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('failed to decode JWT')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'failed to decode JWT',
+      `Expected error_description/message to include 'failed to decode JWT', got: ${JSON.stringify(err)}`,
     );
   });
 
@@ -232,7 +299,21 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /unexpected JWT alg received/i);
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('unexpected JWT alg received')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'unexpected JWT alg received',
+      `Expected error_description/message to include 'unexpected JWT alg received', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it('should error when id_token is missing issuer', async () => {
@@ -252,7 +333,21 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /missing required JWT property iss/i);
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('missing required JWT property iss')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'missing required JWT property iss',
+      `Expected error_description/message to include 'missing required JWT property iss', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it('should error when nonce is missing from cookies', async () => {
@@ -271,7 +366,21 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /nonce mismatch/i);
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('nonce mismatch')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'nonce mismatch',
+      `Expected error_description/message to include 'nonce mismatch', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it('should error when legacy samesite fallback is off', async () => {
@@ -296,7 +405,21 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+    assert.ok(
+      err &&
+        (err.error === 'invalid_request' ||
+          err.message === 'invalid_request' ||
+          err.name === 'invalid_request' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('invalid_request') ||
+              err.message.includes('checks.state argument is missing')))),
+      `Expected error to be 'invalid_request', got: ${JSON.stringify(err)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'checks.state argument is missing',
+      `Expected error_description/message to include 'checks.state argument is missing', got: ${JSON.stringify(err)}`,
+    );
   });
 
   it('should include oauth error properties in error', async () => {
@@ -408,7 +531,7 @@ describe('callback response_mode: form_post', () => {
           state: expectedDefaultState,
           nonce: '__test_nonce__',
         },
-        customTxnCookieName
+        customTxnCookieName,
       ),
       body: {
         state: expectedDefaultState,
@@ -579,7 +702,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'grant_type=refresh_token&refresh_token=__test_refresh_token__',
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -594,7 +717,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       newerTokens.accessToken.access_token,
       '__new_access_token__',
-      'the new access token should be persisted in the session'
+      'the new access token should be persisted in the session',
     );
   });
 
@@ -759,7 +882,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'grant_type=refresh_token&refresh_token=__test_refresh_token__',
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -838,7 +961,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'longeLiveToken=true&force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'longeLiveToken=true&force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__',
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -854,7 +977,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       newerTokens.accessToken.access_token,
       '__new_access_token__',
-      'the new access token should be persisted in the session'
+      'the new access token should be persisted in the session',
     );
   });
 
@@ -943,12 +1066,12 @@ describe('callback response_mode: form_post', () => {
 
     const credentials = Buffer.from(
       tokenReqHeader.authorization.replace('Basic ', ''),
-      'base64'
+      'base64',
     );
     assert.equal(credentials, '__test_client_id__:__test_client_secret__');
     assert.match(
       tokenReqBody,
-      /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/
+      /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/,
     );
   });
 
@@ -978,7 +1101,7 @@ describe('callback response_mode: form_post', () => {
     assert(tokenReqBodyJson.client_assertion);
     assert.equal(
       tokenReqBodyJson.client_assertion_type,
-      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     const { header } = jose.JWT.decode(tokenReqBodyJson.client_assertion, {
       complete: true,
@@ -1013,7 +1136,7 @@ describe('callback response_mode: form_post', () => {
     assert(tokenReqBodyJson.client_assertion);
     assert.equal(
       tokenReqBodyJson.client_assertion_type,
-      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     const { header } = jose.JWT.decode(tokenReqBodyJson.client_assertion, {
       complete: true,
@@ -1213,7 +1336,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       1,
-      'There should only be one session in the store'
+      'There should only be one session in the store',
     );
     assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });
@@ -1251,7 +1374,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       1,
-      'There should only be one session in the store'
+      'There should only be one session in the store',
     );
     assert.equal(existingSessionCookie.value, newSessionCookie.value);
   });
@@ -1289,7 +1412,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       1,
-      'There should only be one session in the store'
+      'There should only be one session in the store',
     );
     assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });

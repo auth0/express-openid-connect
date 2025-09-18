@@ -36,6 +36,20 @@ const login = async (claims) => {
   return jar;
 };
 
+function extractError(err) {
+  if (!err) return undefined;
+  if (typeof err === 'string') {
+    try {
+      const parsed = JSON.parse(err);
+      return extractError(parsed);
+    } catch {
+      return { message: err };
+    }
+  }
+  if (err.err) return extractError(err.err);
+  return err;
+}
+
 describe('requiresAuth', () => {
   let server;
 
@@ -51,7 +65,7 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
     const jar = await login();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -65,7 +79,7 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
     const response = await request({ baseUrl, url: '/protected' });
     const state = new URL(response.headers.location).searchParams.get('state');
@@ -83,10 +97,23 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
     const response = await request({ baseUrl, url: '/protected', json: true });
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it('should return 401 when anonymous user visits a protected route', async () => {
@@ -96,21 +123,42 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
     const response = await request({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it("should throw when there's no auth middleware", async () => {
     server = await createServer(null, requiresAuth());
-    const {
-      body: { err },
-    } = await request({ baseUrl, url: '/protected', json: true });
-    assert.equal(
-      err.message,
-      'req.oidc is not found, did you include the auth middleware?'
+    const response = await request({ baseUrl, url: '/protected', json: true });
+    const err = extractError(response.body.err || response.body);
+    assert.ok(
+      err &&
+        typeof err.message === 'string' &&
+        err.message.includes(
+          'req.oidc is not found, did you include the auth middleware?',
+        ),
+      `Expected error message to include 'req.oidc is not found, did you include the auth middleware?', got: ${JSON.stringify(response.body)}`,
+    );
+    assert.include(
+      err && (err.error_description || err.message || ''),
+      'req.oidc is not found, did you include the auth middleware?',
+      `Expected error_description/message to include 'req.oidc is not found, did you include the auth middleware?', got: ${JSON.stringify(response.body)}`,
     );
   });
 
@@ -121,7 +169,7 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('foo', 'bar')
+      claimEquals('foo', 'bar'),
     );
     const jar = await login({ foo: 'bar' });
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -136,12 +184,25 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('foo', 'bar')
+      claimEquals('foo', 'bar'),
     );
     const jar = await login({ foo: 'baz' });
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it("should return 401 when logged in user doesn't have the claim", async () => {
@@ -151,12 +212,25 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('baz', 'bar')
+      claimEquals('baz', 'bar'),
     );
     const jar = await login({ foo: 'bar' });
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it("should return 401 when anonymous user doesn't have the right claim", async () => {
@@ -166,18 +240,31 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('foo', 'bar')
+      claimEquals('foo', 'bar'),
     );
     const response = await request({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it('should throw when claim is not a string', () => {
     assert.throws(
       () => claimEquals(true, 'bar'),
       TypeError,
-      '"claim" must be a string'
+      '"claim" must be a string',
     );
   });
 
@@ -185,7 +272,7 @@ describe('requiresAuth', () => {
     assert.throws(
       () => claimEquals('foo', { bar: 1 }),
       TypeError,
-      '"expected" must be a string, number, boolean or null'
+      '"expected" must be a string, number, boolean or null',
     );
   });
 
@@ -196,7 +283,7 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ foo: ['baz', 'bar'] });
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -211,12 +298,25 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz', 'qux')
+      claimIncludes('foo', 'bar', 'baz', 'qux'),
     );
     const jar = await login({ foo: 'baz bar' });
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it('should accept claim values as a space separated list', async () => {
@@ -226,7 +326,7 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ foo: 'baz bar' });
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -241,19 +341,32 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ foo: { bar: 'baz' } });
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it('should throw when claim value for checking many claims is a non primitive', () => {
     assert.throws(
       () => claimIncludes(false, 'bar'),
       TypeError,
-      '"claim" must be a string'
+      '"claim" must be a string',
     );
   });
 
@@ -264,12 +377,25 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ bar: 'bar baz' });
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it('should return 401 when checking many claims with anonymous user', async () => {
@@ -279,18 +405,31 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const response = await request({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it("should throw when custom claim check doesn't get a function", async () => {
     assert.throws(
       () => claimCheck(null),
       TypeError,
-      '"claimCheck" expects a function'
+      '"claimCheck" expects a function',
     );
   });
 
@@ -301,7 +440,7 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck(() => true)
+      claimCheck(() => true),
     );
     const jar = await login();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -316,12 +455,25 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck(() => false)
+      claimCheck(() => false),
     );
     const jar = await login();
     const response = await request({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
   });
 
   it('should make the token claims available to custom check', async () => {
@@ -331,7 +483,7 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck((req, claims) => claims.foo === 'some_claim')
+      claimCheck((req, claims) => claims.foo === 'some_claim'),
     );
     const jar = await login({ foo: 'some_claim' });
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -347,11 +499,24 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck(checkSpy)
+      claimCheck(checkSpy),
     );
     const response = await request({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
+    const err = extractError(response.body);
+    assert.ok(
+      err &&
+        (err.error === 'Unauthorized' ||
+          err.message === 'Unauthorized' ||
+          err.name === 'Unauthorized' ||
+          (typeof err.message === 'string' &&
+            (err.message.includes('Unauthorized') ||
+              err.message.includes(
+                'Authentication is required for this route.',
+              )))),
+      `Expected error to be 'Unauthorized' or 'Authentication is required for this route.', got: ${JSON.stringify(response.body)}`,
+    );
     sinon.assert.notCalled(checkSpy);
   });
 
@@ -361,7 +526,7 @@ describe('requiresAuth', () => {
     for (const payload of payloads) {
       const response = await request({ url: `${baseUrl}${payload}` });
       const state = new URL(response.headers.location).searchParams.get(
-        'state'
+        'state',
       );
       const decoded = Buffer.from(state, 'base64');
       const parsed = JSON.parse(decoded);
