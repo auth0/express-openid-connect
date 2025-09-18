@@ -130,19 +130,19 @@ const setup = async (params) => {
 // production application should have an error middleware.
 // http://expressjs.com/en/guide/error-handling.html
 
-function extractError(err) {
-  if (!err) return undefined;
-  if (typeof err === 'string') {
-    try {
-      const parsed = JSON.parse(err);
-      return extractError(parsed);
-    } catch {
-      return { message: err };
-    }
-  }
-  if (err.err) return extractError(err.err);
-  return err;
-}
+// function extractError(err) {
+//   if (!err) return undefined;
+//   if (typeof err === 'string') {
+//     try {
+//       const parsed = JSON.parse(err);
+//       return extractError(parsed);
+//     } catch {
+//       return { message: err };
+//     }
+//   }
+//   if (err.err) return extractError(err.err);
+//   return err;
+// }
 
 describe('callback response_mode: form_post', () => {
   afterEach(() => {

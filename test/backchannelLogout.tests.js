@@ -29,19 +29,19 @@ const login = async (idToken) => {
   return { jar, session };
 };
 
-function extractError(err) {
-  if (!err) return undefined;
-  if (typeof err === 'string') {
-    try {
-      const parsed = JSON.parse(err);
-      return extractError(parsed);
-    } catch {
-      return { message: err };
-    }
-  }
-  if (err.err) return extractError(err.err);
-  return err;
-}
+// function extractError(err) {
+//   if (!err) return undefined;
+//   if (typeof err === 'string') {
+//     try {
+//       const parsed = JSON.parse(err);
+//       return extractError(parsed);
+//     } catch {
+//       return { message: err };
+//     }
+//   }
+//   if (err.err) return extractError(err.err);
+//   return err;
+// }
 
 describe('back-channel logout', async () => {
   let server;
