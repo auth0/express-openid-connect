@@ -1,5 +1,54 @@
 # Change Log
 
+## [v2.19.2](https://github.com/auth0/express-openid-connect/tree/v2.19.2) (2025-07-22)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.1...v2.19.2)
+
+**Fixed**
+- fix: async functions that require callbacks in promisify utility [\#677](https://github.com/auth0/express-openid-connect/pull/677) ([kushalshit27](https://github.com/kushalshit27))
+
+## [v2.19.1](https://github.com/auth0/express-openid-connect/tree/v2.19.1) (2025-07-22)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.0...v2.19.1)
+
+**Fixed**
+- refactor: optimize async function handling in session store and promise utilities [\#675](https://github.com/auth0/express-openid-connect/pull/675) ([kushalshit27](https://github.com/kushalshit27))
+
+## [v2.19.0](https://github.com/auth0/express-openid-connect/tree/v2.19.0) (2025-07-22)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.18.1...v2.19.0)
+
+**Changed**
+- docs: explain the agent-base problem in FAQ [\#639](https://github.com/auth0/express-openid-connect/pull/639) ([markstos](https://github.com/markstos))
+- docs: document min length for secret [\#638](https://github.com/auth0/express-openid-connect/pull/638) ([markstos](https://github.com/markstos))
+- add missing callback example [\#610](https://github.com/auth0/express-openid-connect/pull/610) ([elen-ita](https://github.com/elen-ita))
+
+**Fixed**
+- fix: handle null/undefined session header [\#666](https://github.com/auth0/express-openid-connect/pull/666) ([kushalshit27](https://github.com/kushalshit27))
+- fix: added promisification utility to handle callback and promise-based stores [\#665](https://github.com/auth0/express-openid-connect/pull/665) ([kushalshit27](https://github.com/kushalshit27))
+- bugfix: Do an idp logout even when oidc.isAuthenticated is false [\#640](https://github.com/auth0/express-openid-connect/pull/640) ([tusharpandey13](https://github.com/tusharpandey13))
+- fix: #624 fix calculateExp functionality [\#670](https://github.com/auth0/express-openid-connect/pull/670) ([aks96](https://github.com/aks96))
+
+**Security**
+- chore: dependency updates [\#668](https://github.com/auth0/express-openid-connect/pull/668) ([kushalshit27](https://github.com/kushalshit27))
+
+## [v2.18.1](https://github.com/auth0/express-openid-connect/tree/v2.18.1) (2025-05-06)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.18.0...v2.18.1)
+
+**Fixed**
+- fix: clear backchannel logout tokens [\#649](https://github.com/auth0/express-openid-connect/pull/649) ([kushalshit27](https://github.com/kushalshit27))
+
+## [v2.18.0](https://github.com/auth0/express-openid-connect/tree/v2.18.0) (2025-03-18)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.17.1...v2.18.0)
+
+**Changed**
+- build(deps): bump codecov/codecov-action from 3.1.4 to 3.1.5 [\#578](https://github.com/auth0/express-openid-connect/pull/578) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): bump actions/cache from 3 to 4 [\#574](https://github.com/auth0/express-openid-connect/pull/574) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Update automated release process to latest version [\#557](https://github.com/auth0/express-openid-connect/pull/557) ([frederikprijck](https://github.com/frederikprijck))
+- build(deps): bump github/codeql-action from 2 to 3 [\#556](https://github.com/auth0/express-openid-connect/pull/556) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): bump actions/github-script from 6 to 7 [\#540](https://github.com/auth0/express-openid-connect/pull/540) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Use a single client assertion audience [\#641](https://github.com/auth0/express-openid-connect/pull/641) 
+
+**Security**
+- Update dependencies cookie and express [\#643](https://github.com/auth0/express-openid-connect/pull/643) ([nandan-bhat](https://github.com/nandan-bhat))
+
 ## [v2.17.1](https://github.com/auth0/express-openid-connect/tree/v2.17.1) (2023-11-02)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.17.0...v2.17.1)
 
