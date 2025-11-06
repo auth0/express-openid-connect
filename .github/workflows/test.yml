@@ -102,7 +102,7 @@ jobs:
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
-      - run: npm install -g mocha
+
       - run: npm run test:end-to-end
 
   lint:
