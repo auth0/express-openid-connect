@@ -62,7 +62,7 @@ describe('logout route', async () => {
       auth({
         ...defaultConfig,
         idpLogout: false,
-      })
+      }),
     );
 
     const { jar, session: loggedInSession } = await login();
@@ -75,7 +75,7 @@ describe('logout route', async () => {
       {
         location: 'http://example.org',
       },
-      'should redirect to the base url'
+      'should redirect to the base url',
     );
   });
 
@@ -84,7 +84,7 @@ describe('logout route', async () => {
       auth({
         ...defaultConfig,
         idpLogout: true,
-      })
+      }),
     );
 
     const idToken = makeIdToken();
@@ -97,7 +97,7 @@ describe('logout route', async () => {
       {
         location: `https://op.example.com/session/end?id_token_hint=${idToken}&post_logout_redirect_uri=http%3A%2F%2Fexample.org`,
       },
-      'should redirect to the identity provider'
+      'should redirect to the identity provider',
     );
   });
 
@@ -108,7 +108,7 @@ describe('logout route', async () => {
         issuerBaseURL: 'https://test.eu.auth0.com',
         idpLogout: true,
         auth0Logout: true,
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -119,9 +119,9 @@ describe('logout route', async () => {
       response.headers,
       {
         location:
-          'https://op.example.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
+          'https://test.eu.auth0.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
       },
-      'should redirect to the identity provider'
+      'should redirect to the identity provider',
     );
   });
 
@@ -132,7 +132,7 @@ describe('logout route', async () => {
         routes: {
           postLogoutRedirect: '/after-logout-in-auth-config',
         },
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -144,7 +144,7 @@ describe('logout route', async () => {
       {
         location: 'http://example.org/after-logout-in-auth-config',
       },
-      'should redirect to postLogoutRedirect'
+      'should redirect to postLogoutRedirect',
     );
   });
 
@@ -158,7 +158,7 @@ describe('logout route', async () => {
     });
     server = await createServer(router);
     router.get('/logout', (req, res) =>
-      res.oidc.logout({ returnTo: 'http://www.another-example.org/logout' })
+      res.oidc.logout({ returnTo: 'http://www.another-example.org/logout' }),
     );
 
     const { jar } = await login();
@@ -170,7 +170,7 @@ describe('logout route', async () => {
       {
         location: 'http://www.another-example.org/logout',
       },
-      'should redirect to params.returnTo'
+      'should redirect to params.returnTo',
     );
   });
 
@@ -185,7 +185,7 @@ describe('logout route', async () => {
         },
       }),
       null,
-      '/foo'
+      '/foo',
     );
     const baseUrl = 'http://localhost:3000/foo';
 
@@ -205,17 +205,17 @@ describe('logout route', async () => {
     const { jar } = await login();
     const baseUrl = 'http://localhost:3000';
     assert.notOk(
-      jar.getCookies(baseUrl).find(({ key }) => key === 'skipSilentLogin')
+      jar.getCookies(baseUrl).find(({ key }) => key === 'skipSilentLogin'),
     );
     await logout(jar);
     assert.ok(
-      jar.getCookies(baseUrl).find(({ key }) => key === 'skipSilentLogin')
+      jar.getCookies(baseUrl).find(({ key }) => key === 'skipSilentLogin'),
     );
   });
 
   it('should pass logout params to end session url', async () => {
     server = await createServer(
-      auth({ ...defaultConfig, idpLogout: true, logoutParams: { foo: 'bar' } })
+      auth({ ...defaultConfig, idpLogout: true, logoutParams: { foo: 'bar' } }),
     );
 
     const { jar } = await login();
@@ -237,7 +237,7 @@ describe('logout route', async () => {
     });
     server = await createServer(router);
     router.get('/logout', (req, res) =>
-      res.oidc.logout({ logoutParams: { foo: 'baz' } })
+      res.oidc.logout({ logoutParams: { foo: 'baz' } }),
     );
 
     const { jar } = await login();
@@ -258,7 +258,7 @@ describe('logout route', async () => {
         idpLogout: true,
         auth0Logout: true,
         logoutParams: { foo: 'bar' },
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -282,7 +282,7 @@ describe('logout route', async () => {
           foo: 'bar',
           post_logout_redirect_uri: 'http://bar.com',
         },
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -292,7 +292,7 @@ describe('logout route', async () => {
       },
     } = await logout(jar);
     const url = new URL(
-      new URL(location).searchParams.get('post_logout_redirect_uri')
+      new URL(location).searchParams.get('post_logout_redirect_uri'),
     );
     assert.equal(url.hostname, 'foo.com');
   });
@@ -307,7 +307,7 @@ describe('logout route', async () => {
     router.get('/logout', (req, res) =>
       res.oidc.logout({
         logoutParams: { post_logout_redirect_uri: 'http://bar.com' },
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -317,7 +317,7 @@ describe('logout route', async () => {
       },
     } = await logout(jar);
     const url = new URL(
-      new URL(location).searchParams.get('post_logout_redirect_uri')
+      new URL(location).searchParams.get('post_logout_redirect_uri'),
     );
     assert.equal(url.hostname, 'bar.com');
   });
@@ -332,7 +332,7 @@ describe('logout route', async () => {
     router.get('/logout', (req, res) =>
       res.oidc.logout({
         logoutParams: { id_token_hint: null },
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -352,7 +352,7 @@ describe('logout route', async () => {
         idpLogout: true,
         auth0Logout: true,
         logoutParams: { foo: 'bar', bar: undefined, baz: null, qux: '' },
-      })
+      }),
     );
 
     const { jar } = await login();
@@ -381,7 +381,7 @@ describe('logout route', async () => {
       auth({
         ...defaultConfig,
         issuerBaseURL: 'https://example.com',
-      })
+      }),
     );
     const res = await request.get({
       uri: '/logout',
@@ -393,7 +393,7 @@ describe('logout route', async () => {
     assert.match(
       res.body.err.message,
       /^Issuer.discover\(\) failed/,
-      'Should get error json from server error middleware'
+      'Should get error json from server error middleware',
     );
   });
 });

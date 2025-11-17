@@ -36,7 +36,7 @@
     "joi": "^17.13.3",
     "jose": "^2.0.7",
     "on-headers": "^1.1.0",
-    "openid-client": "^4.9.1",
+    "openid-client": "6.8.1",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
@@ -53,7 +53,7 @@
     "lodash": "^4.17.21",
     "memorystore": "^1.6.7",
     "mocha": "^10.8.2",
-    "nock": "^11.9.1",
+    "nock": "14.0.10",
     "nyc": "^15.1.0",
     "oidc-provider": "^6.31.1",
     "prettier": "^3.6.2",
@@ -71,7 +71,7 @@
     "express": ">= 4.17.0"
   },
   "engines": {
-    "node": "^10.19.0 || >=12.0.0 < 13 || >=13.7.0 < 14 || >= 14.2.0"
+    "node": ">=18.0.0"
   },
   "husky": {
     "hooks": {
