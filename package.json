@@ -37,7 +37,7 @@
     "jose": "^2.0.7",
     "on-headers": "^1.1.0",
     "openid-client": "6.8.1",
-    "undici": "7.16.0",
+    "undici": "5.28.4",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
