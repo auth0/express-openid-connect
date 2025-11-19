@@ -168,7 +168,10 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+    assert.equal(
+      err.message,
+      'state mismatch, expected [missing], got: __test_state__',
+    );
   });
 
   it("should error when state doesn't match", async () => {
@@ -207,10 +210,8 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(
-      err.message,
-      'failed to decode JWT (JWTMalformed: JWTs must have three components)',
-    );
+    // SECURITY: openid-client now handles JWT validation completely for better security
+    assert.equal(err.message, 'invalid response encountered');
   });
 
   it('should error when id_token has invalid alg', async () => {
@@ -232,7 +233,8 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /unexpected JWT alg received/i);
+    // SECURITY: openid-client now handles JWT validation completely for better security
+    assert.equal(err.message, 'invalid response encountered');
   });
 
   it('should error when id_token is missing issuer', async () => {
@@ -252,7 +254,8 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /missing required JWT property iss/i);
+    // SECURITY: openid-client now handles JWT validation completely for better security
+    assert.equal(err.message, 'invalid response encountered');
   });
 
   it('should error when nonce is missing from cookies', async () => {
@@ -271,7 +274,10 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.match(err.message, /nonce mismatch/i);
+    assert.equal(
+      err.message,
+      'nonce is required for implicit and hybrid flows',
+    );
   });
 
   it('should error when legacy samesite fallback is off', async () => {
@@ -296,7 +302,10 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+    assert.equal(
+      err.message,
+      'state mismatch, expected [missing], got: __test_state__',
+    );
   });
 
   it('should include oauth error properties in error', async () => {
