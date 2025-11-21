@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { TokenHistory } = require('../../lib/tokenHistory');
 
 module.exports.create = function (router, protect, path) {
   const app = express();
@@ -21,6 +22,15 @@ module.exports.create = function (router, protect, path) {
     });
     Object.assign(req.appSession, req.body);
     res.json();
+  });
+
+  app.get('/tokenhistory', (req, res) => {
+    res.json({ tokenHistory: TokenHistory.getAll(req) });
+  });
+
+  app.post('/tokenhistory', (req, res) => {
+    req.body.tokenHistory.forEach((ts) => TokenHistory.append(req, ts));
+    res.json({ tokenHistory: TokenHistory.getAll(req) });
   });
 
   app.get('/user', (req, res) => {

@@ -3,7 +3,6 @@
 import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
 import {
-  AuthorizationParameters,
   IdTokenClaims,
   UserinfoResponse,
 } from 'openid-client';
@@ -67,6 +66,25 @@ interface OpenidResponse extends Response {
    * Library namespace for authentication methods and data.
    */
   oidc: ResponseContext;
+}
+
+interface AuthorizationParameters {
+  audience?: string;
+  scope?: string;
+  organization?: string;
+
+  [x: string]: unknown;
+}
+
+interface TokenSetParameters {
+  access_token?: string;
+  audience?: string;
+  expires_at?: number;
+  id_token?: string;
+  organization?: string;
+  refresh_token?: string;
+  scope?: string;
+  token_type?: string;
 }
 
 /**
@@ -690,6 +708,29 @@ interface ConfigParams {
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
+
+  /**
+   * Try to refresh access tokens if expired before being made available in the {@link RequestContext}.
+   *
+   * Default is `false`.
+   */
+  autoRefreshExpired?: boolean;
+
+  /**
+   * When this option is enabled, every time a new token is issued the previous one will be stored along with the user's session. This increases the likelihood of having a valid token available, reducing the need to redirect the user to the authorization server.
+   *
+   * Note that enabling this option will *significantly* increase session size. Only enable it if you're using a `session.store` that can handle the size.
+   *
+   * Default is `false`.
+   */
+  tokenHistory?: boolean;
+
+  /**
+   * When this option is enabled, the Multi-Resource Refresh Token (MRRT) flow is leveraged to use a single refresh token to get access tokens for multiple resource servers.
+   *
+   * Default is `false`. Requires `tokenHistory` to be enabled.
+   */
+  useMrrt?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
@@ -954,6 +995,8 @@ interface TokenParameters {
  */
 export function auth(params?: ConfigParams): RequestHandler;
 
+type RequiresLoginCheck = (req: Request) => boolean;
+
 /**
  * Set {@link ConfigParams.authRequired authRequired} to `false` then require authentication
  * on specific routes.
@@ -975,8 +1018,33 @@ export function auth(params?: ConfigParams): RequestHandler;
  * ```
  */
 export function requiresAuth(
-  requiresLoginCheck?: (req: OpenidRequest) => boolean
+  requiresLoginCheck: RequiresLoginCheck
 ): RequestHandler;
+
+/**
+ * Set {@link ConfigParams.authRequired authRequired} to `false` then require authentication
+ * on specific routes.
+ *
+ * ```js
+ * const { auth, requiresAuth } = require('express-openid-connect');
+ *
+ * app.use(
+ *   auth({
+ *      ...
+ *      authRequired: false
+ *   })
+ * );
+ *
+ * app.get('/profile', requiresAuth(), (req, res) => {
+ *   res.send(`hello ${req.oidc.user.name}`);
+ * });
+ *
+ * ```
+ */
+export function requiresAuth(params?: {
+  requiresLoginCheck?: RequiresLoginCheck;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to protect a route based on the value of a specific claim.
@@ -999,6 +1067,28 @@ export function claimEquals(
 ): RequestHandler;
 
 /**
+ * Use this MW to protect a route based on the value of a specific claim.
+ *
+ * ```js
+ * const { claimEquals } = require('express-openid-connect');
+ *
+ * app.get('/admin', claimEquals('isAdmin', true), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ *
+ * @param params
+ * @param params.claim The name of the claim
+ * @param params.value The value of the claim, should be a primitive
+ */
+export function claimEquals(params: {
+  claim: string;
+  value: boolean | number | string | null;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
+
+/**
  * Use this MW to protect a route, checking that _all_ values are in a claim.
  *
  * ```js
@@ -1019,6 +1109,50 @@ export function claimIncludes(
 ): RequestHandler;
 
 /**
+ * Use this MW to protect a route, checking that _all_ values are in a claim.
+ *
+ * ```js
+ * const { claimIncludes } = require('express-openid-connect');
+ *
+ * app.get('/admin/delete', claimIncludes('roles', 'admin', 'superadmin'), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ *
+ * @param params
+ * @param params.claim The name of the claim
+ * @param params.value Claim value that must be included
+ */
+export function claimIncludes(params: {
+  claim: string;
+  value: boolean | number | string | null;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
+
+/**
+ * Use this MW to protect a route, checking that _all_ values are in a claim.
+ *
+ * ```js
+ * const { claimIncludes } = require('express-openid-connect');
+ *
+ * app.get('/admin/delete', claimIncludes('roles', 'admin', 'superadmin'), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ *
+ * @param params
+ * @param params.claim The name of the claim
+ * @param params.values Claim values that must all be included
+ */
+export function claimIncludes(params: {
+  claim: string;
+  values: (boolean | number | string | null)[];
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
+
+/**
  * Use this MW to protect a route, providing a custom function to check.
  *
  * ```js
@@ -1033,8 +1167,27 @@ export function claimIncludes(
  * ```
  */
 export function claimCheck(
-  checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean
+  predicate: (req: OpenidRequest, claims: IdTokenClaims) => boolean
 ): RequestHandler;
+
+/**
+ * Use this MW to protect a route, providing a custom function to check.
+ *
+ * ```js
+ * const { claimCheck } = require('express-openid-connect');
+ *
+ * app.get('/admin/community', claimCheck((req, claims) => {
+ *   return claims.isAdmin && claims.roles.includes('community');
+ * }), (req, res) => {
+ *   res.send(...);
+ * });
+ *
+ * ```
+ */
+export function claimCheck(params: {
+  predicate: (req: OpenidRequest, claims: IdTokenClaims) => boolean;
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;
 
 /**
  * Use this MW to attempt silent login (`prompt=none`) but not require authentication.
@@ -1052,4 +1205,6 @@ export function claimCheck(
  *
  * ```
  */
-export function attemptSilentLogin(): RequestHandler;
+export function attemptSilentLogin(params: {
+  authorizationParams?: AuthorizationParameters;
+}): RequestHandler;

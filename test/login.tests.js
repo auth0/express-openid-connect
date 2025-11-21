@@ -373,6 +373,9 @@ describe('auth', () => {
           response_type: 'code',
           response_mode: 'query',
           scope: 'openid email',
+          audience: 'https://api.example.com/',
+          organization: 'test_organization',
+          somethingElse: 'foo',
         },
       });
     });
@@ -386,6 +389,8 @@ describe('auth', () => {
     assert.equal(parsed.hostname, 'op.example.com');
     assert.equal(parsed.pathname, '/authorize');
     assert.equal(parsed.query.scope, 'openid email');
+    assert.equal(parsed.query.audience, 'https://api.example.com/');
+    assert.equal(parsed.query.organization, 'test_organization');
     assert.equal(parsed.query.response_type, 'code');
     assert.equal(parsed.query.response_mode, 'query');
     assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
@@ -394,6 +399,9 @@ describe('auth', () => {
     const decodedState = decodeState(parsed.query.state);
 
     assert.equal(decodedState.returnTo, 'https://example.org/custom-redirect');
+    assert.equal(decodedState.audience, 'https://api.example.com/');
+    assert.equal(decodedState.organization, 'test_organization');
+    assert.isUndefined(decodedState.somethingElse);
   });
 
   it('should not allow removing openid from scope', async function () {

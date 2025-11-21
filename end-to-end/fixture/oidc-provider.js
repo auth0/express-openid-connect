@@ -43,7 +43,7 @@ const config = {
   audiences() {
     return 'https://api.example.com/products';
   },
-  scopes: ['openid', 'offline_access', 'read:products'],
+  scopes: ['openid', 'profile', 'email', 'offline_access', 'read:products'],
   findAccount(ctx, id) {
     return {
       accountId: id,

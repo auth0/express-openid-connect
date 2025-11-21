@@ -1,6 +1,6 @@
 const debug = require('../lib/debug')('attemptSilentLogin');
 const COOKIES = require('../lib/cookies');
-const weakRef = require('../lib/weakCache');
+const { weakRef } = require('../lib/weakCache');
 
 const COOKIE_NAME = 'skipSilentLogin';
 
