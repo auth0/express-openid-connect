@@ -37,7 +37,8 @@
     "jose": "^2.0.7",
     "on-headers": "^1.1.0",
     "openid-client": "^4.9.1",
-    "url-join": "^4.0.1"
+    "url-join": "^4.0.1",
+    "util-promisify": "3.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.23",
