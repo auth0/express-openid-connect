@@ -1,7 +1,11 @@
 const { Agent } = require('https');
-const { custom } = require('openid-client');
 const fs = require('fs');
 const { assert, expect } = require('chai').use(require('chai-as-promised'));
+
+// Create a compatibility object for the old custom API
+const custom = {
+  http_options: Symbol.for('http_options'),
+};
 const { get: getConfig } = require('../lib/config');
 const { get: getClient } = require('../lib/client');
 const wellKnown = require('./fixture/well-known.json');
@@ -41,14 +45,14 @@ describe('client initialization', function () {
     it('should send the correct default headers', async function () {
       const headers = await client.introspect(
         '__test_token__',
-        '__test_hint__'
+        '__test_hint__',
       );
       const headerProps = Object.getOwnPropertyNames(headers);
 
       assert.include(headerProps, 'auth0-client');
 
       const decodedTelemetry = JSON.parse(
-        Buffer.from(headers['auth0-client'], 'base64').toString('ascii')
+        Buffer.from(headers['auth0-client'], 'base64').toString('ascii'),
       );
 
       assert.equal('express-oidc', decodedTelemetry.name);
@@ -58,7 +62,7 @@ describe('client initialization', function () {
       assert.include(headerProps, 'user-agent');
       assert.equal(
         `express-openid-connect/${pkg.version}`,
-        headers['user-agent']
+        headers['user-agent'],
       );
     });
 
@@ -71,7 +75,7 @@ describe('client initialization', function () {
           headers: {
             Authorization: 'Bearer foo',
           },
-        }
+        },
       );
       const headerProps = Object.getOwnPropertyNames(JSON.parse(response.body));
 
@@ -95,8 +99,9 @@ describe('client initialization', function () {
         .reply(
           200,
           Object.assign({}, wellKnown, {
+            issuer: 'https://test-too.auth0.com/',
             id_token_signing_alg_values_supported: ['none'],
-          })
+          }),
         );
 
       const { client } = await getClient(config);
@@ -121,11 +126,11 @@ describe('client initialization', function () {
 
     it('should use auth0 logout endpoint if configured', async function () {
       const { client } = await getClient(
-        getConfig({ ...base, auth0Logout: true })
+        getConfig({ ...base, auth0Logout: true }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://op.example.com/v2/logout?client_id=__test_client_id__'
+        'https://op.example.com/v2/logout?client_id=__test_client_id__',
       );
     });
 
@@ -134,11 +139,11 @@ describe('client initialization', function () {
         .get('/.well-known/openid-configuration')
         .reply(200, { ...wellKnown, issuer: 'https://foo.auth0.com/' });
       const { client } = await getClient(
-        getConfig({ ...base, issuerBaseURL: 'https://foo.auth0.com' })
+        getConfig({ ...base, issuerBaseURL: 'https://foo.auth0.com' }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__'
+        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__',
       );
     });
 
@@ -151,11 +156,11 @@ describe('client initialization', function () {
           ...base,
           issuerBaseURL: 'https://foo.auth0.com',
           auth0Logout: true,
-        })
+        }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__'
+        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__',
       );
     });
 
@@ -172,11 +177,11 @@ describe('client initialization', function () {
           ...base,
           issuerBaseURL: 'https://foo.auth0.com',
           auth0Logout: false,
-        })
+        }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://foo.auth0.com/oidc/logout'
+        'https://foo.auth0.com/oidc/logout',
       );
     });
 
@@ -189,7 +194,7 @@ describe('client initialization', function () {
           end_session_endpoint: undefined,
         });
       const { client } = await getClient(
-        getConfig({ ...base, issuerBaseURL: 'https://op2.example.com' })
+        getConfig({ ...base, issuerBaseURL: 'https://op2.example.com' }),
       );
       assert.throws(() => client.endSessionUrl({}));
     });
@@ -217,7 +222,7 @@ describe('client initialization', function () {
           headers: {
             Authorization: 'Bearer foo',
           },
-        }
+        },
       );
     }
 
@@ -239,7 +244,7 @@ describe('client initialization', function () {
       mockRequest(1500);
       const { client } = await getClient({ ...config, httpTimeout: 500 });
       await expect(invokeRequest(client)).to.be.rejectedWith(
-        `Timeout awaiting 'request' for 500ms`
+        /Timeout|The operation was aborted due to timeout/,
       );
     });
   });
@@ -259,7 +264,7 @@ describe('client initialization', function () {
       const { client } = await getClient({ ...config });
       await client.requestResource('https://op.example.com/foo');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.match(
-        /^express-openid-connect\//
+        /^express-openid-connect\//,
       );
     });
 
@@ -269,7 +274,7 @@ describe('client initialization', function () {
       const { client } = await getClient({ ...config, httpUserAgent: 'foo' });
       await client.requestResource('https://op.example.com/foo');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
-        'foo'
+        'foo',
       );
     });
   });
@@ -308,9 +313,9 @@ describe('client initialization', function () {
       nock('https://par-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
-        .reply(200, rest);
+        .reply(200, { ...rest, issuer: 'https://par-test.auth0.com/' });
       await expect(getClient(config)).to.be.rejectedWith(
-        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`
+        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`,
       );
     });
 
@@ -326,7 +331,7 @@ describe('client initialization', function () {
       nock('https://par-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
-        .reply(200, wellKnown);
+        .reply(200, { ...wellKnown, issuer: 'https://par-test.auth0.com/' });
       await expect(getClient(config)).to.be.fulfilled;
     });
   });
@@ -341,12 +346,18 @@ describe('client initialization', function () {
         response_type: 'code',
       },
       clientAssertionSigningKey: fs.readFileSync(
-        require('path').join(__dirname, '../examples', 'private-key.pem')
+        require('path').join(__dirname, '../examples', 'private-key.pem'),
       ),
     };
 
     it('should set default client signing assertion alg', async function () {
-      const handler = sinon.stub().returns([200, {}]);
+      const handler = sinon.stub().returns([
+        200,
+        {
+          access_token: 'test_access_token',
+          token_type: 'Bearer',
+        },
+      ]);
       nock('https://op.example.com').post('/oauth/token').reply(handler);
       const { client } = await getClient(getConfig(config));
       await client.grant();
@@ -359,7 +370,13 @@ describe('client initialization', function () {
     });
 
     it('should set custom client signing assertion alg', async function () {
-      const handler = sinon.stub().returns([200, {}]);
+      const handler = sinon.stub().returns([
+        200,
+        {
+          access_token: 'test_access_token',
+          token_type: 'Bearer',
+        },
+      ]);
       nock('https://op.example.com').post('/oauth/token').reply(handler);
       const { client } = await getClient({
         ...getConfig(config),
@@ -390,7 +407,10 @@ describe('client initialization', function () {
     });
 
     it('should memoize get client call', async function () {
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
@@ -404,7 +424,10 @@ describe('client initialization', function () {
     });
 
     it('should handle concurrent client calls', async function () {
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
@@ -419,7 +442,10 @@ describe('client initialization', function () {
     });
 
     it('should make new calls for different config references', async function () {
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
@@ -438,7 +464,10 @@ describe('client initialization', function () {
         toFake: ['Date'],
       });
 
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
@@ -460,7 +489,10 @@ describe('client initialization', function () {
         toFake: ['Date'],
       });
 
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .persist()
         .get('/.well-known/openid-configuration')
@@ -479,7 +511,10 @@ describe('client initialization', function () {
     });
 
     it('should not cache failed discoveries', async function () {
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .get('/.well-known/openid-configuration')
         .reply(500)
@@ -497,7 +532,10 @@ describe('client initialization', function () {
     });
 
     it('should handle concurrent client calls with failures', async function () {
-      const spy = sinon.spy(() => wellKnown);
+      const spy = sinon.spy(() => ({
+        ...wellKnown,
+        issuer: 'https://max-age-test.auth0.com/',
+      }));
       nock('https://max-age-test.auth0.com')
         .get('/.well-known/openid-configuration')
         .reply(500);
