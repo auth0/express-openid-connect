@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.19.3](https://github.com/auth0/express-openid-connect/tree/v2.19.3) (2025-11-21)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.2...v2.19.3)
+
+**Added**
+- feat: add Claude Code PR Review workflow [\#723](https://github.com/auth0/express-openid-connect/pull/723) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
+**Fixed**
+- Fix: Replace complex promisification logic with util-promisify to resolve store method detection [\#733](https://github.com/auth0/express-openid-connect/pull/733) ([aks96](https://github.com/aks96))
+
 ## [v2.19.2](https://github.com/auth0/express-openid-connect/tree/v2.19.2) (2025-07-22)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.1...v2.19.2)
 
