@@ -2,6 +2,7 @@
 
 ![Release](https://img.shields.io/npm/v/express-openid-connect)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/express-openid-connect)](https://codecov.io/gh/auth0/express-openid-connect)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/auth0/express-openid-connect)
 ![Downloads](https://img.shields.io/npm/dw/express-openid-connect)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 ![CircleCI](https://img.shields.io/circleci/build/github/auth0/express-openid-connect)
