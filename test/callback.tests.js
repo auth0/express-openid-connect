@@ -788,7 +788,11 @@ describe('callback response_mode: form_post', () => {
     const router = auth(authOpts);
     router.get('/refresh', async (req, res) => {
       const accessToken = await req.oidc.accessToken.refresh({
-        tokenEndpointParams: { force: true },
+        tokenEndpointParams: {
+          force: true,
+          audience: 'https://other-api.example.com/',
+          organization: 'other_test_organization',
+        },
       });
       res.json({
         accessToken,
@@ -815,6 +819,10 @@ describe('callback response_mode: form_post', () => {
         id_token: idToken,
         code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
       },
+      existingSession: {
+        audience: 'https://api.example.com/',
+        organization: 'test_organization',
+      },
     });
 
     const reply = sinon.spy(() => ({
@@ -838,7 +846,10 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'longeLiveToken=true&force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'longeLiveToken=true&force=true' +
+      '&audience=https%3A%2F%2Fother-api.example.com%2F' +
+      '&organization=other_test_organization' +
+      '&grant_type=refresh_token&refresh_token=__test_refresh_token__'
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -855,6 +866,22 @@ describe('callback response_mode: form_post', () => {
       newerTokens.accessToken.access_token,
       '__new_access_token__',
       'the new access token should be persisted in the session'
+    );
+
+    const newSession = await request
+      .get('/session', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+
+    assert.equal(
+      newSession.audience,
+      'https://api.example.com/',
+      'the audience should be kept unchanged in the session',
+    );
+
+    assert.equal(
+      newSession.organization,
+      'test_organization',
+      'the organization should be kept unchanged in the session',
     );
   });
 
@@ -1324,5 +1351,49 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(headers.foo, 'bar');
+  });
+
+  it('should persist audience and organization', async () => {
+    const router = auth({
+      ...defaultConfig,
+      authorizationParams: {
+        audience: 'https://api.example.com/',
+        organization: 'test_organization',
+      }
+    });
+    const state = encodeState({
+      audience: 'https://other-api.example.com/',
+      organization: 'other_organization',
+    });
+
+    const {
+      jar
+    } = await setup({
+      router,
+      cookies: generateCookies({
+        state,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state,
+        id_token: makeIdToken(),
+      },
+    });
+
+    const newSession = await request
+      .get('/session', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+
+    assert.equal(
+      newSession.audience,
+      'https://other-api.example.com/',
+      'the audience in the state should be copied to the session',
+    );
+
+    assert.equal(
+      newSession.organization,
+      'other_organization',
+      'the organization in the state should be copied to the session',
+    );
   });
 });
