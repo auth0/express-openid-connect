@@ -43,10 +43,15 @@ describe('client initialization', function () {
     });
 
     it('should send the correct default headers', async function () {
-      const headers = await client.introspect(
+      const response = await client.requestResource(
+        'https://op.example.com/introspection',
         '__test_token__',
-        '__test_hint__',
+        {
+          method: 'POST',
+        },
       );
+
+      const headers = JSON.parse(response.body);
       const headerProps = Object.getOwnPropertyNames(headers);
 
       assert.include(headerProps, 'auth0-client');
