@@ -10,6 +10,7 @@ const {
   checkContext,
   goto,
   login,
+  password,
 } = require('./fixture/helpers');
 
 describe('back-channel logout', async () => {
@@ -39,11 +40,11 @@ describe('back-channel logout', async () => {
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -86,11 +87,11 @@ describe('back-channel logout', async () => {
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
-    await login('username', 'password', page);
+    await login('username', password, page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
 
     const loggedInCookies = await page.cookies('http://localhost:3000');

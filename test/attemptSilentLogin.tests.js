@@ -9,7 +9,7 @@ const request = require('request-promise-native').defaults({
   resolveWithFullResponse: true,
   followRedirect: false,
 });
-const weakRef = require('../lib/weakCache.js');
+const { weakRef } = require('../lib/weakCache.js');
 const {
   cancelSilentLogin,
   resumeSilentLogin,

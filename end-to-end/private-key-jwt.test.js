@@ -9,6 +9,7 @@ const {
   stubEnv,
   goto,
   login,
+  password,
 } = require('./fixture/helpers');
 
 describe('private key jwt', async () => {
@@ -43,7 +44,7 @@ describe('private key jwt', async () => {
     );
     const promise = once(provider, 'grant.success');
 
-    await login('username', 'password', page);
+    await login('username', password, page);
     const [ctx] = await promise;
     assert(
       ctx.oidc.body.client_assertion,

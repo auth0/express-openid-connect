@@ -1,3 +1,5 @@
+// @ts-check
+
 const { assert } = require('chai');
 const sinon = require('sinon');
 const { create: createServer } = require('./fixture/server');
@@ -9,6 +11,7 @@ const {
   claimIncludes,
   claimCheck,
 } = require('./..');
+const nock = require('nock');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -24,12 +27,23 @@ const defaultConfig = {
   issuerBaseURL: 'https://op.example.com',
 };
 
+const baseTokenSet = {
+  id_token: makeIdToken(),
+  access_token: '__test_access_token__',
+  refresh_token: '__test_refresh_token__',
+  token_type: 'Bearer',
+  expires_at: Math.floor(Date.now() + 86400 / 1000),
+  audience: '__test_audience__',
+  scope: 'openid profile email',
+};
+
 const login = async (claims) => {
   const jar = request.jar();
   await request.post('/session', {
     baseUrl,
     jar,
     json: {
+      ...baseTokenSet,
       id_token: makeIdToken(claims),
     },
   });
@@ -370,5 +384,259 @@ describe('requiresAuth', () => {
       assert.include(response.headers.location, 'https://op.example.com');
       assert.equal(parsed.returnTo, '/google.com');
     }
+  });
+
+  it('should normalize requiresAuth arguments and pass them forward', async () => {
+    const authorizationParams = { foo: 'bar' };
+    const requiresLoginCheck = () => true;
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      requiresAuth({ requiresLoginCheck, authorizationParams })
+    );
+
+    const response = await request({ baseUrl, url: '/protected' });
+
+    assert.equal(response.statusCode, 302);
+    assert.isTrue(response.headers.location.includes('foo=bar'));
+  });
+
+  it('should normalize claimEquals arguments and pass them forward', async () => {
+    const authorizationParams = { foo: 'bar' };
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      claimEquals({ claim: 'role', value: 'admin', authorizationParams })
+    );
+
+    const response = await request({ baseUrl, url: '/protected' });
+
+    assert.equal(response.statusCode, 302);
+    assert.isTrue(response.headers.location.includes('foo=bar'));
+  });
+
+  it('should normalize claimIncludes arguments and pass them forward', async () => {
+    const authorizationParams = { foo: 'bar' };
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      claimIncludes({
+        claim: 'role',
+        values: ['admin', 'manager'],
+        authorizationParams,
+      })
+    );
+
+    const response = await request({ baseUrl, url: '/protected' });
+
+    assert.equal(response.statusCode, 302);
+    assert.isTrue(response.headers.location.includes('foo=bar'));
+  });
+
+  it('should normalize claimCheck arguments and pass them forward', async () => {
+    const authorizationParams = { foo: 'bar' };
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      claimCheck({ predicate: () => false, authorizationParams })
+    );
+
+    const response = await request({ baseUrl, url: '/protected' });
+
+    assert.equal(response.statusCode, 302);
+    assert.isTrue(response.headers.location.includes('foo=bar'));
+  });
+
+  it('should use current tokenset if compatible', async () => {
+    const audience = 'test_audience';
+    const organization = 'test_organization';
+    const scope = 'openid profile email __test_scope__';
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      requiresAuth({
+        authorizationParams: { audience, organization, scope },
+      })
+    );
+
+    const jar = await login();
+
+    const initialSession = {
+      ...baseTokenSet,
+      audience,
+      organization,
+      scope,
+    };
+
+    // simulate a previously existing compatible token in the session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: initialSession,
+    });
+
+    const res = await request({ baseUrl, jar, url: '/protected' });
+
+    assert.equal(res.statusCode, 200); // user is properly authenticated
+
+    const { body: newSession } = await request({
+      baseUrl,
+      jar,
+      json: true,
+      url: '/session',
+    });
+
+    assert.deepEqual(newSession, initialSession);
+  });
+
+  it('should force login if not compatible tokenset found', async () => {
+    const audience = 'test_audience';
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+      }),
+      requiresAuth({ authorizationParams: { audience } })
+    );
+
+    const jar = await login();
+
+    // simulate a previously existing incompatible token in the session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        ...baseTokenSet,
+        audience: audience + 'x',
+      },
+    });
+
+    const res = await request({ baseUrl, jar, url: '/protected' });
+
+    assert.equal(res.statusCode, 302); // user is NOT authenticated
+  });
+
+  it('should set the compatible tokenset in the list as current', async () => {
+    const audience1 = 'test_audience_1';
+    const audience2 = 'test_audience_2';
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+        tokenHistory: true,
+      }),
+      requiresAuth({
+        authorizationParams: { audience: audience1 },
+      })
+    );
+
+    const jar = await login();
+
+    // simulate a previously existing incompatible token in the session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: { ...baseTokenSet, audience: audience2 },
+    });
+
+    // simulate a previously existing compatible token in the history
+    await request.post('/tokenhistory', {
+      baseUrl,
+      jar,
+      json: {
+        tokenHistory: [{ ...baseTokenSet, audience: audience1 }],
+      },
+    });
+
+    const res = await request({ baseUrl, jar, url: '/protected' });
+
+    assert.equal(res.statusCode, 200); // user is properly authenticated
+
+    const { body: newSession } = await request({
+      baseUrl,
+      jar,
+      json: true,
+      url: '/session',
+    });
+
+    assert.equal(newSession.audience, audience1);
+  });
+
+  it('should refresh tokenset if expired and autorefresh enabled', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authRequired: false,
+        autoRefreshExpired: true,
+      }),
+      requiresAuth()
+    );
+
+    const jar = await login();
+
+    // simulate a previously existing expired token in the session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: makeIdToken(),
+        access_token: '__old_access_token__',
+        refresh_token: '__old_refresh_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor((Date.now() - 86400) / 1000), // expired yesterday
+        scope: 'openid profile email',
+      },
+    });
+
+    // simulate a successful refresh token flow response from the issuer
+    const interceptor = nock(defaultConfig.issuerBaseURL, {
+      allowUnmocked: false,
+    }).post('/oauth/token', (body) => body.grant_type === 'refresh_token');
+
+    interceptor.reply(200, {
+      id_token: makeIdToken(),
+      access_token: '__new_access_token__',
+      refresh_token: '__new_refresh_token__',
+      token_type: 'Bearer',
+      expires_in: 86400,
+    });
+
+    // make a request that triggers the autorefresh
+    const res = await request({ baseUrl, jar, url: '/protected' });
+
+    assert.equal(res.statusCode, 200);
+
+    const { body: newSession } = await request({
+      baseUrl,
+      jar,
+      json: true,
+      url: '/session',
+    });
+
+    assert.isTrue(newSession.expires_at > 0);
+
+    assert.deepInclude(newSession, {
+      access_token: '__new_access_token__',
+      refresh_token: '__new_refresh_token__',
+    });
+
+    nock.removeInterceptor(interceptor);
   });
 });
