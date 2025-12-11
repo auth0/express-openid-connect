@@ -20,7 +20,11 @@ beforeEach(function () {
   nock('https://test.eu.auth0.com')
     .persist()
     .get('/.well-known/openid-configuration')
-    .reply(200, { ...wellKnown, end_session_endpoint: undefined });
+    .reply(200, {
+      ...wellKnown,
+      issuer: 'https://test.eu.auth0.com/',
+      end_session_endpoint: undefined,
+    });
 
   nock('https://test.eu.auth0.com')
     .persist()
