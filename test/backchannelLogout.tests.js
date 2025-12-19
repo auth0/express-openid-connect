@@ -128,7 +128,7 @@ describe('back-channel logout', async () => {
 
   it('should set a maxAge based on rolling expiry', async () => {
     server = await createServer(
-      auth({ ...config, session: { rollingDuration: 999 } })
+      auth({ ...config, session: { rollingDuration: 999 } }),
     );
 
     const res = await request.post('/backchannel-logout', {
@@ -145,7 +145,7 @@ describe('back-channel logout', async () => {
 
   it('should set a maxAge based on absolute expiry', async () => {
     server = await createServer(
-      auth({ ...config, session: { absoluteDuration: 999, rolling: false } })
+      auth({ ...config, session: { absoluteDuration: 999, rolling: false } }),
     );
 
     const res = await request.post('/backchannel-logout', {
@@ -170,7 +170,7 @@ describe('back-channel logout', async () => {
             throw new Error('storage failure');
           },
         },
-      })
+      }),
     );
 
     const res = await request.post('/backchannel-logout', {
@@ -200,7 +200,7 @@ describe('back-channel logout', async () => {
     });
     assert.equal(res.statusCode, 204);
     const payload = await client.asyncGet(
-      'https://op.example.com/|__foo_sid__'
+      'https://op.example.com/|__foo_sid__',
     );
     assert.ok(payload);
     ({ body } = await request.get('/session', {
@@ -228,7 +228,7 @@ describe('back-channel logout', async () => {
     });
     assert.equal(res.statusCode, 204);
     const payload = await client.asyncGet(
-      'https://op.example.com/|__foo_sub__'
+      'https://op.example.com/|__foo_sub__',
     );
     assert.ok(payload);
     ({ body } = await request.get('/session', {
@@ -254,8 +254,12 @@ describe('back-channel logout', async () => {
     assert.ok(payload);
 
     await onLogin(
-      { oidc: { idTokenClaims: { sub: '__foo_sub__' } } },
-      getConfig(config)
+      {
+        oidc: {
+          idTokenClaims: { sub: '__foo_sub__', iss: 'https://op.example.com/' },
+        },
+      },
+      getConfig(config),
     );
     payload = await client.asyncGet('https://op.example.com/|__foo_sub__');
     assert.notOk(payload);
@@ -277,7 +281,7 @@ describe('back-channel logout', async () => {
             throw new Error('storage failure');
           },
         },
-      })
+      }),
     );
     const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
     let body;
