@@ -2,14 +2,93 @@
 
 import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
-import {
-  AuthorizationParameters,
-  IdTokenClaims,
-  UserinfoResponse,
-} from 'openid-client';
+import type { UserInfoResponse, JsonObject } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
 import type { JSONWebKey, KeyInput } from 'jose';
 import type { KeyObject } from 'crypto';
+
+// Type aliases for openid-client v6 compatibility
+type IdTokenClaims = JsonObject;
+
+/**
+ * OAuth 2.0 / OpenID Connect Authorization Parameters
+ *
+ * Based on RFC 6749, RFC 7636 (PKCE), and OpenID Connect Core 1.0 specifications.
+ * All parameters are converted to strings when building the authorization URL.
+ */
+interface AuthorizationParameters {
+  /** REQUIRED. OAuth 2.0 response type */
+  response_type?:
+    | 'code'
+    | 'id_token'
+    | 'code id_token'
+    | 'token'
+    | 'code token'
+    | 'id_token token'
+    | 'code id_token token';
+
+  /** REQUIRED. The client identifier */
+  client_id?: string;
+
+  /** REQUIRED for code flow. Client redirection URI */
+  redirect_uri?: string;
+
+  /** REQUIRED for OpenID Connect. Must include 'openid' */
+  scope?: string;
+
+  /** RECOMMENDED. Unguessable random string to mitigate CSRF attacks */
+  state?: string;
+
+  /** OAuth 2.0 response mode */
+  response_mode?: 'query' | 'fragment' | 'form_post';
+
+  /** OpenID Connect nonce parameter */
+  nonce?: string;
+
+  /** OpenID Connect display parameter */
+  display?: 'page' | 'popup' | 'touch' | 'wap';
+
+  /** OpenID Connect prompt parameter */
+  prompt?: 'none' | 'login' | 'consent' | 'select_account' | string;
+
+  /** OpenID Connect max_age parameter (seconds) */
+  max_age?: number;
+
+  /** OpenID Connect ui_locales parameter */
+  ui_locales?: string;
+
+  /** OpenID Connect id_token_hint parameter */
+  id_token_hint?: string;
+
+  /** OpenID Connect login_hint parameter */
+  login_hint?: string;
+
+  /** OpenID Connect acr_values parameter */
+  acr_values?: string;
+
+  /** PKCE code challenge */
+  code_challenge?: string;
+
+  /** PKCE code challenge method */
+  code_challenge_method?: 'plain' | 'S256';
+
+  /** OAuth 2.0 resource parameter (RFC 8707) */
+  resource?: string;
+
+  /** OAuth 2.0 audience parameter */
+  audience?: string;
+
+  /** PAR request URI */
+  request_uri?: string;
+
+  /** JWT request parameter */
+  request?: string;
+
+  /** Additional custom parameters - all values converted to strings */
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+type UserinfoResponse = UserInfoResponse;
 
 /**
  * Session object
@@ -281,7 +360,7 @@ interface BackchannelLogoutOptions {
    */
   onLogoutToken?: (
     decodedToken: object,
-    config: ConfigParams
+    config: ConfigParams,
   ) => Promise<void> | void;
 
   /**
@@ -496,7 +575,7 @@ interface ConfigParams {
     req: OpenidRequest,
     res: OpenidResponse,
     session: Session,
-    decodedState: { [key: string]: any }
+    decodedState: { [key: string]: any },
   ) => Promise<Session> | Session;
 
   /**
@@ -671,6 +750,13 @@ interface ConfigParams {
   httpTimeout?: number;
 
   /**
+   * Allow insecure HTTP connections to localhost for development. Default is false.
+   * When false, HTTP connections are only allowed in non-production environments.
+   * When true, HTTP connections to localhost are always permitted (NOT recommended for production).
+   */
+  allowInsecureLocalhost?: boolean;
+
+  /**
    * Specify an Agent or Agents to pass to the underlying http client https://github.com/sindresorhus/got/
    *
    * An object representing `http`, `https` and `http2` keys for [`http.Agent`](https://nodejs.org/api/http.html#http_class_http_agent),
@@ -729,7 +815,7 @@ interface SessionStore<Data = Session> {
    */
   get(
     sid: string,
-    callback: (err: any, session?: SessionStorePayload<Data> | null) => void
+    callback: (err: any, session?: SessionStorePayload<Data> | null) => void,
   ): void;
 
   /**
@@ -738,7 +824,7 @@ interface SessionStore<Data = Session> {
   set(
     sid: string,
     session: SessionStorePayload<Data>,
-    callback?: (err?: any) => void
+    callback?: (err?: any) => void,
   ): void;
 
   /**
@@ -975,7 +1061,7 @@ export function auth(params?: ConfigParams): RequestHandler;
  * ```
  */
 export function requiresAuth(
-  requiresLoginCheck?: (req: OpenidRequest) => boolean
+  requiresLoginCheck?: (req: OpenidRequest) => boolean,
 ): RequestHandler;
 
 /**
@@ -995,7 +1081,7 @@ export function requiresAuth(
  */
 export function claimEquals(
   claim: string,
-  value: boolean | number | string | null
+  value: boolean | number | string | null,
 ): RequestHandler;
 
 /**
@@ -1033,7 +1119,7 @@ export function claimIncludes(
  * ```
  */
 export function claimCheck(
-  checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean
+  checkFn: (req: OpenidRequest, claims: IdTokenClaims) => boolean,
 ): RequestHandler;
 
 /**
