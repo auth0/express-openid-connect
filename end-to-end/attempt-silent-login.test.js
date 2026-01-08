@@ -72,27 +72,19 @@ describe('attempt silent login', async () => {
     const loggedInCookies = await context.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
-    // Delete cookies using BrowserContext API
-    const cookiesToDelete = await context.cookies(baseUrl);
-    const appSessionCookie = cookiesToDelete.find(
-      ({ name }) => name === 'appSession',
-    );
-    const skipSilentLoginCookie = cookiesToDelete.find(
-      ({ name }) => name === 'skipSilentLogin',
+    // Delete cookies by setting them with past expiration date
+    const cookiesToDelete = loggedInCookies.filter(
+      (cookie) =>
+        cookie.name === 'appSession' || cookie.name === 'skipSilentLogin',
     );
 
-    if (appSessionCookie) {
-      await page.deleteCookie({
-        name: appSessionCookie.name,
-        domain: appSessionCookie.domain,
-        path: appSessionCookie.path,
-      });
-    }
-    if (skipSilentLoginCookie) {
-      await page.deleteCookie({
-        name: skipSilentLoginCookie.name,
-        domain: skipSilentLoginCookie.domain,
-        path: skipSilentLoginCookie.path,
+    for (const cookie of cookiesToDelete) {
+      await page.setCookie({
+        name: cookie.name,
+        value: '',
+        domain: cookie.domain,
+        path: cookie.path,
+        expires: 0, // This forces immediate expiration
       });
     }
 
