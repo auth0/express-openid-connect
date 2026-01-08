@@ -9,8 +9,6 @@ import { RequestContext, ResponseContext } from '../lib/context.js';
 import appSession from '../lib/appSession.js';
 import isLoggedOut from '../lib/hooks/backchannelLogout/isLoggedOut.js';
 
-const debugAuth = debug('auth');
-
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
 };
