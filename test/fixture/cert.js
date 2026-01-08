@@ -1,5 +1,5 @@
-const { JWK, JWKS, JWT } = require('jose');
-const crypto = require('crypto');
+import { JWK, JWKS, JWT } from 'jose';
+import crypto from 'crypto';
 
 const key = JWK.asKey({
   e: 'AQAB',
@@ -15,12 +15,11 @@ const key = JWK.asKey({
   alg: 'RS256',
 });
 
-module.exports.jwks = new JWKS.KeyStore(key).toJWKS(false);
+export const jwks = new JWKS.KeyStore(key).toJWKS(false);
+export const keyPEM = key.toPEM(true);
+export const kid = key.kid;
 
-module.exports.key = key.toPEM(true);
-module.exports.kid = key.kid;
-
-module.exports.makeIdToken = (payload) => {
+export const makeIdToken = (payload) => {
   payload = Object.assign(
     {
       nickname: '__test_nickname__',
@@ -31,7 +30,7 @@ module.exports.makeIdToken = (payload) => {
       exp: Math.round(Date.now() / 1000) + 60000,
       nonce: '__test_nonce__',
     },
-    payload
+    payload,
   );
 
   return JWT.sign(payload, key.toPEM(true), {
@@ -40,7 +39,7 @@ module.exports.makeIdToken = (payload) => {
   });
 };
 
-module.exports.makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
+export const makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
   return JWT.sign(
     {
       events: {
@@ -58,6 +57,9 @@ module.exports.makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
       algorithm: secret ? 'HS256' : 'RS256',
       header: { typ: 'logout+jwt' },
       ...payload,
-    }
+    },
   );
 };
+
+// For backward compatibility
+export default { jwks, key: keyPEM, kid, makeIdToken, makeLogoutToken };

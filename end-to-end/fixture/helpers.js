@@ -1,10 +1,16 @@
-const path = require('path');
-const crypto = require('crypto');
-const sinon = require('sinon');
-const express = require('express');
-const { JWT } = require('jose');
-const { privateJWK } = require('./jwk');
-const request = require('request-promise-native').defaults({ json: true });
+import path from 'path';
+import crypto from 'crypto';
+import sinon from 'sinon';
+import express from 'express';
+import { JWT } from 'jose';
+import { privateJWK } from './jwk.js';
+import request from 'request-promise-native';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const requestDefaults = request.defaults({ json: true });
 
 const baseUrl = 'http://localhost:3000';
 
@@ -19,14 +25,18 @@ const start = (app, port) =>
     });
   });
 
-const runExample = (name) => {
-  const app = require(path.join('..', '..', 'examples', name));
+const runExample = async (name) => {
+  const { default: app } = await import(
+    path.join('..', '..', 'examples', `${name}.js`)
+  );
   app.use(testMw());
   return start(app, 3000);
 };
 
-const runApi = () => {
-  const app = require(path.join('..', '..', 'examples', 'api'));
+const runApi = async () => {
+  const { default: app } = await import(
+    path.join('..', '..', 'examples', 'api.js')
+  );
   return start(app, 3002);
 };
 
@@ -37,7 +47,7 @@ const stubEnv = (
     BASE_URL: 'http://localhost:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
-  }
+  },
 ) =>
   sinon.stub(process, 'env').value({
     ...process.env,
@@ -67,11 +77,11 @@ const testMw = () => {
 };
 
 const checkContext = async (cookies) => {
-  const jar = request.jar();
+  const jar = requestDefaults.jar();
   cookies.forEach(({ name, value }) =>
-    jar.setCookie(`${name}=${value}`, baseUrl)
+    jar.setCookie(`${name}=${value}`, baseUrl),
   );
-  return request('/context', { jar, baseUrl });
+  return requestDefaults('/context', { jar, baseUrl });
 };
 
 const goto = async (url, page) =>
@@ -109,7 +119,7 @@ const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
       jti: crypto.randomBytes(16).toString('hex'),
       algorithm: 'RS256',
       header: { typ: 'logout+jwt' },
-    }
+    },
   );
 
   res.send(`
@@ -117,7 +127,7 @@ const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
   `);
 };
 
-module.exports = {
+export {
   baseUrl,
   start,
   runExample,

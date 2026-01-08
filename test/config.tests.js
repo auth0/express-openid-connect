@@ -1,6 +1,6 @@
-const { assert } = require('chai');
-const sinon = require('sinon');
-const { get: getConfig } = require('../lib/config');
+import { assert } from 'chai';
+import sinon from 'sinon';
+import { get as getConfig } from '../lib/config.js';
 
 const defaultConfig = {
   secret: '__test_session_secret__',
@@ -71,7 +71,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"issuerBaseURL" must be a valid uri'
+      '"issuerBaseURL" must be a valid uri',
     );
   });
 
@@ -317,7 +317,7 @@ describe('get config', () => {
     });
     sinon.assert.calledWith(
       console.warn,
-      "Setting your cookie to insecure when over https is not recommended, I hope you know what you're doing."
+      "Setting your cookie to insecure when over https is not recommended, I hope you know what you're doing.",
     );
   });
 
@@ -329,7 +329,7 @@ describe('get config', () => {
     });
     sinon.assert.calledWith(
       console.warn,
-      "Using 'form_post' for response_mode may cause issues for you logging in over http, see https://github.com/auth0/express-openid-connect/blob/master/FAQ.md"
+      "Using 'form_post' for response_mode may cause issues for you logging in over http, see https://github.com/auth0/express-openid-connect/blob/master/FAQ.md",
     );
   });
 
@@ -507,17 +507,17 @@ describe('get config', () => {
     assert.throws(
       () => getConfig({ ...defaultConfig, secret: 'short' }),
       TypeError,
-      '"secret" does not match any of the allowed types'
+      '"secret" does not match any of the allowed types',
     );
     assert.throws(
       () => getConfig({ ...defaultConfig, secret: ['short', 'too'] }),
       TypeError,
-      '"secret[0]" does not match any of the allowed types'
+      '"secret[0]" does not match any of the allowed types',
     );
     assert.throws(
       () => getConfig({ ...defaultConfig, secret: Buffer.from('short') }),
       TypeError,
-      '"secret" must be at least 8 bytes'
+      '"secret" must be at least 8 bytes',
     );
   });
 
@@ -531,7 +531,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"'
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"',
     );
   });
 
@@ -545,7 +545,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"'
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"',
     );
   });
 
@@ -560,7 +560,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      'Public code flow clients are not supported.'
+      'Public code flow clients are not supported.',
     );
   });
 
@@ -575,7 +575,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"'
+      '"clientAssertionSigningKey" is required for a "clientAuthMethod" of "private_key_jwt"',
     );
   });
 
@@ -613,7 +613,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+      '"clientSecret" is required for ID tokens with HMAC based algorithms',
     );
   });
 
@@ -628,7 +628,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+      '"clientSecret" is required for ID tokens with HMAC based algorithms',
     );
   });
 
@@ -643,7 +643,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for ID tokens with HMAC based algorithms'
+      '"clientSecret" is required for ID tokens with HMAC based algorithms',
     );
   });
 
@@ -656,12 +656,12 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ scope: null }),
       TypeError,
-      '"authorizationParams.scope" must be a string'
+      '"authorizationParams.scope" must be a string',
     );
     assert.throws(
       () => validateAuthorizationParams({ scope: '' }),
       TypeError,
-      '"authorizationParams.scope" is not allowed to be empty'
+      '"authorizationParams.scope" is not allowed to be empty',
     );
   });
 
@@ -669,19 +669,19 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ scope: 'profile email' }),
       TypeError,
-      '"authorizationParams.scope" with value "profile email" fails to match the contains openid pattern'
+      '"authorizationParams.scope" with value "profile email" fails to match the contains openid pattern',
     );
   });
 
   it('should allow scope with openid', () => {
     assert.doesNotThrow(() =>
-      validateAuthorizationParams({ scope: 'openid read:users' })
+      validateAuthorizationParams({ scope: 'openid read:users' }),
     );
     assert.doesNotThrow(() =>
-      validateAuthorizationParams({ scope: 'read:users openid' })
+      validateAuthorizationParams({ scope: 'read:users openid' }),
     );
     assert.doesNotThrow(() =>
-      validateAuthorizationParams({ scope: 'read:users openid profile email' })
+      validateAuthorizationParams({ scope: 'read:users openid profile email' }),
     );
   });
 
@@ -689,12 +689,12 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_type: null }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: '' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
   });
 
@@ -702,17 +702,17 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'foo' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'foo id_token' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'id_token code' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]'
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
   });
 
@@ -723,7 +723,7 @@ describe('get config', () => {
       authorizationParams,
     });
     assert.doesNotThrow(() =>
-      validateAuthorizationParams({ response_type: 'id_token' })
+      validateAuthorizationParams({ response_type: 'id_token' }),
     );
     assert.doesNotThrow(() => config({ response_type: 'code id_token' }));
     assert.doesNotThrow(() => config({ response_type: 'code' }));
@@ -733,12 +733,12 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_mode: null }),
       TypeError,
-      '"authorizationParams.response_mode" must be [form_post]'
+      '"authorizationParams.response_mode" must be [form_post]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_mode: '' }),
       TypeError,
-      '"authorizationParams.response_mode" must be [form_post]'
+      '"authorizationParams.response_mode" must be [form_post]',
     );
     assert.throws(
       () =>
@@ -747,7 +747,7 @@ describe('get config', () => {
           response_mode: '',
         }),
       TypeError,
-      '"authorizationParams.response_mode" must be one of [query, form_post]'
+      '"authorizationParams.response_mode" must be one of [query, form_post]',
     );
   });
 
@@ -759,7 +759,7 @@ describe('get config', () => {
           response_mode: 'query',
         }),
       TypeError,
-      '"authorizationParams.response_mode" must be [form_post]'
+      '"authorizationParams.response_mode" must be [form_post]',
     );
     assert.throws(
       () =>
@@ -768,7 +768,7 @@ describe('get config', () => {
           response_mode: 'query',
         }),
       TypeError,
-      '"authorizationParams.response_mode" must be [form_post]'
+      '"authorizationParams.response_mode" must be [form_post]',
     );
   });
 
@@ -779,19 +779,19 @@ describe('get config', () => {
       authorizationParams,
     });
     assert.doesNotThrow(() =>
-      config({ response_type: 'code', response_mode: 'query' })
+      config({ response_type: 'code', response_mode: 'query' }),
     );
     assert.doesNotThrow(() =>
-      config({ response_type: 'code', response_mode: 'form_post' })
+      config({ response_type: 'code', response_mode: 'form_post' }),
     );
     assert.doesNotThrow(() =>
       validateAuthorizationParams({
         response_type: 'id_token',
         response_mode: 'form_post',
-      })
+      }),
     );
     assert.doesNotThrow(() =>
-      config({ response_type: 'code id_token', response_mode: 'form_post' })
+      config({ response_type: 'code id_token', response_mode: 'form_post' }),
     );
   });
 
@@ -862,7 +862,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig({ ...defaultConfig, backchannelLogout: true }),
       TypeError,
-      `Back-Channel Logout requires a "backchannelLogout.store" (you can also reuse "session.store" if you have stateful sessions) or custom hooks for "isLoggedOut" and "onLogoutToken".`
+      `Back-Channel Logout requires a "backchannelLogout.store" (you can also reuse "session.store" if you have stateful sessions) or custom hooks for "isLoggedOut" and "onLogoutToken".`,
     );
   });
 
@@ -871,7 +871,7 @@ describe('get config', () => {
       getConfig({
         ...defaultConfig,
         backchannelLogout: { store: {} },
-      })
+      }),
     );
   });
 
@@ -881,7 +881,7 @@ describe('get config', () => {
         ...defaultConfig,
         backchannelLogout: true,
         session: { store: {} },
-      })
+      }),
     );
   });
 
@@ -893,7 +893,7 @@ describe('get config', () => {
           isLoggedOut: () => {},
           onLogoutToken: () => {},
         },
-      })
+      }),
     );
   });
 });

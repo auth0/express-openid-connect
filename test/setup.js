@@ -1,7 +1,7 @@
-const nock = require('nock');
-const sinon = require('sinon');
-const wellKnown = require('./fixture/well-known.json');
-const certs = require('./fixture/cert');
+import nock from 'nock';
+import sinon from 'sinon';
+import wellKnown from './fixture/well-known.json' with { type: 'json' };
+import certs from './fixture/cert.js';
 
 let warn;
 

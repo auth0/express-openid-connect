@@ -1,14 +1,14 @@
-const { assert } = require('chai');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import puppeteer from 'puppeteer';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   login,
   runExample,
   stubEnv,
   goto,
-} = require('./fixture/helpers');
+} from './fixture/helpers.js';
 
 describe('attempt silent login', async () => {
   let authServer;

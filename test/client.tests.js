@@ -1,14 +1,21 @@
-const { Agent } = require('https');
-const { custom } = require('openid-client');
-const fs = require('fs');
-const { assert, expect } = require('chai').use(require('chai-as-promised'));
-const { get: getConfig } = require('../lib/config');
-const { get: getClient } = require('../lib/client');
-const wellKnown = require('./fixture/well-known.json');
-const nock = require('nock');
-const pkg = require('../package.json');
-const sinon = require('sinon');
-const jose = require('jose');
+import { Agent } from 'https';
+import { custom } from 'openid-client';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { get as getConfig } from '../lib/config.js';
+import { get as getClient } from '../lib/client.js';
+import wellKnown from './fixture/well-known.json' with { type: 'json' };
+import nock from 'nock';
+import pkg from '../package.json' with { type: 'json' };
+import sinon from 'sinon';
+import * as jose from 'jose';
+
+const { assert, expect } = chai.use(chaiAsPromised);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('client initialization', function () {
   beforeEach(async function () {
@@ -41,14 +48,14 @@ describe('client initialization', function () {
     it('should send the correct default headers', async function () {
       const headers = await client.introspect(
         '__test_token__',
-        '__test_hint__'
+        '__test_hint__',
       );
       const headerProps = Object.getOwnPropertyNames(headers);
 
       assert.include(headerProps, 'auth0-client');
 
       const decodedTelemetry = JSON.parse(
-        Buffer.from(headers['auth0-client'], 'base64').toString('ascii')
+        Buffer.from(headers['auth0-client'], 'base64').toString('ascii'),
       );
 
       assert.equal('express-oidc', decodedTelemetry.name);
@@ -58,7 +65,7 @@ describe('client initialization', function () {
       assert.include(headerProps, 'user-agent');
       assert.equal(
         `express-openid-connect/${pkg.version}`,
-        headers['user-agent']
+        headers['user-agent'],
       );
     });
 
@@ -71,7 +78,7 @@ describe('client initialization', function () {
           headers: {
             Authorization: 'Bearer foo',
           },
-        }
+        },
       );
       const headerProps = Object.getOwnPropertyNames(JSON.parse(response.body));
 
@@ -96,7 +103,7 @@ describe('client initialization', function () {
           200,
           Object.assign({}, wellKnown, {
             id_token_signing_alg_values_supported: ['none'],
-          })
+          }),
         );
 
       const { client } = await getClient(config);
@@ -121,11 +128,11 @@ describe('client initialization', function () {
 
     it('should use auth0 logout endpoint if configured', async function () {
       const { client } = await getClient(
-        getConfig({ ...base, auth0Logout: true })
+        getConfig({ ...base, auth0Logout: true }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://op.example.com/v2/logout?client_id=__test_client_id__'
+        'https://op.example.com/v2/logout?client_id=__test_client_id__',
       );
     });
 
@@ -134,11 +141,11 @@ describe('client initialization', function () {
         .get('/.well-known/openid-configuration')
         .reply(200, { ...wellKnown, issuer: 'https://foo.auth0.com/' });
       const { client } = await getClient(
-        getConfig({ ...base, issuerBaseURL: 'https://foo.auth0.com' })
+        getConfig({ ...base, issuerBaseURL: 'https://foo.auth0.com' }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__'
+        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__',
       );
     });
 
@@ -151,11 +158,11 @@ describe('client initialization', function () {
           ...base,
           issuerBaseURL: 'https://foo.auth0.com',
           auth0Logout: true,
-        })
+        }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__'
+        'https://foo.auth0.com/v2/logout?client_id=__test_client_id__',
       );
     });
 
@@ -172,11 +179,11 @@ describe('client initialization', function () {
           ...base,
           issuerBaseURL: 'https://foo.auth0.com',
           auth0Logout: false,
-        })
+        }),
       );
       assert.equal(
         client.endSessionUrl({}),
-        'https://foo.auth0.com/oidc/logout'
+        'https://foo.auth0.com/oidc/logout',
       );
     });
 
@@ -189,7 +196,7 @@ describe('client initialization', function () {
           end_session_endpoint: undefined,
         });
       const { client } = await getClient(
-        getConfig({ ...base, issuerBaseURL: 'https://op2.example.com' })
+        getConfig({ ...base, issuerBaseURL: 'https://op2.example.com' }),
       );
       assert.throws(() => client.endSessionUrl({}));
     });
@@ -217,7 +224,7 @@ describe('client initialization', function () {
           headers: {
             Authorization: 'Bearer foo',
           },
-        }
+        },
       );
     }
 
@@ -239,7 +246,7 @@ describe('client initialization', function () {
       mockRequest(1500);
       const { client } = await getClient({ ...config, httpTimeout: 500 });
       await expect(invokeRequest(client)).to.be.rejectedWith(
-        `Timeout awaiting 'request' for 500ms`
+        `Timeout awaiting 'request' for 500ms`,
       );
     });
   });
@@ -259,7 +266,7 @@ describe('client initialization', function () {
       const { client } = await getClient({ ...config });
       await client.requestResource('https://op.example.com/foo');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.match(
-        /^express-openid-connect\//
+        /^express-openid-connect\//,
       );
     });
 
@@ -269,7 +276,7 @@ describe('client initialization', function () {
       const { client } = await getClient({ ...config, httpUserAgent: 'foo' });
       await client.requestResource('https://op.example.com/foo');
       expect(handler.firstCall.thisValue.req.headers['user-agent']).to.equal(
-        'foo'
+        'foo',
       );
     });
   });
@@ -310,7 +317,7 @@ describe('client initialization', function () {
         .get('/.well-known/openid-configuration')
         .reply(200, rest);
       await expect(getClient(config)).to.be.rejectedWith(
-        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`
+        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`,
       );
     });
 
@@ -341,7 +348,7 @@ describe('client initialization', function () {
         response_type: 'code',
       },
       clientAssertionSigningKey: fs.readFileSync(
-        require('path').join(__dirname, '../examples', 'private-key.pem')
+        path.join(__dirname, '../examples', 'private-key.pem'),
       ),
     };
 

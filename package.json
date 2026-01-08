@@ -6,6 +6,7 @@
   "homepage": "https://github.com/auth0/express-openid-connect",
   "license": "MIT",
   "author": "Auth0 <support@auth0.com>",
+  "type": "module",
   "main": "index.js",
   "files": [
     "lib",
