@@ -1,21 +1,27 @@
 import { Agent } from 'https';
 import { custom } from 'openid-client';
-import fs from 'fs';
-import path from 'path';
+import fs, { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
+import path from 'path';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+
+const { assert, expect } = chai.use(chaiAsPromised);
+
 import { get as getConfig } from '../lib/config.js';
 import { get as getClient } from '../lib/client.js';
-import wellKnown from './fixture/well-known.json' with { type: 'json' };
 import nock from 'nock';
-import pkg from '../package.json' with { type: 'json' };
 import sinon from 'sinon';
 import * as jose from 'jose';
 
-const { assert, expect } = chai.use(chaiAsPromised);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const wellKnown = JSON.parse(
+  readFileSync(path.join(__dirname, 'fixture', 'well-known.json'), 'utf8'),
+);
+const pkg = JSON.parse(
+  readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'),
+);
 
 describe('client initialization', function () {
   beforeEach(async function () {

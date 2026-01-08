@@ -5,10 +5,6 @@ import express from 'express';
 import { JWT } from 'jose';
 import { privateJWK } from './jwk.js';
 import request from 'request-promise-native';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const requestDefaults = request.defaults({ json: true });
 
