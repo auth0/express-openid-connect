@@ -109,11 +109,7 @@ jobs:
             npm ci
           fi
 
-      - name: Run End-to-End Tests
-        run: npx mocha end-to-end --timeout 30000 --exit
-        env:
-          CI: true
-          NODE_ENV: test
+      - run: npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests
