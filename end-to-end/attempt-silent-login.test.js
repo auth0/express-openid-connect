@@ -1,14 +1,14 @@
-import { assert } from 'chai';
-import puppeteer from 'puppeteer';
-import provider from './fixture/oidc-provider.js';
-import {
+const { assert } = require('chai');
+const puppeteer = require('puppeteer');
+const provider = require('./fixture/oidc-provider');
+const {
   baseUrl,
   start,
   login,
   runExample,
   stubEnv,
   goto,
-} from './fixture/helpers.js';
+} = require('./fixture/helpers');
 
 describe('attempt silent login', async () => {
   let authServer;
@@ -73,18 +73,26 @@ describe('attempt silent login', async () => {
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
     // Delete cookies by setting them with past expiration date
-    const cookiesToDelete = loggedInCookies.filter(
-      (cookie) =>
-        cookie.name === 'appSession' || cookie.name === 'skipSilentLogin',
+    const cookiesToDelete = await context.cookies(baseUrl);
+    const appSessionCookie = cookiesToDelete.find(
+      ({ name }) => name === 'appSession',
+    );
+    const skipSilentLoginCookie = cookiesToDelete.find(
+      ({ name }) => name === 'skipSilentLogin',
     );
 
-    for (const cookie of cookiesToDelete) {
-      await page.setCookie({
-        name: cookie.name,
-        value: '',
-        domain: cookie.domain,
-        path: cookie.path,
-        expires: 0, // This forces immediate expiration
+    if (appSessionCookie) {
+      await page.deleteCookie({
+        name: appSessionCookie.name,
+        domain: appSessionCookie.domain,
+        path: appSessionCookie.path,
+      });
+    }
+    if (skipSilentLoginCookie) {
+      await page.deleteCookie({
+        name: skipSilentLoginCookie.name,
+        domain: skipSilentLoginCookie.domain,
+        path: skipSilentLoginCookie.path,
       });
     }
 
