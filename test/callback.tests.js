@@ -1,23 +1,27 @@
-const assert = require('chai').assert;
-const sinon = require('sinon');
-const jose = require('jose');
-const request = require('request-promise-native').defaults({
+import { assert } from 'chai';
+import sinon from 'sinon';
+import * as jose from 'jose';
+import request from 'request-promise-native';
+import qs from 'querystring';
+
+import TransientCookieHandler from '../lib/transientHandler.js';
+import { encodeState } from '../lib/hooks/getLoginState.js';
+import { auth } from '../index.js';
+import { create as createServer } from './fixture/server.js';
+import { makeIdToken } from './fixture/cert.js';
+import nock from 'nock';
+import MemoryStore from 'memorystore';
+import { privatePEM as privateKey } from '../end-to-end/fixture/jwk.js';
+import getRedisStore from './fixture/store.js';
+
+const requestDefaults = request.defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
-const qs = require('querystring');
 
-const TransientCookieHandler = require('../lib/transientHandler');
-const { encodeState } = require('../lib/hooks/getLoginState');
-const { auth } = require('..');
-const { create: createServer } = require('./fixture/server');
-const { makeIdToken } = require('./fixture/cert');
 const clientID = '__test_client_id__';
 const expectedDefaultState = encodeState({ returnTo: 'https://example.org' });
-const nock = require('nock');
-const MemoryStore = require('memorystore')(auth);
-const { privatePEM: privateKey } = require('../end-to-end/fixture/jwk');
-const getRedisStore = require('./fixture/store');
+const memoryStoreFactory = MemoryStore(auth);
 
 const baseUrl = 'http://localhost:3000';
 const defaultConfig = {
@@ -38,7 +42,7 @@ const setup = async (params) => {
   const router = params.router || auth(authOpts);
   const transient = new TransientCookieHandler(authOpts);
 
-  const jar = params.jar || request.jar();
+  const jar = params.jar || requestDefaults.jar();
   server = await createServer(router);
   let tokenReqHeader;
   let tokenReqBody;
@@ -57,12 +61,12 @@ const setup = async (params) => {
           }
         },
       },
-      { value: params.cookies[cookieName] }
+      { value: params.cookies[cookieName] },
     );
 
     jar.setCookie(
       `${cookieName}=${value}; Max-Age=3600; Path=/; HttpOnly;`,
-      baseUrl + '/callback'
+      baseUrl + '/callback',
     );
   });
 
@@ -74,7 +78,6 @@ const setup = async (params) => {
       tokenReqHeader = this.req.headers;
       tokenReqBody = requestBody;
       tokenReqBodyJson = qs.parse(requestBody);
-      require('querystring').parse(requestBody);
       return {
         access_token: '__test_access_token__',
         refresh_token: '__test_refresh_token__',
@@ -86,7 +89,7 @@ const setup = async (params) => {
 
   let existingSessionCookie;
   if (params.existingSession) {
-    await request.post('/session', {
+    await requestDefaults.post('/session', {
       baseUrl,
       jar,
       json: params.existingSession,
@@ -95,18 +98,18 @@ const setup = async (params) => {
     existingSessionCookie = cookies.find(({ key }) => key === 'appSession');
   }
 
-  const response = await request.post('/callback', {
+  const response = await requestDefaults.post('/callback', {
     baseUrl,
     jar,
     json: params.body,
   });
-  const currentUser = await request
+  const currentUser = await requestDefaults
     .get('/user', { baseUrl, jar, json: true })
     .then((r) => r.body);
-  const currentSession = await request
+  const currentSession = await requestDefaults
     .get('/session', { baseUrl, jar, json: true })
     .then((r) => r.body);
-  const tokens = await request
+  const tokens = await requestDefaults
     .get('/tokens', { baseUrl, jar, json: true })
     .then((r) => r.body);
 
@@ -209,7 +212,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(statusCode, 400);
     assert.equal(
       err.message,
-      'failed to decode JWT (JWTMalformed: JWTs must have three components)'
+      'failed to decode JWT (JWTMalformed: JWTs must have three components)',
     );
   });
 
@@ -408,7 +411,7 @@ describe('callback response_mode: form_post', () => {
           state: expectedDefaultState,
           nonce: '__test_nonce__',
         },
-        customTxnCookieName
+        customTxnCookieName,
       ),
       body: {
         state: expectedDefaultState,
@@ -501,13 +504,13 @@ describe('callback response_mode: form_post', () => {
     });
     assert.equal(tokens.accessToken.expires_in, 24 * hrSecs);
     clock.tick(4 * hrMs);
-    const tokens2 = await request
+    const tokens2 = await requestDefaults
       .get('/tokens', { baseUrl, jar, json: true })
       .then((r) => r.body);
     assert.equal(tokens2.accessToken.expires_in, 20 * hrSecs);
     assert.isFalse(tokens2.accessTokenExpired);
     clock.tick(21 * hrMs);
-    const tokens3 = await request
+    const tokens3 = await requestDefaults
       .get('/tokens', { baseUrl, jar, json: true })
       .then((r) => r.body);
     assert.isTrue(tokens3.accessTokenExpired);
@@ -571,7 +574,7 @@ describe('callback response_mode: form_post', () => {
       .post('/oauth/token')
       .reply(200, reply);
 
-    const newTokens = await request
+    const newTokens = await requestDefaults
       .get('/refresh', { baseUrl, jar, json: true })
       .then((r) => r.body);
     nock.removeInterceptor(interceptor);
@@ -579,7 +582,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'grant_type=refresh_token&refresh_token=__test_refresh_token__',
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -587,14 +590,14 @@ describe('callback response_mode: form_post', () => {
     assert.equal(newTokens.accessToken.access_token, '__new_access_token__');
     assert.equal(newTokens.refreshToken, '__new_refresh_token__');
 
-    const newerTokens = await request
+    const newerTokens = await requestDefaults
       .get('/tokens', { baseUrl, jar, json: true })
       .then((r) => r.body);
 
     assert.equal(
       newerTokens.accessToken.access_token,
       '__new_access_token__',
-      'the new access token should be persisted in the session'
+      'the new access token should be persisted in the session',
     );
   });
 
@@ -659,8 +662,8 @@ describe('callback response_mode: form_post', () => {
       .post('/oauth/token')
       .reply(200, reply);
 
-    await request.get('/refresh', { baseUrl, jar });
-    const { body: newTokens } = await request.get('/tokens', {
+    await requestDefaults.get('/refresh', { baseUrl, jar });
+    const { body: newTokens } = await requestDefaults.get('/tokens', {
       baseUrl,
       jar,
       json: true,
@@ -751,7 +754,7 @@ describe('callback response_mode: form_post', () => {
       .post('/oauth/token')
       .reply(200, reply);
 
-    const newTokens = await request
+    const newTokens = await requestDefaults
       .get('/refresh', { baseUrl, jar, json: true })
       .then((r) => r.body);
     nock.removeInterceptor(interceptor);
@@ -759,7 +762,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'grant_type=refresh_token&refresh_token=__test_refresh_token__',
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -830,7 +833,7 @@ describe('callback response_mode: form_post', () => {
       .post('/oauth/token')
       .reply(200, reply);
 
-    const newTokens = await request
+    const newTokens = await requestDefaults
       .get('/refresh', { baseUrl, jar, json: true })
       .then((r) => r.body);
     nock.removeInterceptor(interceptor);
@@ -838,7 +841,7 @@ describe('callback response_mode: form_post', () => {
     sinon.assert.calledWith(
       reply,
       '/oauth/token',
-      'longeLiveToken=true&force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__'
+      'longeLiveToken=true&force=true&grant_type=refresh_token&refresh_token=__test_refresh_token__',
     );
 
     assert.equal(tokens.accessToken.access_token, '__test_access_token__');
@@ -847,14 +850,14 @@ describe('callback response_mode: form_post', () => {
     assert.equal(newTokens.refreshToken, '__new_refresh_token__');
     assert.match(tokenReqBody, /longeLiveToken=true/);
 
-    const newerTokens = await request
+    const newerTokens = await requestDefaults
       .get('/tokens', { baseUrl, jar, json: true })
       .then((r) => r.body);
 
     assert.equal(
       newerTokens.accessToken.access_token,
       '__new_access_token__',
-      'the new access token should be persisted in the session'
+      'the new access token should be persisted in the session',
     );
   });
 
@@ -907,7 +910,7 @@ describe('callback response_mode: form_post', () => {
         sub: '__test_sub__',
       }));
 
-    const userInfo = await request
+    const userInfo = await requestDefaults
       .get('/user-info', { baseUrl, jar, json: true })
       .then((r) => r.body);
 
@@ -943,12 +946,12 @@ describe('callback response_mode: form_post', () => {
 
     const credentials = Buffer.from(
       tokenReqHeader.authorization.replace('Basic ', ''),
-      'base64'
+      'base64',
     );
     assert.equal(credentials, '__test_client_id__:__test_client_secret__');
     assert.match(
       tokenReqBody,
-      /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/
+      /code=jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y/,
     );
   });
 
@@ -978,7 +981,7 @@ describe('callback response_mode: form_post', () => {
     assert(tokenReqBodyJson.client_assertion);
     assert.equal(
       tokenReqBodyJson.client_assertion_type,
-      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     const { header } = jose.JWT.decode(tokenReqBodyJson.client_assertion, {
       complete: true,
@@ -1013,7 +1016,7 @@ describe('callback response_mode: form_post', () => {
     assert(tokenReqBodyJson.client_assertion);
     assert.equal(
       tokenReqBodyJson.client_assertion_type,
-      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     const { header } = jose.JWT.decode(tokenReqBodyJson.client_assertion, {
       complete: true,
@@ -1023,7 +1026,7 @@ describe('callback response_mode: form_post', () => {
 
   it('should resume silent logins when user successfully logs in', async () => {
     const idToken = makeIdToken();
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     jar.setCookie('skipSilentLogin=true', baseUrl);
     await setup({
       cookies: generateCookies({
@@ -1098,7 +1101,7 @@ describe('callback response_mode: form_post', () => {
 
       nock.removeInterceptor(interceptor);
 
-      const body = await request
+      const body = await requestDefaults
         .get('/session', { baseUrl, jar, json: true })
         .then((r) => r.body);
 
@@ -1182,7 +1185,7 @@ describe('callback response_mode: form_post', () => {
   });
 
   it('should preserve session but regenerate session id when a new user is logging in over an anonymous session', async () => {
-    const store = new MemoryStore({
+    const store = new memoryStoreFactory({
       checkPeriod: 24 * 60 * 1000,
     });
     const { currentSession, currentUser, existingSessionCookie, jar } =
@@ -1213,13 +1216,13 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       1,
-      'There should only be one session in the store'
+      'There should only be one session in the store',
     );
     assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });
 
   it('should preserve session when the same user is logging in over their existing session', async () => {
-    const store = new MemoryStore({
+    const store = new memoryStoreFactory({
       checkPeriod: 24 * 60 * 1000,
     });
     const { currentSession, currentUser, existingSessionCookie, jar } =
@@ -1251,13 +1254,13 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       1,
-      'There should only be one session in the store'
+      'There should only be one session in the store',
     );
     assert.equal(existingSessionCookie.value, newSessionCookie.value);
   });
 
   it('should regenerate the session when a new user is logging in over an existing different user', async () => {
-    const store = new MemoryStore({
+    const store = new memoryStoreFactory({
       checkPeriod: 24 * 60 * 1000,
     });
     const { currentSession, currentUser, existingSessionCookie, jar } =
@@ -1289,7 +1292,7 @@ describe('callback response_mode: form_post', () => {
     assert.equal(
       store.store.length,
       1,
-      'There should only be one session in the store'
+      'There should only be one session in the store',
     );
     assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
   });

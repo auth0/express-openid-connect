@@ -1,6 +1,6 @@
-const express = require('express');
-const request = require('request-promise-native');
-const { auth } = require('../');
+import express from 'express';
+import request from 'request-promise-native';
+import { auth } from '../index.js';
 
 const app = express();
 
@@ -14,7 +14,7 @@ app.use(
       scope: 'openid profile email offline_access read:products',
       prompt: 'consent',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -31,4 +31,4 @@ app.get('/', async (req, res) => {
   res.send(`Products: ${products.map(({ name }) => name).join(', ')}`);
 });
 
-module.exports = app;
+export default app;

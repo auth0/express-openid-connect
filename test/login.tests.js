@@ -1,16 +1,17 @@
-const assert = require('chai').assert;
-const url = require('url');
-const querystring = require('querystring');
-const nock = require('nock');
-const request = require('request-promise-native').defaults({
+import { assert } from 'chai';
+import url from 'url';
+import querystring from 'querystring';
+import nock from 'nock';
+import request from 'request-promise-native';
+
+import { decodeState } from '../lib/hooks/getLoginState.js';
+import { auth } from '../index.js';
+import { create as createServer } from './fixture/server.js';
+
+const requestDefaults = request.defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
-
-const { decodeState } = require('../lib/hooks/getLoginState');
-
-const { auth } = require('..');
-const { create: createServer } = require('./fixture/server');
 
 const filterRoute = (method, path) => {
   return (r) =>
@@ -21,7 +22,7 @@ const fetchAuthCookie = (res, txnCookieName) => {
   txnCookieName = txnCookieName || 'auth_verification';
   const cookieHeaders = res.headers['set-cookie'];
   return cookieHeaders.filter(
-    (header) => header.split('=')[0] === txnCookieName
+    (header) => header.split('=')[0] === txnCookieName,
   )[0];
 };
 
@@ -87,7 +88,10 @@ describe('auth', () => {
 
   it('should redirect to the authorize url for /login', async () => {
     server = await createServer(auth(defaultConfig));
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -112,9 +116,12 @@ describe('auth', () => {
       auth({
         ...defaultConfig,
         transactionCookie: { name: customTxnCookieName },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -130,11 +137,11 @@ describe('auth', () => {
 
     assert.equal(
       fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
-      parsed.query.nonce
+      parsed.query.nonce,
     );
     assert.equal(
       fetchFromAuthCookie(res, 'state', customTxnCookieName),
-      parsed.query.state
+      parsed.query.state,
     );
   });
 
@@ -143,9 +150,9 @@ describe('auth', () => {
       auth({
         ...defaultConfig,
         authRequired: true,
-      })
+      }),
     );
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       followRedirect: false,
     });
@@ -158,9 +165,9 @@ describe('auth', () => {
         ...defaultConfig,
         authRequired: false,
         attemptSilentLogin: true,
-      })
+      }),
     );
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       followRedirect: false,
     });
@@ -174,9 +181,9 @@ describe('auth', () => {
         authRequired: false,
         attemptSilentLogin: true,
         transactionCookie: { name: 'CustomTxnCookie' },
-      })
+      }),
     );
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       followRedirect: false,
     });
@@ -191,9 +198,12 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'code',
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -223,9 +233,12 @@ describe('auth', () => {
           response_type: 'code',
         },
         transactionCookie: { name: customTxnCookieName },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -243,11 +256,11 @@ describe('auth', () => {
 
     assert.equal(
       fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
-      parsed.query.nonce
+      parsed.query.nonce,
     );
     assert.equal(
       fetchFromAuthCookie(res, 'state', customTxnCookieName),
-      parsed.query.state
+      parsed.query.state,
     );
   });
 
@@ -258,9 +271,12 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'id_token',
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -284,9 +300,12 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'code id_token',
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -311,9 +330,9 @@ describe('auth', () => {
           login: 'custom-login',
           logout: 'custom-logout',
         },
-      })
+      }),
     );
-    const res = await request.get('/custom-login', {
+    const res = await requestDefaults.get('/custom-login', {
       baseUrl,
       followRedirect: false,
     });
@@ -324,7 +343,7 @@ describe('auth', () => {
     assert.equal(parsed.pathname, '/authorize');
     assert.equal(
       parsed.query.redirect_uri,
-      'https://example.org/custom-callback'
+      'https://example.org/custom-callback',
     );
   });
 
@@ -348,9 +367,9 @@ describe('auth', () => {
         clientSecret: 'test-client-secret',
         pushedAuthorizationRequests: true,
         clientAuthMethod: 'client_secret_post',
-      })
+      }),
     );
-    const res = await request.get('/login', {
+    const res = await requestDefaults.get('/login', {
       baseUrl,
       followRedirect: false,
     });
@@ -378,7 +397,10 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -407,8 +429,8 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const cookieJar = request.jar();
-    const res = await request.get('/login', {
+    const cookieJar = requestDefaults.jar();
+    const res = await requestDefaults.get('/login', {
       cookieJar,
       baseUrl,
       json: true,
@@ -432,8 +454,8 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const cookieJar = request.jar();
-    const res = await request.get('/login', {
+    const cookieJar = requestDefaults.jar();
+    const res = await requestDefaults.get('/login', {
       cookieJar,
       baseUrl,
       json: true,
@@ -442,7 +464,7 @@ describe('auth', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'response_type should be one of id_token, code id_token, code'
+      'response_type should be one of id_token, code id_token, code',
     );
   });
 
@@ -461,8 +483,8 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const cookieJar = request.jar();
-    const res = await request.get('/login', {
+    const cookieJar = requestDefaults.jar();
+    const res = await requestDefaults.get('/login', {
       cookieJar,
       baseUrl,
       json: true,
@@ -471,7 +493,7 @@ describe('auth', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'response_type should be one of id_token, code id_token, code'
+      'response_type should be one of id_token, code id_token, code',
     );
   });
 
@@ -485,9 +507,12 @@ describe('auth', () => {
             customProp: '__test_custom_prop__',
           };
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -505,9 +530,12 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'code id_token',
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -532,9 +560,12 @@ describe('auth', () => {
             sameSite: 'Strict',
           },
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=Strict');
@@ -552,9 +583,12 @@ describe('auth', () => {
           response_mode: 'query',
           response_type: 'code',
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=Strict');
@@ -567,9 +601,12 @@ describe('auth', () => {
         transactionCookie: {
           sameSite: 'Strict',
         },
-      })
+      }),
     );
-    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=None');
@@ -587,9 +624,9 @@ describe('auth', () => {
       auth({
         ...defaultConfig,
         issuerBaseURL: 'https://example.com',
-      })
+      }),
     );
-    const res = await request.get('/login', {
+    const res = await requestDefaults.get('/login', {
       baseUrl,
       followRedirect: false,
       json: true,
@@ -598,7 +635,7 @@ describe('auth', () => {
     assert.match(
       res.body.err.message,
       /^Issuer.discover\(\) failed/,
-      'Should get error json from server error middleware'
+      'Should get error json from server error middleware',
     );
   });
 });

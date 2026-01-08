@@ -1,7 +1,15 @@
-const nock = require('nock');
-const sinon = require('sinon');
-const wellKnown = require('./fixture/well-known.json');
-const certs = require('./fixture/cert');
+import nock from 'nock';
+import sinon from 'sinon';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import certs from './fixture/cert.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const wellKnown = JSON.parse(
+  readFileSync(path.join(__dirname, 'fixture', 'well-known.json'), 'utf8'),
+);
 
 let warn;
 

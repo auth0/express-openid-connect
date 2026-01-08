@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 env:
-  NODE_VERSION: 18
+  NODE_VERSION: 20
   CACHE_KEY: '${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}'
 
 jobs:
@@ -102,6 +102,12 @@ jobs:
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
+
+      - name: Install dependencies if cache missed
+        run: |
+          if [ ! -d "node_modules" ]; then
+            npm ci
+          fi
 
       - run: npm run test:end-to-end
 
