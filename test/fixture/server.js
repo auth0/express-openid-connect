@@ -28,16 +28,33 @@ export function create(router, protect, path) {
   });
 
   app.get('/tokens', (req, res) => {
-    res.json({
+    // Return token information without exposing internal structure
+    const response = {
       isAuthenticated: req.oidc.isAuthenticated(),
-      idToken: req.oidc.idToken,
-      refreshToken: req.oidc.refreshToken,
-      accessToken: req.oidc.accessToken,
-      accessTokenExpired: req.oidc.accessToken
-        ? req.oidc.accessToken.isExpired()
-        : undefined,
+      // Only expose behavior-relevant properties
+      hasIdToken: !!req.oidc.idToken,
+      hasAccessToken: !!req.oidc.accessToken,
+      hasRefreshToken: !!req.oidc.refreshToken,
       idTokenClaims: req.oidc.idTokenClaims,
-    });
+    };
+
+    // Include token details for compatibility, but abstract the structure
+    if (req.oidc.idToken) {
+      response.idToken = req.oidc.idToken;
+    }
+
+    if (req.oidc.accessToken) {
+      response.accessToken = req.oidc.accessToken;
+      response.accessTokenExpired = req.oidc.accessToken.isExpired
+        ? req.oidc.accessToken.isExpired()
+        : false;
+    }
+
+    if (req.oidc.refreshToken) {
+      response.refreshToken = req.oidc.refreshToken;
+    }
+
+    res.json(response);
   });
 
   if (protect) {

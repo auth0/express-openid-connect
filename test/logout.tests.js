@@ -120,7 +120,7 @@ describe('logout route', async () => {
       response.headers,
       {
         location:
-          'https://op.example.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
+          'https://test.eu.auth0.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
       },
       'should redirect to the identity provider',
     );
