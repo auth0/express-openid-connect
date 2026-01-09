@@ -1,15 +1,19 @@
-const express = require('express');
-const { assert } = require('chai').use(require('chai-as-promised'));
-const request = require('request-promise-native').defaults({
+import express from 'express';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import request from 'request-promise-native';
+
+import appSession from '../lib/appSession.js';
+import { get as getConfig } from '../lib/config.js';
+import { create as createServer } from './fixture/server.js';
+import { getKeyStore, signCookie } from '../lib/crypto.js';
+import getRedisStore from './fixture/store.js';
+
+const { assert } = chai.use(chaiAsPromised);
+const requestDefaults = request.defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
-
-const appSession = require('../lib/appSession');
-const { get: getConfig } = require('../lib/config');
-const { create: createServer } = require('./fixture/server');
-const { getKeyStore, signCookie } = require('../lib/crypto');
-const getRedisStore = require('./fixture/store');
 
 const defaultConfig = {
   clientID: '__test_client_id__',
@@ -39,8 +43,8 @@ const sessionData = () => {
 };
 
 const login = async (claims) => {
-  const jar = request.jar();
-  await request.post('/session', {
+  const jar = requestDefaults.jar();
+  await requestDefaults.post('/session', {
     baseUrl,
     jar,
     json: claims,
@@ -87,13 +91,13 @@ describe('appSession custom store', () => {
 
   it('should not create a session when there are no cookies', async () => {
     await setup();
-    const res = await request.get('/session', { baseUrl, json: true });
+    const res = await requestDefaults.get('/session', { baseUrl, json: true });
     assert.isEmpty(res.body);
   });
 
   it('should not error for non existent sessions', async () => {
     await setup();
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       headers: {
@@ -108,7 +112,7 @@ describe('appSession custom store', () => {
     await setup();
     const conf = getConfig(defaultConfig);
     const [key] = getKeyStore(conf.secret);
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       headers: {
@@ -122,8 +126,8 @@ describe('appSession custom store', () => {
   it('should get an existing session', async () => {
     await setup();
     await redisClient.asyncSet('foo', sessionData());
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -144,8 +148,8 @@ describe('appSession custom store', () => {
     const twoDays = 172800;
     await setup({ session: { rolling: false, absoluteDuration: twoDays } });
     await redisClient.asyncSet('foo', sessionData());
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -162,7 +166,7 @@ describe('appSession custom store', () => {
 
   it('should not populate the store when there is no session', async () => {
     await setup();
-    await request.get('/session', {
+    await requestDefaults.get('/session', {
       baseUrl,
       json: true,
     });
@@ -172,7 +176,7 @@ describe('appSession custom store', () => {
   it('should get a new session', async () => {
     await setup();
     const jar = await login({ sub: '__foo_user__' });
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -185,8 +189,8 @@ describe('appSession custom store', () => {
   it('should destroy an existing session', async () => {
     await setup({ idpLogout: false });
     await redisClient.asyncSet('foo', sessionData());
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -195,12 +199,12 @@ describe('appSession custom store', () => {
       },
     });
     assert.deepEqual(res.body, { sub: '__test_sub__' });
-    await request.post('/session', {
+    await requestDefaults.post('/session', {
       baseUrl,
       jar,
       json: {},
     });
-    const loggedOutRes = await request.get('/session', {
+    const loggedOutRes = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -220,7 +224,7 @@ describe('appSession custom store', () => {
       role: 'test',
       userid: immId,
     });
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -255,8 +259,8 @@ describe('appSession custom store', () => {
 
     server = await createServer(appSession(conf));
 
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -301,7 +305,7 @@ describe('appSession custom store', () => {
     });
 
     await assert.becomes(
-      request.get('/', {
+      requestDefaults.get('/', {
         baseUrl,
         json: true,
         headers: {
@@ -316,8 +320,8 @@ describe('appSession custom store', () => {
   it('should not sign the session cookie if signSessionStoreCookie is false', async () => {
     await setup({ session: { signSessionStoreCookie: false } });
     await redisClient.asyncSet('foo', sessionData());
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -342,8 +346,8 @@ describe('appSession custom store', () => {
       },
     });
     await redisClient.asyncSet('foo', sessionData());
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -368,8 +372,8 @@ describe('appSession custom store', () => {
       },
     });
     await redisClient.asyncSet('foo', sessionData());
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -409,8 +413,8 @@ describe('appSession custom store', () => {
 
     server = await createServer(appSession(conf));
 
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       jar,
       json: true,
@@ -456,7 +460,7 @@ describe('appSession custom store', () => {
       server = await createServer(appSession(conf));
       const jar = await login({ sub: '__callback_user__' });
 
-      const res = await request.get('/session', {
+      const res = await requestDefaults.get('/session', {
         baseUrl,
         jar,
         json: true,
@@ -491,7 +495,7 @@ describe('appSession custom store', () => {
       server = await createServer(appSession(conf));
       const jar = await login({ sub: '__promise_user__' });
 
-      const res = await request.get('/session', {
+      const res = await requestDefaults.get('/session', {
         baseUrl,
         jar,
         json: true,
@@ -526,7 +530,7 @@ describe('appSession custom store', () => {
       server = await createServer(appSession(conf));
       const jar = await login({ sub: '__direct_promise_user__' });
 
-      const res = await request.get('/session', {
+      const res = await requestDefaults.get('/session', {
         baseUrl,
         jar,
         json: true,
@@ -566,7 +570,7 @@ describe('appSession custom store', () => {
       server = await createServer(appSession(conf));
       const jar = await login({ sub: '__mixed_user__' });
 
-      const res = await request.get('/session', {
+      const res = await requestDefaults.get('/session', {
         baseUrl,
         jar,
         json: true,
@@ -609,7 +613,7 @@ describe('appSession custom store', () => {
       server = await createServer(appSession(conf));
       const jar = await login({ sub: '__modern_redis_user__' });
 
-      const res = await request.get('/session', {
+      const res = await requestDefaults.get('/session', {
         baseUrl,
         jar,
         json: true,

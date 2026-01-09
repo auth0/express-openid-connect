@@ -1,7 +1,7 @@
-const { assert } = require('chai');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import puppeteer from 'puppeteer';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   runExample,
@@ -10,7 +10,7 @@ const {
   goto,
   login,
   logout,
-} = require('./fixture/helpers');
+} from './fixture/helpers.js';
 
 describe('basic login and logout', async () => {
   let authServer;
@@ -38,13 +38,13 @@ describe('basic login and logout', async () => {
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -54,7 +54,7 @@ describe('basic login and logout', async () => {
     assert.equal(response.user.sub, 'username');
     assert.empty(
       response.accessToken,
-      "default response_type doesn't include code"
+      "default response_type doesn't include code",
     );
     await logout(page);
 

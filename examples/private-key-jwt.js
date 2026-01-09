@@ -1,6 +1,6 @@
-const express = require('express');
-const { auth } = require('../');
-const { privateJWK } = require('../end-to-end/fixture/jwk');
+import express from 'express';
+import { auth } from '../index.js';
+import { privateJWK } from '../end-to-end/fixture/jwk.js';
 
 const app = express();
 
@@ -12,7 +12,7 @@ app.use(
       response_type: 'code',
     },
     clientAssertionSigningKey: privateJWK,
-  })
+  }),
 );
 
 app.get('/', (req, res) => {
@@ -23,4 +23,4 @@ app.get('/', (req, res) => {
   }
 });
 
-module.exports = app;
+export default app;
