@@ -103,6 +103,12 @@ jobs:
           path: .
           key: ${{ env.CACHE_KEY }}
 
+      - name: Install dependencies if cache missed
+        run: |
+          if [ ! -d "node_modules" ]; then
+            npm ci
+          fi
+
       - run: npm run test:end-to-end
 
   lint:
