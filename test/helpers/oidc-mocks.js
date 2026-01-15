@@ -23,6 +23,35 @@ const DEFAULT_ISSUER_BASE_URL = 'https://op.example.com';
 const DEFAULT_AUTH0_DOMAIN = 'https://test.eu.auth0.com';
 
 /**
+ * Safely extract hostname from a URL string.
+ * Returns null if the URL is invalid.
+ */
+function getHostname(urlString) {
+  try {
+    return new URL(urlString).hostname;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if a URL is an Auth0 domain (auth0.com or *.auth0.com)
+ */
+function isAuth0Domain(urlString) {
+  const hostname = getHostname(urlString);
+  if (!hostname) return false;
+  return hostname === 'auth0.com' || hostname.endsWith('.auth0.com');
+}
+
+/**
+ * Check if a URL matches a specific hostname
+ */
+function isHostname(urlString, expectedHostname) {
+  const hostname = getHostname(urlString);
+  return hostname === expectedHostname;
+}
+
+/**
  * Create a reusable well-known configuration mock
  */
 export const createWellKnownMock = (
@@ -312,8 +341,8 @@ export const setupOIDCMocks = async (options = {}) => {
 
     let config = mockWellKnown;
 
-    // Handle different test domains
-    if (issuerUrl.includes('.auth0.com')) {
+    // Handle different test domains - use proper hostname checks for security
+    if (isAuth0Domain(issuerUrl)) {
       // Any Auth0 domain should use Auth0 configuration
       config = {
         ...mockWellKnown,
@@ -323,7 +352,7 @@ export const setupOIDCMocks = async (options = {}) => {
         jwks_uri: `${issuerUrl}/.well-known/jwks.json`,
         end_session_endpoint: undefined, // Auth0 doesn't have standard logout
       };
-    } else if (issuerUrl.includes('op2.example.com')) {
+    } else if (isHostname(issuerUrl, 'op2.example.com')) {
       config = {
         ...mockWellKnown,
         issuer: 'https://op2.example.com/',

@@ -1,5 +1,3 @@
-import * as jose from 'jose';
-
 import crypto from 'crypto';
 import { encryption as deriveKey } from '../../lib/crypto.js';
 
