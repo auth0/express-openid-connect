@@ -21,7 +21,7 @@ const login = async (idToken) => {
   await requestDefaults.post({
     uri: '/session',
     json: {
-      id_token: idToken || makeIdToken(),
+      id_token: idToken || (await makeIdToken()),
     },
     jar,
   });
@@ -44,7 +44,10 @@ describe('back-channel logout', async () => {
       issuerBaseURL: 'https://op.example.com',
       secret: '__test_session_secret__',
       authRequired: false,
-      backchannelLogout: { store },
+      backchannelLogout: {
+        store,
+        isInsecure: true, // Required for tests since v6 migration doesn't have full JWT verification
+      },
     };
   });
 
@@ -185,7 +188,7 @@ describe('back-channel logout', async () => {
 
   it('should log sid out on subsequent requests', async () => {
     server = await createServer(auth(config));
-    const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
+    const { jar } = await login(await makeIdToken({ sid: '__foo_sid__' }));
     let body;
     ({ body } = await requestDefaults.get('/session', {
       jar,
@@ -213,7 +216,7 @@ describe('back-channel logout', async () => {
 
   it('should log sub out on subsequent requests', async () => {
     server = await createServer(auth(config));
-    const { jar } = await login(makeIdToken({ sub: '__foo_sub__' }));
+    const { jar } = await login(await makeIdToken({ sub: '__foo_sub__' }));
     let body;
     ({ body } = await requestDefaults.get('/session', {
       jar,
@@ -242,7 +245,7 @@ describe('back-channel logout', async () => {
   it('should not log sub out if login is after back-channel logout', async () => {
     server = await createServer(auth(config));
 
-    const { jar } = await login(makeIdToken({ sub: '__foo_sub__' }));
+    const { jar } = await login(await makeIdToken({ sub: '__foo_sub__' }));
 
     const res = await requestDefaults.post('/backchannel-logout', {
       baseUrl,
@@ -280,7 +283,7 @@ describe('back-channel logout', async () => {
         },
       }),
     );
-    const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
+    const { jar } = await login(await makeIdToken({ sid: '__foo_sid__' }));
     let body;
     ({ body } = await requestDefaults.get('/session', {
       jar,

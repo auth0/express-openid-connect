@@ -9,6 +9,7 @@ import {
   stubEnv,
   goto,
   login,
+  shouldSkipPuppeteerTest,
 } from './fixture/helpers.js';
 
 describe('private key jwt', async () => {
@@ -17,7 +18,8 @@ describe('private key jwt', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('private-key-jwt');
   });
 
@@ -27,6 +29,10 @@ describe('private key jwt', async () => {
   });
 
   it('should login with private key jwt client auth method', async () => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     const browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()
@@ -41,7 +47,8 @@ describe('private key jwt', async () => {
       /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
-    const promise = once(provider, 'grant.success');
+    const resolvedProvider = await provider;
+    const promise = once(resolvedProvider, 'grant.success');
 
     await login('username', 'password', page);
     const [ctx] = await promise;

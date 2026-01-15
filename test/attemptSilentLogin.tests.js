@@ -32,7 +32,7 @@ const login = async (claims) => {
     baseUrl,
     jar,
     json: {
-      id_token: makeIdToken(claims),
+      id_token: await makeIdToken(claims),
     },
   });
   return jar;

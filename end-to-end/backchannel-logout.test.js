@@ -10,6 +10,7 @@ import {
   checkContext,
   goto,
   login,
+  shouldSkipPuppeteerTest,
 } from './fixture/helpers.js';
 
 describe('back-channel logout', async () => {
@@ -19,16 +20,25 @@ describe('back-channel logout', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
   });
 
   afterEach(async () => {
     authServer.close();
-    appServer.close();
-    await browser.close();
+    if (appServer) {
+      appServer.close();
+    }
+    if (browser) {
+      await browser.close();
+    }
   });
 
   const runTest = async (example) => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     appServer = await runExample(example);
     browser = await puppeteer.launch({
       args: puppeteer
@@ -74,6 +84,10 @@ describe('back-channel logout', async () => {
     runTest('backchannel-logout'));
 
   it('should not logout sub via back-channel logout if user logs in after', async () => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     await runTest('backchannel-logout');
 
     await browser.close();

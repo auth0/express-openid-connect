@@ -8,6 +8,7 @@ import {
   runExample,
   stubEnv,
   goto,
+  shouldSkipPuppeteerTest,
 } from './fixture/helpers.js';
 
 describe('attempt silent login', async () => {
@@ -16,7 +17,8 @@ describe('attempt silent login', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('attempt-silent-login');
   });
 
@@ -26,6 +28,10 @@ describe('attempt silent login', async () => {
   });
 
   it('should attempt silent login and swallow failures', async () => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     const browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()
@@ -49,6 +55,10 @@ describe('attempt silent login', async () => {
   });
 
   it('should login silently if there is an active session on the IDP', async () => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     const browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()

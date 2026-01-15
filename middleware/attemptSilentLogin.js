@@ -1,6 +1,6 @@
-import debug from '../lib/debug.js';
 import COOKIES from '../lib/cookies.js';
 import weakRef from '../lib/weakCache.js';
+import debug from '../lib/debug.js';
 
 const debugAttemptSilentLogin = debug('attemptSilentLogin');
 

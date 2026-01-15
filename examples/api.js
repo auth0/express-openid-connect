@@ -5,7 +5,11 @@ import express from 'express';
 import { auth, requiredScopes } from 'express-oauth2-jwt-bearer';
 
 const app = express();
-app.use(auth({ secret: false }));
+app.use(
+  auth({
+    secret: false,
+  }),
+);
 
 app.get('/products', requiredScopes('read:products'), (req, res) => {
   res.json([

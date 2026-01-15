@@ -521,7 +521,7 @@ describe('get config', () => {
     );
   });
 
-  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "client_secret_post" (by default)', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
@@ -531,11 +531,11 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"',
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_post"',
     );
   });
 
-  it('shouldn\'t allow hybrid flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
+  it('shouldn\'t allow hybrid flow without client authn when clientAuthMethod is "client_secret_post" (by default)', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
@@ -545,7 +545,7 @@ describe('get config', () => {
     assert.throws(
       () => getConfig(config),
       TypeError,
-      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"',
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_post"',
     );
   });
 
@@ -834,7 +834,7 @@ describe('get config', () => {
     }
   });
 
-  it('should default clientAuthMethod to client_secret_basic for other response types', () => {
+  it('should default clientAuthMethod to client_secret_post for other response types', () => {
     {
       const config = getConfig({
         ...defaultConfig,
@@ -842,7 +842,7 @@ describe('get config', () => {
         authorizationParams: { response_type: 'code' },
       });
       assert.deepInclude(config, {
-        clientAuthMethod: 'client_secret_basic',
+        clientAuthMethod: 'client_secret_post',
       });
     }
 
@@ -853,7 +853,7 @@ describe('get config', () => {
         authorizationParams: { response_type: 'code id_token' },
       });
       assert.deepInclude(config, {
-        clientAuthMethod: 'client_secret_basic',
+        clientAuthMethod: 'client_secret_post',
       });
     }
   });

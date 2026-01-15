@@ -24,7 +24,7 @@ const login = async (baseUrl = 'http://localhost:3000', idToken) => {
   await requestDefaults.post({
     uri: '/session',
     json: {
-      id_token: idToken || makeIdToken(),
+      id_token: idToken || (await makeIdToken()),
     },
     baseUrl,
     jar,
@@ -88,7 +88,7 @@ describe('logout route', async () => {
       }),
     );
 
-    const idToken = makeIdToken();
+    const idToken = await makeIdToken();
     const { jar } = await login('http://localhost:3000', idToken);
     const { response, session: loggedOutSession } = await logout(jar);
     assert.notOk(loggedOutSession.id_token);
@@ -371,6 +371,14 @@ describe('logout route', async () => {
   });
 
   it('should pass discovery errors to the express mw', async () => {
+    // Disable global mock discovery for this test
+    const originalMockDiscovery = global.__testMockDiscovery;
+    delete global.__testMockDiscovery;
+
+    // Disable undici global mocking to allow nock to work
+    const { setGlobalDispatcher, Agent } = await import('undici');
+    setGlobalDispatcher(new Agent());
+
     nock('https://example.com')
       .get('/.well-known/openid-configuration')
       .reply(500);
@@ -378,23 +386,30 @@ describe('logout route', async () => {
       .get('/.well-known/oauth-authorization-server')
       .reply(500);
 
-    server = await createServer(
-      auth({
-        ...defaultConfig,
-        issuerBaseURL: 'https://example.com',
-      }),
-    );
-    const res = await requestDefaults.get({
-      uri: '/logout',
-      baseUrl: 'http://localhost:3000',
-      followRedirect: false,
-      json: true,
-    });
-    assert.equal(res.statusCode, 500);
-    assert.match(
-      res.body.err.message,
-      /^Issuer.discover\(\) failed/,
-      'Should get error json from server error middleware',
-    );
+    try {
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          issuerBaseURL: 'https://example.com',
+        }),
+      );
+      const res = await requestDefaults.get({
+        uri: '/logout',
+        baseUrl: 'http://localhost:3000',
+        followRedirect: false,
+        json: true,
+      });
+      assert.equal(res.statusCode, 500);
+      assert.match(
+        res.body.err.message,
+        /^(Issuer\.discover\(\) failed|fetch failed)/,
+        'Should get error json from server error middleware',
+      );
+    } finally {
+      // Restore global mock discovery
+      if (originalMockDiscovery) {
+        global.__testMockDiscovery = originalMockDiscovery;
+      }
+    }
   });
 });

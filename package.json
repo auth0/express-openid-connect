@@ -35,9 +35,9 @@
     "futoin-hkdf": "^1.5.3",
     "http-errors": "^1.8.1",
     "joi": "^17.13.3",
-    "jose": "^2.0.7",
+    "jose": "^5.9.6",
     "on-headers": "^1.1.0",
-    "openid-client": "^4.9.1",
+    "openid-client": "^6.8.1",
     "url-join": "^4.0.1",
     "util-promisify": "3.0.0"
   },
@@ -67,7 +67,8 @@
     "sinon": "^7.5.0",
     "tsd": "^0.33.0",
     "typedoc": "^0.28.7",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "undici": "7.18.2"
   },
   "peerDependencies": {
     "express": ">= 4.17.0"
