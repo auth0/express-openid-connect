@@ -14,6 +14,7 @@ app.use(
       response_type: 'code',
     },
     clientAssertionSigningKey: privateJWK,
+    allowInsecureRequests: true,
   }),
 );
 

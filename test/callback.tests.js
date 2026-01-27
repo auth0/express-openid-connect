@@ -1,8 +1,6 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
-import * as jose from 'jose';
 import request from 'request-promise-native';
-import qs from 'querystring';
 import nock from 'nock';
 
 import TransientCookieHandler from '../lib/transientHandler.js';
@@ -56,10 +54,24 @@ const setup = async (params) => {
   nock.enableNetConnect();
   nock.cleanAll();
 
+  // Import the public JWK for JWKS mocking
+  const { jwks } = await import('./fixture/cert.js');
+
   // Mock fetch directly since nock may not intercept Node.js built-in fetch
   const originalFetch = global.fetch;
   global.fetch = async (url, options) => {
     const urlString = url.toString();
+
+    // Intercept JWKS requests
+    if (
+      urlString.includes('/jwks') ||
+      urlString.includes('/.well-known/jwks')
+    ) {
+      return new Response(JSON.stringify(jwks), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
 
     // Intercept token endpoint requests
     if (urlString.includes('/oauth/token') && options?.method === 'POST') {
@@ -97,9 +109,22 @@ const setup = async (params) => {
   // Create appropriate ID token for token endpoint based on test setup
   let tokenEndpointIdToken;
   if (params.cookies && Object.keys(params.cookies).length > 0) {
-    // For authorization code flow, create a token endpoint ID token without nonce (per OIDC spec)
-    // If there's an ID token in the callback body, match its subject
-    let tokenPayload = { nonce: undefined };
+    // Parse the auth verification cookie to get the nonce
+    let authVerification = {};
+    const authVerificationCookie =
+      params.cookies['auth_verification'] ||
+      params.cookies[Object.keys(params.cookies)[0]];
+    if (authVerificationCookie) {
+      try {
+        authVerification = JSON.parse(authVerificationCookie);
+      } catch {
+        // If it's already an object
+        authVerification = authVerificationCookie;
+      }
+    }
+
+    // Create token endpoint ID token with matching nonce (required by oauth4webapi)
+    let tokenPayload = { nonce: authVerification.nonce || '__test_nonce__' };
     if (params.body?.id_token) {
       try {
         // Decode the authorization endpoint ID token to get the subject
@@ -108,7 +133,7 @@ const setup = async (params) => {
           Buffer.from(authIdToken.split('.')[1], 'base64url').toString(),
         );
         tokenPayload.sub = payload.sub; // Match the subject from authorization endpoint
-      } catch (err) {
+      } catch {
         // If decoding fails, use default
       }
     }
@@ -167,6 +192,7 @@ const setup = async (params) => {
     jar,
     json: params.body,
   });
+
   const currentUser = await requestDefaults
     .get('/user', { baseUrl, jar, json: true })
     .then((r) => r.body);
@@ -459,9 +485,6 @@ describe('callback response_mode: form_post', () => {
 
   it('should handle access token expiry', async () => {
     const clock = sinon.useFakeTimers({ toFake: ['Date'] });
-    const idToken = await makeIdToken({
-      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
-    });
     const hrSecs = 60 * 60;
     const hrMs = hrSecs * 1000;
 
@@ -478,7 +501,6 @@ describe('callback response_mode: form_post', () => {
       }),
       body: {
         state: expectedDefaultState,
-        id_token: idToken,
         code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
       },
     });
@@ -612,12 +634,16 @@ describe('callback response_mode: form_post', () => {
       },
     };
     const router = auth(authOpts);
-    router.get('/refresh', async (req, res) => {
-      const accessToken = await req.oidc.accessToken.refresh();
-      res.json({
-        accessToken,
-        refreshToken: req.oidc.refreshToken,
-      });
+    router.get('/refresh', async (req, res, next) => {
+      try {
+        const accessToken = await req.oidc.accessToken.refresh();
+        res.json({
+          accessToken,
+          refreshToken: req.oidc.refreshToken,
+        });
+      } catch (err) {
+        next(err);
+      }
     });
 
     const { jar } = await setup({
@@ -641,7 +667,7 @@ describe('callback response_mode: form_post', () => {
       },
       // Custom token response that preserves the SID
       tokenResponse: {
-        id_token: await makeIdToken({ nonce: undefined, sid: 'foo' }),
+        id_token: await makeIdToken({ sid: 'foo' }),
       },
     });
 
@@ -997,9 +1023,6 @@ describe('callback response_mode: form_post', () => {
 
   it('should use private key jwt on token endpoint', async () => {
     const privateKey = await getPrivatePEM();
-    const idToken = await makeIdToken({
-      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
-    });
 
     const { currentUser, tokens } = await setup({
       authOpts: {
@@ -1014,7 +1037,6 @@ describe('callback response_mode: form_post', () => {
       }),
       body: {
         state: expectedDefaultState,
-        id_token: idToken,
         code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
       },
     });
@@ -1027,10 +1049,6 @@ describe('callback response_mode: form_post', () => {
   });
 
   it('should use client secret jwt on token endpoint', async () => {
-    const idToken = await makeIdToken({
-      c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
-    });
-
     const { currentUser, tokens } = await setup({
       authOpts: {
         clientSecret: 'foo',
@@ -1045,7 +1063,6 @@ describe('callback response_mode: form_post', () => {
       }),
       body: {
         state: expectedDefaultState,
-        id_token: idToken,
         code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
       },
     });

@@ -14,6 +14,7 @@ app.use(
       scope: 'openid profile email offline_access read:products',
       prompt: 'consent',
     },
+    allowInsecureRequests: true,
   }),
 );
 

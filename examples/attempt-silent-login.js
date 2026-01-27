@@ -7,6 +7,7 @@ app.use(
   auth({
     attemptSilentLogin: true,
     authRequired: false,
+    allowInsecureRequests: true,
   }),
 );
 

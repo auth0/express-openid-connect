@@ -49,6 +49,7 @@ app.use(
         }
       },
     },
+    allowInsecureRequests: true,
   }),
 );
 
