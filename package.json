@@ -17,8 +17,8 @@
     "lint": "eslint .",
     "start:example": "node ./examples/run_example.js",
     "test": "mocha --max-http-header-size=16384",
-    "test:ci": "nyc --reporter=lcov npm test",
-    "test:types": "tsd .",
+    "test:ci": "npx nyc --reporter=lcov npm test",
+    "test:types": "npx tsd .",
     "docs": "typedoc --options typedoc.js index.d.ts",
     "test:end-to-end": "mocha end-to-end"
   },
