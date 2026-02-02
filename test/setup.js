@@ -14,6 +14,8 @@ nock.recorder.rec({
 let warn;
 let mockAgent;
 let originalDispatcher;
+// eslint-disable-next-line no-unused-vars
+let activeMocks;
 
 beforeEach(async function () {
   // Ensure we're in test mode
