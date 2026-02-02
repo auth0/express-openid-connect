@@ -5,7 +5,7 @@ import { requiresAuth } from './requiresAuth.js';
 import attemptSilentLogin from './attemptSilentLogin.js';
 import TransientCookieHandler from '../lib/transientHandler.js';
 import { RequestContext, ResponseContext } from '../lib/context.js';
-import appSession, { replaceSession } from '../lib/appSession.js';
+import appSession from '../lib/appSession.js';
 import isLoggedOut from '../lib/hooks/backchannelLogout/isLoggedOut.js';
 
 const enforceLeadingSlash = (path) => {

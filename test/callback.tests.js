@@ -192,7 +192,6 @@ const setup = async (params) => {
     jar,
     json: params.body,
   });
-
   const currentUser = await requestDefaults
     .get('/user', { baseUrl, jar, json: true })
     .then((r) => r.body);

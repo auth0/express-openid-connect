@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.19.4](https://github.com/auth0/express-openid-connect/tree/v2.19.4) (2026-01-09)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.3...v2.19.4)
+
+**Fixed**
+- fix: added condition for aysnc which uses callbacks [\#742](https://github.com/auth0/express-openid-connect/pull/742) ([aks96](https://github.com/aks96))
+
 ## [v2.19.3](https://github.com/auth0/express-openid-connect/tree/v2.19.3) (2025-11-21)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.2...v2.19.3)
 
