@@ -1,6 +1,6 @@
 // This example needs to be run on https, see https://auth0.com/docs/libraries/secure-local-development
-const express = require('express');
-const { auth } = require('../');
+import express from 'express';
+import { auth } from '../index.js';
 
 const app = express();
 
@@ -13,7 +13,8 @@ app.use(
         sameSite: 'None',
       },
     },
-  })
+    allowInsecureRequests: true,
+  }),
 );
 
 app.get('/', (req, res) => {
@@ -30,4 +31,4 @@ app.get('/iframe', (req, res) => {
   `);
 });
 
-module.exports = app;
+export default app;

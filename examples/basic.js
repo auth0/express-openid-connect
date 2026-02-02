@@ -6,6 +6,8 @@ const app = express();
 app.use(
   auth({
     idpLogout: true,
+    // Allow HTTP for local development with mock provider
+    allowInsecureRequests: true,
   }),
 );
 

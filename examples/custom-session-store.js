@@ -1,6 +1,8 @@
-const express = require('express');
-const { auth } = require('../');
-const MemoryStore = require('memorystore')(auth);
+import express from 'express';
+import { auth } from '../index.js';
+import MemoryStore from 'memorystore';
+
+const MemorySessionStore = MemoryStore(auth);
 
 const app = express();
 
@@ -8,15 +10,16 @@ app.use(
   auth({
     idpLogout: true,
     session: {
-      store: new MemoryStore({
+      store: new MemorySessionStore({
         checkPeriod: 24 * 60 * 1000,
       }),
     },
-  })
+    allowInsecureRequests: true,
+  }),
 );
 
 app.get('/', (req, res) => {
   res.send(`hello ${req.oidc.user.sub}`);
 });
 
-module.exports = app;
+export default app;

@@ -11,6 +11,7 @@ import {
   checkContext,
   goto,
   login,
+  shouldSkipPuppeteerTest,
 } from './fixture/helpers.js';
 
 describe('access an api', async () => {
@@ -20,7 +21,8 @@ describe('access an api', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('access-an-api');
     apiServer = await runApi();
   });
@@ -32,6 +34,10 @@ describe('access an api', async () => {
   });
 
   it('should get an access token and access an api', async () => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     const browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()

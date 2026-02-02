@@ -1,6 +1,8 @@
 import express from 'express';
 import { auth } from '../index.js';
-import { privateJWK } from '../end-to-end/fixture/jwk.js';
+import { getPrivateJWK } from '../end-to-end/fixture/jwk.js';
+
+const privateJWK = await getPrivateJWK();
 
 const app = express();
 
@@ -12,6 +14,7 @@ app.use(
       response_type: 'code',
     },
     clientAssertionSigningKey: privateJWK,
+    allowInsecureRequests: true,
   }),
 );
 

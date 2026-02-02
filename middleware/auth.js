@@ -1,5 +1,4 @@
 import express from 'express';
-
 import debug from '../lib/debug.js';
 import { get as getConfig } from '../lib/config.js';
 import { requiresAuth } from './requiresAuth.js';
@@ -85,7 +84,20 @@ const auth = function (params) {
         try {
           const loggedOut = await isLoggedOutFn(req, config);
           if (loggedOut) {
-            req[config.session.name] = undefined;
+            // If using external store, try to destroy the session first
+            if (config.session.store && req[config.session.name]) {
+              try {
+                const sessionObj = req[config.session.name];
+                if (sessionObj && typeof sessionObj.destroy === 'function') {
+                  sessionObj.destroy();
+                }
+              } catch {
+                // Ignore errors during session destruction
+              }
+            }
+
+            // Clear the session using replaceSession like it was originally
+            replaceSession(req, undefined, config);
           }
           next();
         } catch (e) {

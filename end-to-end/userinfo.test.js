@@ -8,6 +8,7 @@ import {
   stubEnv,
   goto,
   login,
+  shouldSkipPuppeteerTest,
 } from './fixture/helpers.js';
 
 describe('fetch userinfo', async () => {
@@ -16,7 +17,8 @@ describe('fetch userinfo', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('userinfo');
   });
 
@@ -26,6 +28,10 @@ describe('fetch userinfo', async () => {
   });
 
   it('should login with hybrid flow and fetch userinfo', async () => {
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
     const browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()

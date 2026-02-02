@@ -48,6 +48,7 @@ app.use(
       isLoggedOut: false,
       onLogin: false,
     },
+    allowInsecureRequests: true,
   }),
 );
 

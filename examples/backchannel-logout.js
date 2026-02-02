@@ -16,6 +16,7 @@ app.use(
       store: new MemorySessionStore(),
     },
     backchannelLogout: true,
+    allowInsecureRequests: true,
   }),
 );
 

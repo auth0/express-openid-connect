@@ -9,6 +9,7 @@ app.use(
     authorizationParams: {
       response_type: 'code id_token',
     },
+    allowInsecureRequests: true,
   }),
 );
 
