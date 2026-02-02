@@ -1,8 +1,9 @@
-const express = require('express');
-const { auth, requiresAuth } = require('../');
-const { logoutTokenTester } = require('../end-to-end/fixture/helpers');
+import express from 'express';
+import { auth, requiresAuth } from '../index.js';
+import { logoutTokenTester } from '../end-to-end/fixture/helpers.js';
+import MemoryStore from 'memorystore';
 
-const MemoryStore = require('memorystore')(auth);
+const MemorySessionStore = MemoryStore(auth);
 
 const app = express();
 
@@ -12,10 +13,10 @@ app.use(
     authRequired: false,
     idpLogout: true,
     session: {
-      store: new MemoryStore(),
+      store: new MemorySessionStore(),
     },
     backchannelLogout: true,
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -30,7 +31,7 @@ app.get('/', async (req, res) => {
 app.get(
   '/logout-token',
   requiresAuth(),
-  logoutTokenTester('backchannel-logout-client', false, true)
+  logoutTokenTester('backchannel-logout-client', false, true),
 );
 
-module.exports = app;
+export default app;

@@ -1,5 +1,5 @@
-const Provider = require('oidc-provider');
-const { privateJWK, publicJWK } = require('./jwk');
+import Provider from 'oidc-provider';
+import { privateJWK, publicJWK } from './jwk.js';
 
 const client = {
   client_id: 'test-express-openid-connect-client-id',
@@ -65,7 +65,7 @@ const provider = new Provider(`http://localhost:${PORT}`, config);
 const { invalidate: orig } = provider.Client.Schema.prototype;
 provider.Client.Schema.prototype.invalidate = function invalidate(
   message,
-  code
+  code,
 ) {
   if (code === 'implicit-force-https' || code === 'implicit-forbid-localhost') {
     return;
@@ -73,4 +73,4 @@ provider.Client.Schema.prototype.invalidate = function invalidate(
   orig.call(this, message);
 };
 
-module.exports = provider;
+export default provider;

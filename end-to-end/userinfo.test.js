@@ -1,14 +1,14 @@
-const { assert } = require('chai');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import puppeteer from 'puppeteer';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   runExample,
   stubEnv,
   goto,
   login,
-} = require('./fixture/helpers');
+} from './fixture/helpers.js';
 
 describe('fetch userinfo', async () => {
   let authServer;
@@ -36,13 +36,13 @@ describe('fetch userinfo', async () => {
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
 
     assert.include(await page.content(), 'hello username');

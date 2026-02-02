@@ -1,18 +1,19 @@
-const { promisify } = require('util');
-const express = require('express');
-const base64url = require('base64url');
-const { auth, requiresAuth } = require('../');
-const { logoutTokenTester } = require('../end-to-end/fixture/helpers');
+import { promisify } from 'util';
+import express from 'express';
+import base64url from 'base64url';
+import { auth, requiresAuth } from '../index.js';
+import { logoutTokenTester } from '../end-to-end/fixture/helpers.js';
+import MemoryStore from 'memorystore';
 
 // This implementation assumes you can query all sessions in the store.
 // When you receive a Back-Channel logout request it queries you session store
 // for sessions that match the logout token's `sub` or `sid` claim and removes them.
 
-const MemoryStore = require('memorystore')(auth);
+const MemorySessionStore = MemoryStore(auth);
 
 const app = express();
 
-const store = new MemoryStore();
+const store = new MemorySessionStore();
 const all = promisify(store.all).bind(store);
 const destroy = promisify(store.destroy).bind(store);
 
@@ -47,7 +48,7 @@ app.use(
       isLoggedOut: false,
       onLogin: false,
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -62,7 +63,7 @@ app.get('/', async (req, res) => {
 app.get(
   '/logout-token',
   requiresAuth(),
-  logoutTokenTester('backchannel-logout-client-no-sid', true, true)
+  logoutTokenTester('backchannel-logout-client-no-sid', true, true),
 );
 
-module.exports = app;
+export default app;

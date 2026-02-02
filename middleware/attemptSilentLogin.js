@@ -1,6 +1,8 @@
-const debug = require('../lib/debug')('attemptSilentLogin');
-const COOKIES = require('../lib/cookies');
-const weakRef = require('../lib/weakCache');
+import debug from '../lib/debug.js';
+import COOKIES from '../lib/cookies.js';
+import weakRef from '../lib/weakCache.js';
+
+const debugAttemptSilentLogin = debug('attemptSilentLogin');
 
 const COOKIE_NAME = 'skipSilentLogin';
 
@@ -38,11 +40,13 @@ const resumeSilentLogin = (req, res) => {
   });
 };
 
-module.exports = function attemptSilentLogin() {
+export default function attemptSilentLogin() {
   return (req, res, next) => {
     if (!req.oidc) {
       next(
-        new Error('req.oidc is not found, did you include the auth middleware?')
+        new Error(
+          'req.oidc is not found, did you include the auth middleware?',
+        ),
       );
       return;
     }
@@ -54,13 +58,12 @@ module.exports = function attemptSilentLogin() {
       !req.oidc.isAuthenticated() &&
       req.accepts('html')
     ) {
-      debug('Attempting silent login');
+      debugAttemptSilentLogin('Attempting silent login');
       cancelSilentLogin(req, res);
       return res.oidc.silentLogin();
     }
     next();
   };
-};
+}
 
-module.exports.cancelSilentLogin = cancelSilentLogin;
-module.exports.resumeSilentLogin = resumeSilentLogin;
+export { cancelSilentLogin, resumeSilentLogin };

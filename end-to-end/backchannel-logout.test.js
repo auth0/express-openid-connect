@@ -1,8 +1,8 @@
-const { assert } = require('chai');
-const puppeteer = require('puppeteer');
-const request = require('request-promise-native');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import puppeteer from 'puppeteer';
+import request from 'request-promise-native';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   runExample,
@@ -10,7 +10,7 @@ const {
   checkContext,
   goto,
   login,
-} = require('./fixture/helpers');
+} from './fixture/helpers.js';
 
 describe('back-channel logout', async () => {
   let authServer;
@@ -43,7 +43,7 @@ describe('back-channel logout', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -90,7 +90,7 @@ describe('back-channel logout', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
 
     const loggedInCookies = await page.cookies('http://localhost:3000');

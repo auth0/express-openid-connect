@@ -1,7 +1,7 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+import express from 'express';
+import bodyParser from 'body-parser';
 
-module.exports.create = function (router, protect, path) {
+export function create(router, protect, path) {
   const app = express();
 
   app.use(bodyParser.urlencoded({ extended: false }));
@@ -48,15 +48,13 @@ module.exports.create = function (router, protect, path) {
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
-    res
-      .status(err.status || 500)
-      .json({
-        err: {
-          message: err.message,
-          error: err.error,
-          error_description: err.error_description,
-        },
-      });
+    res.status(err.status || 500).json({
+      err: {
+        message: err.message,
+        error: err.error,
+        error_description: err.error_description,
+      },
+    });
   });
 
   let mainApp;
@@ -70,4 +68,4 @@ module.exports.create = function (router, protect, path) {
   return new Promise((resolve) => {
     const server = mainApp.listen(3000, () => resolve(server));
   });
-};
+}

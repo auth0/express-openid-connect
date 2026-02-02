@@ -1,5 +1,5 @@
-const express = require('express');
-const { auth } = require('../');
+import express from 'express';
+import { auth } from '../index.js';
 
 const app = express();
 
@@ -9,7 +9,7 @@ app.use(
     authorizationParams: {
       response_type: 'code id_token',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -17,4 +17,4 @@ app.get('/', async (req, res) => {
   res.send(`hello ${userInfo.sub}`);
 });
 
-module.exports = app;
+export default app;

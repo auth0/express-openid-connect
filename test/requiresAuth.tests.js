@@ -1,15 +1,17 @@
-const { assert } = require('chai');
-const sinon = require('sinon');
-const { create: createServer } = require('./fixture/server');
-const { makeIdToken } = require('./fixture/cert');
-const {
+import { assert } from 'chai';
+import sinon from 'sinon';
+import { create as createServer } from './fixture/server.js';
+import { makeIdToken } from './fixture/cert.js';
+import {
   auth,
   requiresAuth,
   claimEquals,
   claimIncludes,
   claimCheck,
-} = require('./..');
-const request = require('request-promise-native').defaults({
+} from '../index.js';
+import request from 'request-promise-native';
+
+const requestDefaults = request.defaults({
   simple: false,
   resolveWithFullResponse: true,
   followRedirect: false,
@@ -25,8 +27,8 @@ const defaultConfig = {
 };
 
 const login = async (claims) => {
-  const jar = request.jar();
-  await request.post('/session', {
+  const jar = requestDefaults.jar();
+  await requestDefaults.post('/session', {
     baseUrl,
     jar,
     json: {
@@ -51,10 +53,10 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
     const jar = await login();
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 200);
   });
@@ -65,9 +67,9 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
-    const response = await request({ baseUrl, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, url: '/protected' });
     const state = new URL(response.headers.location).searchParams.get('state');
     const decoded = Buffer.from(state, 'base64');
     const parsed = JSON.parse(decoded);
@@ -83,9 +85,13 @@ describe('requiresAuth', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
-    const response = await request({ baseUrl, url: '/protected', json: true });
+    const response = await requestDefaults({
+      baseUrl,
+      url: '/protected',
+      json: true,
+    });
     assert.equal(response.statusCode, 401);
   });
 
@@ -96,9 +102,9 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      requiresAuth()
+      requiresAuth(),
     );
-    const response = await request({ baseUrl, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -107,10 +113,10 @@ describe('requiresAuth', () => {
     server = await createServer(null, requiresAuth());
     const {
       body: { err },
-    } = await request({ baseUrl, url: '/protected', json: true });
+    } = await requestDefaults({ baseUrl, url: '/protected', json: true });
     assert.equal(
       err.message,
-      'req.oidc is not found, did you include the auth middleware?'
+      'req.oidc is not found, did you include the auth middleware?',
     );
   });
 
@@ -121,10 +127,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('foo', 'bar')
+      claimEquals('foo', 'bar'),
     );
     const jar = await login({ foo: 'bar' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 200);
   });
@@ -136,10 +142,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('foo', 'bar')
+      claimEquals('foo', 'bar'),
     );
     const jar = await login({ foo: 'baz' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -151,10 +157,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('baz', 'bar')
+      claimEquals('baz', 'bar'),
     );
     const jar = await login({ foo: 'bar' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -166,9 +172,9 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimEquals('foo', 'bar')
+      claimEquals('foo', 'bar'),
     );
-    const response = await request({ baseUrl, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -177,7 +183,7 @@ describe('requiresAuth', () => {
     assert.throws(
       () => claimEquals(true, 'bar'),
       TypeError,
-      '"claim" must be a string'
+      '"claim" must be a string',
     );
   });
 
@@ -185,7 +191,7 @@ describe('requiresAuth', () => {
     assert.throws(
       () => claimEquals('foo', { bar: 1 }),
       TypeError,
-      '"expected" must be a string, number, boolean or null'
+      '"expected" must be a string, number, boolean or null',
     );
   });
 
@@ -196,10 +202,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ foo: ['baz', 'bar'] });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 200);
   });
@@ -211,10 +217,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz', 'qux')
+      claimIncludes('foo', 'bar', 'baz', 'qux'),
     );
     const jar = await login({ foo: 'baz bar' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -226,10 +232,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ foo: 'baz bar' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 200);
   });
@@ -241,10 +247,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ foo: { bar: 'baz' } });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -253,7 +259,7 @@ describe('requiresAuth', () => {
     assert.throws(
       () => claimIncludes(false, 'bar'),
       TypeError,
-      '"claim" must be a string'
+      '"claim" must be a string',
     );
   });
 
@@ -264,10 +270,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
     const jar = await login({ bar: 'bar baz' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -279,9 +285,9 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimIncludes('foo', 'bar', 'baz')
+      claimIncludes('foo', 'bar', 'baz'),
     );
-    const response = await request({ baseUrl, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -290,7 +296,7 @@ describe('requiresAuth', () => {
     assert.throws(
       () => claimCheck(null),
       TypeError,
-      '"claimCheck" expects a function'
+      '"claimCheck" expects a function',
     );
   });
 
@@ -301,10 +307,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck(() => true)
+      claimCheck(() => true),
     );
     const jar = await login();
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 200);
   });
@@ -316,10 +322,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck(() => false)
+      claimCheck(() => false),
     );
     const jar = await login();
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
   });
@@ -331,10 +337,10 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck((req, claims) => claims.foo === 'some_claim')
+      claimCheck((req, claims) => claims.foo === 'some_claim'),
     );
     const jar = await login({ foo: 'some_claim' });
-    const response = await request({ baseUrl, jar, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, jar, url: '/protected' });
 
     assert.equal(response.statusCode, 200);
   });
@@ -347,9 +353,9 @@ describe('requiresAuth', () => {
         authRequired: false,
         errorOnRequiredAuth: true,
       }),
-      claimCheck(checkSpy)
+      claimCheck(checkSpy),
     );
-    const response = await request({ baseUrl, url: '/protected' });
+    const response = await requestDefaults({ baseUrl, url: '/protected' });
 
     assert.equal(response.statusCode, 401);
     sinon.assert.notCalled(checkSpy);
@@ -359,9 +365,9 @@ describe('requiresAuth', () => {
     server = await createServer(auth(defaultConfig));
     const payloads = ['//google.com', '///google.com', '//google.com'];
     for (const payload of payloads) {
-      const response = await request({ url: `${baseUrl}${payload}` });
+      const response = await requestDefaults({ url: `${baseUrl}${payload}` });
       const state = new URL(response.headers.location).searchParams.get(
-        'state'
+        'state',
       );
       const decoded = Buffer.from(state, 'base64');
       const parsed = JSON.parse(decoded);

@@ -1,6 +1,6 @@
-const { JWK, JWE } = require('jose');
+import { JWK, JWE } from 'jose';
 
-const { encryption: deriveKey } = require('../../lib/crypto');
+import { encryption as deriveKey } from '../../lib/crypto.js';
 const epoch = () => (Date.now() / 1000) | 0;
 
 const key = JWK.asKey(deriveKey('__test_secret__'));
@@ -23,7 +23,7 @@ const { cleartext } = JWE.decrypt(jwe, key, {
   keyManagementAlgorithms: [encryptOpts.alg],
 });
 
-module.exports = {
+export default {
   encrypted: jwe,
   decrypted: cleartext,
 };

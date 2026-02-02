@@ -1,14 +1,14 @@
-const { assert } = require('chai');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import puppeteer from 'puppeteer';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   login,
   runExample,
   stubEnv,
   goto,
-} = require('./fixture/helpers');
+} from './fixture/helpers.js';
 
 describe('attempt silent login', async () => {
   let authServer;
@@ -72,7 +72,7 @@ describe('attempt silent login', async () => {
     const loggedInCookies = await context.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
-    // Delete cookies using BrowserContext API
+    // Delete cookies by setting them with past expiration date
     const cookiesToDelete = loggedInCookies.filter(
       (cookie) =>
         cookie.name === 'appSession' || cookie.name === 'skipSilentLogin',
