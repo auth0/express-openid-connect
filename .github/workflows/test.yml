@@ -112,6 +112,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Puppeteer browser dependencies
+        run: npx puppeteer browsers install chrome
+
       - run: npm run test:end-to-end
 
   lint:
