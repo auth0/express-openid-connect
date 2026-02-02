@@ -12,7 +12,6 @@ nock.recorder.rec({
 });
 
 let warn;
-let activeMocks;
 let mockAgent;
 let originalDispatcher;
 
