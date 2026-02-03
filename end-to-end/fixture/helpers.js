@@ -1,6 +1,5 @@
 import path from 'path';
 import crypto from 'crypto';
-import net from 'net';
 import sinon from 'sinon';
 import express from 'express';
 import { SignJWT } from 'jose';
@@ -39,11 +38,10 @@ const start = (app, port) =>
 const runExample = async (name) => {
   // Ensure environment variables are set BEFORE the dynamic import
   // because auth() is called during module initialization
-  // Use 127.0.0.1 instead of localhost for CI compatibility
   const env = {
-    ISSUER_BASE_URL: 'http://127.0.0.1:3001',
+    ISSUER_BASE_URL: 'http://localhost:3001',
     CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://127.0.0.1:3000',
+    BASE_URL: 'http://localhost:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   };
@@ -86,9 +84,9 @@ const runApi = async () => {
 
 const stubEnv = (
   env = {
-    ISSUER_BASE_URL: 'http://127.0.0.1:3001',
+    ISSUER_BASE_URL: 'http://localhost:3001',
     CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://127.0.0.1:3000',
+    BASE_URL: 'http://localhost:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   },
@@ -209,49 +207,12 @@ const shouldSkipPuppeteerTest = () => {
   const nodeVersion = process.version;
   const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
 
-  // Skip on Node.js v24+ with macOS due to known Puppeteer DNS resolution issues
-  return majorVersion >= 24 && process.platform === 'darwin';
-};
-
-/**
- * Wait for a port to be available (server is listening)
- * @param {number} port - The port to check
- * @param {string} host - The host to connect to (default: 127.0.0.1)
- * @param {number} timeout - Maximum time to wait in ms (default: 5000)
- * @param {number} interval - Time between retries in ms (default: 100)
- * @returns {Promise<void>}
- */
-const waitForPort = (
-  port,
-  host = '127.0.0.1',
-  timeout = 5000,
-  interval = 100,
-) => {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
-
-    const tryConnect = () => {
-      const socket = new net.Socket();
-
-      socket.once('connect', () => {
-        socket.destroy();
-        resolve();
-      });
-
-      socket.once('error', () => {
-        socket.destroy();
-        if (Date.now() - startTime >= timeout) {
-          reject(new Error(`Timeout waiting for port ${port} on ${host}`));
-        } else {
-          setTimeout(tryConnect, interval);
-        }
-      });
-
-      socket.connect(port, host);
-    };
-
-    tryConnect();
-  });
+  // Skip on macOS with Node.js 20 due to Puppeteer DNS resolution issues
+  // Also skip on Node.js v24+ with macOS for similar reasons
+  if (process.platform === 'darwin') {
+    return majorVersion === 20 || majorVersion >= 24;
+  }
+  return false;
 };
 
 export {
@@ -267,5 +228,4 @@ export {
   logout,
   logoutTokenTester,
   shouldSkipPuppeteerTest,
-  waitForPort,
 };

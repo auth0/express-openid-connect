@@ -11,7 +11,6 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
-  waitForPort,
 } from './fixture/helpers.js';
 
 describe('back-channel logout', async () => {
@@ -23,8 +22,6 @@ describe('back-channel logout', async () => {
     stubEnv();
     const resolvedProvider = await provider;
     authServer = await start(resolvedProvider, 3001);
-    // Wait for the auth server to be ready
-    await waitForPort(3001);
   });
 
   afterEach(async () => {
@@ -43,8 +40,6 @@ describe('back-channel logout', async () => {
     }
 
     appServer = await runExample(example);
-    // Wait for the app server to be ready
-    await waitForPort(3000);
     browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()
@@ -52,7 +47,7 @@ describe('back-channel logout', async () => {
     });
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/(localhost|127\.0\.0\.1):300/);
+    assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
     await login('username', 'password', page);
     assert.equal(
@@ -103,7 +98,7 @@ describe('back-channel logout', async () => {
     });
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/(localhost|127\.0\.0\.1):300/);
+    assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
     await login('username', 'password', page);
     assert.equal(

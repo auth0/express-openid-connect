@@ -9,7 +9,6 @@ import {
   stubEnv,
   goto,
   shouldSkipPuppeteerTest,
-  waitForPort,
 } from './fixture/helpers.js';
 
 describe('attempt silent login', async () => {
@@ -21,8 +20,6 @@ describe('attempt silent login', async () => {
     const resolvedProvider = await provider;
     authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('attempt-silent-login');
-    // Wait for both servers to be ready before running tests
-    await Promise.all([waitForPort(3000), waitForPort(3001)]);
   });
 
   afterEach(async () => {
@@ -73,7 +70,7 @@ describe('attempt silent login', async () => {
     await goto(`${baseUrl}/login`, page);
     assert.match(
       page.url(),
-      /http:\/\/(localhost|127\.0\.0\.1):3001\/interaction/,
+      /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
