@@ -11,6 +11,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  waitForPort,
 } from './fixture/helpers.js';
 
 describe('back-channel logout', async () => {
@@ -22,6 +23,8 @@ describe('back-channel logout', async () => {
     stubEnv();
     const resolvedProvider = await provider;
     authServer = await start(resolvedProvider, 3001);
+    // Wait for the auth server to be ready
+    await waitForPort(3001);
   });
 
   afterEach(async () => {
@@ -40,6 +43,8 @@ describe('back-channel logout', async () => {
     }
 
     appServer = await runExample(example);
+    // Wait for the app server to be ready
+    await waitForPort(3000);
     browser = await puppeteer.launch({
       args: puppeteer
         .defaultArgs()
@@ -47,7 +52,7 @@ describe('back-channel logout', async () => {
     });
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/localhost:300/);
+    assert.match(page.url(), /http:\/\/(localhost|127\.0\.0\.1):300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
     await login('username', 'password', page);
     assert.equal(
@@ -55,7 +60,7 @@ describe('back-channel logout', async () => {
       `${baseUrl}/`,
       'User is returned to the original page',
     );
-    const loggedInCookies = await page.cookies('http://localhost:3000');
+    const loggedInCookies = await page.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
     const response = await checkContext(await page.cookies());
@@ -67,7 +72,7 @@ describe('back-channel logout', async () => {
     const element = await page.$('pre');
     const curl = await page.evaluate((el) => el.textContent, element);
     const [, logoutToken] = curl.match(/logout_token=([^"]+)/);
-    const res = await request.post('http://localhost:3000/backchannel-logout', {
+    const res = await request.post(`${baseUrl}/backchannel-logout`, {
       form: {
         logout_token: logoutToken,
       },
@@ -76,7 +81,7 @@ describe('back-channel logout', async () => {
     assert.equal(res.statusCode, 204);
 
     await goto(baseUrl, page);
-    const loggedOutCookies = await page.cookies('http://localhost:3000');
+    const loggedOutCookies = await page.cookies(baseUrl);
     assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   };
 
@@ -98,7 +103,7 @@ describe('back-channel logout', async () => {
     });
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/localhost:300/);
+    assert.match(page.url(), /http:\/\/(localhost|127\.0\.0\.1):300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
     await login('username', 'password', page);
     assert.equal(
@@ -107,7 +112,7 @@ describe('back-channel logout', async () => {
       'User is returned to the original page',
     );
 
-    const loggedInCookies = await page.cookies('http://localhost:3000');
+    const loggedInCookies = await page.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
     const response = await checkContext(await page.cookies());
     assert.isOk(response.isAuthenticated);

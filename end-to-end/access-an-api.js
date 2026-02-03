@@ -12,6 +12,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  waitForPort,
 } from './fixture/helpers.js';
 
 describe('access an api', async () => {
@@ -25,6 +26,12 @@ describe('access an api', async () => {
     authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('access-an-api');
     apiServer = await runApi();
+    // Wait for all servers to be ready before running tests
+    await Promise.all([
+      waitForPort(3000),
+      waitForPort(3001),
+      waitForPort(3002),
+    ]);
   });
 
   afterEach(async () => {

@@ -9,6 +9,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  waitForPort,
 } from './fixture/helpers.js';
 
 describe('fetch userinfo', async () => {
@@ -20,6 +21,8 @@ describe('fetch userinfo', async () => {
     const resolvedProvider = await provider;
     authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('userinfo');
+    // Wait for both servers to be ready before running tests
+    await Promise.all([waitForPort(3000), waitForPort(3001)]);
   });
 
   afterEach(async () => {
@@ -41,7 +44,7 @@ describe('fetch userinfo', async () => {
     await goto(baseUrl, page);
     assert.match(
       page.url(),
-      /http:\/\/127\.0\.0\.1:3001\/interaction/,
+      /http:\/\/(localhost|127\.0\.0\.1):3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);

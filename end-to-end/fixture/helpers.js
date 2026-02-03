@@ -1,5 +1,6 @@
 import path from 'path';
 import crypto from 'crypto';
+import net from 'net';
 import sinon from 'sinon';
 import express from 'express';
 import { SignJWT } from 'jose';
@@ -212,6 +213,47 @@ const shouldSkipPuppeteerTest = () => {
   return majorVersion >= 24 && process.platform === 'darwin';
 };
 
+/**
+ * Wait for a port to be available (server is listening)
+ * @param {number} port - The port to check
+ * @param {string} host - The host to connect to (default: 127.0.0.1)
+ * @param {number} timeout - Maximum time to wait in ms (default: 5000)
+ * @param {number} interval - Time between retries in ms (default: 100)
+ * @returns {Promise<void>}
+ */
+const waitForPort = (
+  port,
+  host = '127.0.0.1',
+  timeout = 5000,
+  interval = 100,
+) => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const tryConnect = () => {
+      const socket = new net.Socket();
+
+      socket.once('connect', () => {
+        socket.destroy();
+        resolve();
+      });
+
+      socket.once('error', () => {
+        socket.destroy();
+        if (Date.now() - startTime >= timeout) {
+          reject(new Error(`Timeout waiting for port ${port} on ${host}`));
+        } else {
+          setTimeout(tryConnect, interval);
+        }
+      });
+
+      socket.connect(port, host);
+    };
+
+    tryConnect();
+  });
+};
+
 export {
   baseUrl,
   start,
@@ -225,4 +267,5 @@ export {
   logout,
   logoutTokenTester,
   shouldSkipPuppeteerTest,
+  waitForPort,
 };

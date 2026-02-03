@@ -11,6 +11,7 @@ import {
   login,
   logout,
   shouldSkipPuppeteerTest,
+  waitForPort,
 } from './fixture/helpers.js';
 
 describe('basic login and logout', async () => {
@@ -22,6 +23,8 @@ describe('basic login and logout', async () => {
     const resolvedProvider = await provider;
     authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('basic');
+    // Wait for both servers to be ready before running tests
+    await Promise.all([waitForPort(3000), waitForPort(3001)]);
   });
 
   afterEach(async () => {
@@ -44,7 +47,7 @@ describe('basic login and logout', async () => {
     await goto(baseUrl, page);
     assert.match(
       page.url(),
-      /http:\/\/127\.0\.0\.1:3001\/interaction/,
+      /http:\/\/(localhost|127\.0\.0\.1):3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
@@ -53,7 +56,7 @@ describe('basic login and logout', async () => {
       `${baseUrl}/`,
       'User is returned to the original page',
     );
-    const loggedInCookies = await page.cookies('http://localhost:3000');
+    const loggedInCookies = await page.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
     const response = await checkContext(await page.cookies());
@@ -65,7 +68,7 @@ describe('basic login and logout', async () => {
     );
     await logout(page);
 
-    const loggedOutCookies = await page.cookies('http://localhost:3000');
+    const loggedOutCookies = await page.cookies(baseUrl);
     assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   });
 });

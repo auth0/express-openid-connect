@@ -10,6 +10,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  waitForPort,
 } from './fixture/helpers.js';
 
 describe('private key jwt', async () => {
@@ -21,6 +22,8 @@ describe('private key jwt', async () => {
     const resolvedProvider = await provider;
     authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('private-key-jwt');
+    // Wait for both servers to be ready before running tests
+    await Promise.all([waitForPort(3000), waitForPort(3001)]);
   });
 
   afterEach(async () => {
@@ -40,11 +43,11 @@ describe('private key jwt', async () => {
     });
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/127\.0\.0\.1:3000/);
+    assert.match(page.url(), /http:\/\/(localhost|127\.0\.0\.1):3000/);
     await page.click('a[href="/login"]');
     assert.match(
       page.url(),
-      /http:\/\/127\.0\.0\.1:3001\/interaction/,
+      /http:\/\/(localhost|127\.0\.0\.1):3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     const resolvedProvider = await provider;
