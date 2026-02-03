@@ -8,8 +8,8 @@ import request from 'request-promise-native';
 
 const requestDefaults = request.defaults({ json: true });
 
-// Use 127.0.0.1 instead of localhost to avoid DNS resolution issues in CI
-const baseUrl = 'http://127.0.0.1:3000';
+// Use localhost consistently across all tests
+const baseUrl = 'http://localhost:3000';
 
 const start = (app, port) =>
   new Promise((resolve, reject) => {
@@ -18,8 +18,8 @@ const start = (app, port) =>
       console.error(`Express app error:`, error);
     });
 
-    // Bind to 127.0.0.1 explicitly for CI compatibility
-    const server = app.listen(port, '127.0.0.1', (err) => {
+    // Don't specify host - let it bind to all interfaces
+    const server = app.listen(port, (err) => {
       if (err) {
         console.error(`Failed to start server on port ${port}:`, err);
         reject(err);

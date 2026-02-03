@@ -98,10 +98,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: ${{ env.CACHE_KEY }}
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Puppeteer Chrome browser
+        run: npx puppeteer browsers install chrome
 
       - run: npm run test:end-to-end
 
