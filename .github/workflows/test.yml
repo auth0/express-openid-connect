@@ -109,8 +109,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Puppeteer browser
-        run: npx puppeteer browsers install chrome
+      - name: Install Puppeteer browser and dependencies
+        run: |
+          npx puppeteer browsers install chrome
+          sudo apt-get update
+          sudo apt-get install -y libgbm1 libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libasound2t64
 
       - name: Run end-to-end tests
         run: npm run test:end-to-end
