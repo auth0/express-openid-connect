@@ -95,7 +95,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '22'
           cache: npm
 
       - uses: actions/cache/restore@v4
@@ -106,28 +106,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libatk1.0-0 libatk-bridge2.0-0 \
+            libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
+            libxfixes3 libxrandr2 libgbm1 libasound2 libpango-1.0-0 libcairo2
+
       - name: Install Puppeteer Chrome browser
         run: npx puppeteer browsers install chrome
 
-      - name: Debug - Check localhost resolution
-        run: |
-          echo "=== /etc/hosts ==="
-          cat /etc/hosts
-          echo ""
-          echo "=== Resolving localhost ==="
-          getent hosts localhost || echo "getent failed"
-          echo ""
-          echo "=== Network interfaces ==="
-          ip addr show lo || ifconfig lo || echo "Could not show loopback interface"
-          echo ""
-          echo "=== Test localhost connectivity ==="
-          nc -zv 127.0.0.1 22 2>&1 || echo "Port 22 not open (expected)"
-          echo ""
-          echo "=== Ping localhost ==="
-          ping -c 1 localhost || echo "Ping failed"
-          ping -c 1 127.0.0.1 || echo "Ping to 127.0.0.1 failed"
-
-      - run: npm run test:end-to-end
+      - name: Run end-to-end tests with xvfb
+        run: xvfb-run --auto-servernum npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests
