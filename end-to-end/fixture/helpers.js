@@ -237,7 +237,7 @@ const shouldSkipPuppeteerTest = () => {
   // Skip on macOS with Node.js 20 due to Puppeteer DNS resolution issues
   // Also skip on Node.js v24+ with macOS for similar reasons
   if (process.platform === 'darwin') {
-    return majorVersion === 20 || majorVersion >= 24;
+    return majorVersion === 20 || majorVersion === 22 || majorVersion >= 24;
   }
   return false;
 };
