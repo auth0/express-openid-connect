@@ -569,16 +569,24 @@ describe('auth', () => {
     const originalMockDiscovery = global.__testMockDiscovery;
     delete global.__testMockDiscovery;
 
-    // Disable undici global mocking to allow nock to work
-    const { setGlobalDispatcher, Agent } = await import('undici');
-    setGlobalDispatcher(new Agent());
+    // Use undici MockAgent to mock the error response (works with native fetch in Node 20+)
+    const { MockAgent, setGlobalDispatcher, getGlobalDispatcher } =
+      await import('undici');
+    const originalDispatcher = getGlobalDispatcher();
+    const mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+    setGlobalDispatcher(mockAgent);
 
-    nock('https://example.com')
-      .get('/.well-known/openid-configuration')
-      .reply(500);
-    nock('https://example.com')
-      .get('/.well-known/oauth-authorization-server')
-      .reply(500);
+    const pool = mockAgent.get('https://example.com');
+    pool
+      .intercept({ path: '/.well-known/openid-configuration', method: 'GET' })
+      .reply(500, 'Internal Server Error');
+    pool
+      .intercept({
+        path: '/.well-known/oauth-authorization-server',
+        method: 'GET',
+      })
+      .reply(500, 'Internal Server Error');
 
     try {
       server = await createServer(
@@ -595,13 +603,14 @@ describe('auth', () => {
       assert.equal(res.statusCode, 500);
       assert.match(
         res.body.err.message,
-        /^(Issuer\.discover\(\) failed|fetch failed|Discovery failed)/,
+        /^(Issuer\.discover\(\) failed|fetch failed|Discovery failed|"response" is not conforming|unexpected HTTP response status code)/,
         'Should get error json from server error middleware',
       );
     } finally {
-      // Restore mock discovery
+      // Restore mock discovery and dispatcher
       global.__testMockDiscovery = originalMockDiscovery;
-      nock.cleanAll();
+      setGlobalDispatcher(originalDispatcher);
+      await mockAgent.close();
     }
   });
 });
