@@ -1,5 +1,6 @@
 import path from 'path';
 import crypto from 'crypto';
+import http from 'http';
 import sinon from 'sinon';
 import express from 'express';
 import { SignJWT } from 'jose';
@@ -10,6 +11,40 @@ import puppeteer from 'puppeteer';
 const requestDefaults = request.defaults({ json: true });
 
 const baseUrl = 'http://localhost:3000';
+
+/**
+ * Wait for a server to be ready by attempting HTTP request
+ */
+const waitForServer = (port, maxAttempts = 50, delay = 100) => {
+  return new Promise((resolve, reject) => {
+    let attempts = 0;
+    const tryConnect = () => {
+      attempts++;
+      const req = http.get(`http://localhost:${port}/`, (res) => {
+        res.resume();
+        resolve();
+      });
+      req.on('error', () => {
+        if (attempts >= maxAttempts) {
+          reject(
+            new Error(
+              `Server on port ${port} not ready after ${maxAttempts} attempts`,
+            ),
+          );
+        } else {
+          setTimeout(tryConnect, delay);
+        }
+      });
+      req.setTimeout(500, () => {
+        req.destroy();
+        if (attempts < maxAttempts) {
+          setTimeout(tryConnect, delay);
+        }
+      });
+    };
+    tryConnect();
+  });
+};
 
 /**
  * Get Puppeteer launch options for CI compatibility
@@ -29,16 +64,24 @@ const getPuppeteerLaunchOptions = () => ({
  */
 const launchBrowser = () => puppeteer.launch(getPuppeteerLaunchOptions());
 
-const start = (app, port) =>
-  new Promise((resolve, reject) => {
-    const server = app.listen(port, (err) => {
+const start = async (app, port) => {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, async (err) => {
       if (err) {
         reject(err);
       } else {
-        resolve(server);
+        try {
+          // Wait for server to be actually ready to accept connections
+          await waitForServer(port);
+          resolve(server);
+        } catch (waitErr) {
+          reject(waitErr);
+        }
       }
     });
+    server.on('error', reject);
   });
+};
 
 const runExample = async (name) => {
   // Ensure environment variables are set BEFORE the dynamic import
