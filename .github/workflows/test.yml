@@ -18,38 +18,31 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 24
+  CACHE_KEY: '${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}'
 
 jobs:
   build:
     name: Build Package
     runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.cache-key.outputs.key }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Generate cache key
-        id: cache-key
-        run: echo "key=node-modules-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
-
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/build
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          node: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Cache node_modules
+      - name: Save build artifacts
         uses: actions/cache/save@v4
         with:
-          path: node_modules
-          key: ${{ steps.cache-key.outputs.key }}
+          path: .
+          key: ${{ env.CACHE_KEY }}
 
   unit:
-    needs: build
+    needs: build # Require build to complete before running tests
+
     name: Run Unit Tests
     runs-on: ubuntu-latest
 
@@ -59,20 +52,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ needs.build.outputs.cache-key }}
-          fail-on-cache-miss: true
+          path: .
+          key: ${{ env.CACHE_KEY }}
 
       - run: npm run test:ci
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@4fe8c5f003fae66aa5ebb77cfd3e7bfbbda0b6b0 # pin@3.1.5
 
   types:
-    needs: build
+    needs: build # Require build to complete before running tests
+
     name: Check Type Definitions
     runs-on: ubuntu-latest
 
@@ -82,18 +75,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ needs.build.outputs.cache-key }}
-          fail-on-cache-miss: true
+          path: .
+          key: ${{ env.CACHE_KEY }}
 
       - run: npm run test:types
 
   mocha:
-    needs: build
+    needs: build # Require build to complete before running tests
+
     name: Run End-to-End Tests
     runs-on: ubuntu-latest
 
@@ -103,21 +96,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ needs.build.outputs.cache-key }}
-          fail-on-cache-miss: true
-
-      - name: Install Puppeteer browser
-        run: npx puppeteer browsers install chrome
+          path: .
+          key: ${{ env.CACHE_KEY }}
 
       - run: npm run test:end-to-end
 
   lint:
-    needs: build
+    needs: build # Require build to complete before running tests
+
     name: Lint Code
     runs-on: ubuntu-latest
 
@@ -127,12 +117,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-      - name: Restore node_modules cache
-        uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ needs.build.outputs.cache-key }}
-          fail-on-cache-miss: true
+          path: .
+          key: ${{ env.CACHE_KEY }}
 
       - run: npm run lint
