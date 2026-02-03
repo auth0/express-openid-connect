@@ -8,7 +8,8 @@ import request from 'request-promise-native';
 
 const requestDefaults = request.defaults({ json: true });
 
-const baseUrl = 'http://localhost:3000';
+// Use 127.0.0.1 instead of localhost to avoid DNS resolution issues in CI
+const baseUrl = 'http://127.0.0.1:3000';
 
 const start = (app, port) =>
   new Promise((resolve, reject) => {
@@ -17,7 +18,8 @@ const start = (app, port) =>
       console.error(`Express app error:`, error);
     });
 
-    const server = app.listen(port, (err) => {
+    // Bind to 127.0.0.1 explicitly for CI compatibility
+    const server = app.listen(port, '127.0.0.1', (err) => {
       if (err) {
         console.error(`Failed to start server on port ${port}:`, err);
         reject(err);
@@ -36,10 +38,11 @@ const start = (app, port) =>
 const runExample = async (name) => {
   // Ensure environment variables are set BEFORE the dynamic import
   // because auth() is called during module initialization
+  // Use 127.0.0.1 instead of localhost for CI compatibility
   const env = {
-    ISSUER_BASE_URL: 'http://localhost:3001',
+    ISSUER_BASE_URL: 'http://127.0.0.1:3001',
     CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://localhost:3000',
+    BASE_URL: 'http://127.0.0.1:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   };
@@ -82,9 +85,9 @@ const runApi = async () => {
 
 const stubEnv = (
   env = {
-    ISSUER_BASE_URL: 'http://localhost:3001',
+    ISSUER_BASE_URL: 'http://127.0.0.1:3001',
     CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://localhost:3000',
+    BASE_URL: 'http://127.0.0.1:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   },

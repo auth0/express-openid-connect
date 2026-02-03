@@ -43,7 +43,7 @@ describe('attempt silent login', async () => {
     await goto(baseUrl, page);
     await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
-    const cookies = await context.cookies('http://localhost:3000');
+    const cookies = await context.cookies('http://127.0.0.1:3000');
     assert.ok(
       cookies.find(
         ({ name, value }) => name === 'skipSilentLogin' && value === 'true',
@@ -70,7 +70,7 @@ describe('attempt silent login', async () => {
     await goto(`${baseUrl}/login`, page);
     assert.match(
       page.url(),
-      /http:\/\/localhost:3001\/interaction/,
+      /http:\/\/127\.0\.0\.1:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
@@ -104,7 +104,7 @@ describe('attempt silent login', async () => {
     await goto(baseUrl, page);
     await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
-    const cookies = await context.cookies('http://localhost:3000');
+    const cookies = await context.cookies('http://127.0.0.1:3000');
     assert.ok(cookies.find(({ name }) => name === 'appSession'));
 
     await browser.close();
