@@ -90,6 +90,9 @@ jobs:
     name: Run End-to-End Tests
     runs-on: ubuntu-latest
 
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'false'
+
     steps:
       - uses: actions/checkout@v4
 
@@ -103,21 +106,14 @@ jobs:
           path: .
           key: ${{ env.CACHE_KEY }}
 
-      - name: Install dependencies if cache missed
-        run: |
-          if [ ! -d "node_modules" ]; then
-            npm ci
-          fi
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Verify localhost resolution
-        run: |
-          echo "Testing localhost resolution..."
-          cat /etc/hosts
-          getent hosts localhost || echo "getent failed for localhost"
-          ping -c 1 127.0.0.1 || echo "ping failed"
-          node -e "const http = require('http'); const server = http.createServer((req, res) => res.end('ok')); server.listen(9999, () => { http.get('http://localhost:9999/', (r) => { console.log('localhost works, status:', r.statusCode); server.close(); }).on('error', (e) => { console.error('localhost failed:', e.message); server.close(); }); });"
+      - name: Install Puppeteer browser
+        run: npx puppeteer browsers install chrome
 
-      - run: npm run test:end-to-end
+      - name: Run end-to-end tests
+        run: npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests

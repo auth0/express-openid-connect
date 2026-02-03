@@ -10,12 +10,13 @@ import puppeteer from 'puppeteer';
 
 const requestDefaults = request.defaults({ json: true });
 
-const baseUrl = 'http://localhost:3000';
+// Use 127.0.0.1 to avoid DNS resolution issues in CI environments
+const baseUrl = 'http://127.0.0.1:3000';
 
 /**
  * Wait for a server to be ready by attempting HTTP request
  */
-const waitForServer = (port, maxAttempts = 50, delay = 100) => {
+const waitForServer = (port, maxAttempts = 100, delay = 200) => {
   return new Promise((resolve, reject) => {
     let attempts = 0;
     const tryConnect = () => {
@@ -25,18 +26,18 @@ const waitForServer = (port, maxAttempts = 50, delay = 100) => {
         res.resume();
         resolve();
       });
-      req.on('error', () => {
+      req.on('error', (err) => {
         if (attempts >= maxAttempts) {
           reject(
             new Error(
-              `Server on port ${port} not ready after ${maxAttempts} attempts`,
+              `Server on port ${port} not ready after ${maxAttempts} attempts. Last error: ${err.message}`,
             ),
           );
         } else {
           setTimeout(tryConnect, delay);
         }
       });
-      req.setTimeout(500, () => {
+      req.setTimeout(1000, () => {
         req.destroy();
         if (attempts < maxAttempts) {
           setTimeout(tryConnect, delay);
@@ -57,8 +58,13 @@ const getPuppeteerLaunchOptions = () => ({
     '--disable-setuid-sandbox',
     '--disable-dev-shm-usage',
     '--disable-gpu',
+    '--disable-extensions',
+    '--disable-background-networking',
+    '--disable-software-rasterizer',
+    '--window-size=1280,720',
     '--host-resolver-rules=MAP localhost 127.0.0.1',
   ],
+  protocolTimeout: 60000,
 });
 
 /**
@@ -68,7 +74,8 @@ const launchBrowser = () => puppeteer.launch(getPuppeteerLaunchOptions());
 
 const start = async (app, port) => {
   return new Promise((resolve, reject) => {
-    const server = app.listen(port, async (err) => {
+    // Explicitly bind to 127.0.0.1 to avoid DNS issues in CI
+    const server = app.listen(port, '127.0.0.1', async (err) => {
       if (err) {
         reject(err);
       } else {
@@ -88,10 +95,11 @@ const start = async (app, port) => {
 const runExample = async (name) => {
   // Ensure environment variables are set BEFORE the dynamic import
   // because auth() is called during module initialization
+  // Use 127.0.0.1 to avoid DNS resolution issues in CI
   const env = {
-    ISSUER_BASE_URL: 'http://localhost:3001',
+    ISSUER_BASE_URL: 'http://127.0.0.1:3001',
     CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://localhost:3000',
+    BASE_URL: 'http://127.0.0.1:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   };
@@ -134,9 +142,9 @@ const runApi = async () => {
 
 const stubEnv = (
   env = {
-    ISSUER_BASE_URL: 'http://localhost:3001',
+    ISSUER_BASE_URL: 'http://127.0.0.1:3001',
     CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://localhost:3000',
+    BASE_URL: 'http://127.0.0.1:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   },
@@ -187,7 +195,7 @@ const login = async (username, password, page) => {
   await page.type('[name=password]', password);
   await Promise.all([page.click('.login-submit'), page.waitForNavigation()]);
   await Promise.all([page.click('.login-submit'), page.waitForNavigation()]); // consent
-  if (!page.url().startsWith('http://localhost:3000')) {
+  if (!page.url().startsWith('http://127.0.0.1:3000')) {
     await page.waitForNavigation();
   }
 };
@@ -211,14 +219,14 @@ const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
       alg: 'RS256',
       typ: 'logout+jwt',
     })
-    .setIssuer(`http://localhost:${process.env.PROVIDER_PORT || 3001}`)
+    .setIssuer(`http://127.0.0.1:${process.env.PROVIDER_PORT || 3001}`)
     .setAudience(clientId)
     .setIssuedAt()
     .setJti(crypto.randomBytes(16).toString('hex'))
     .sign(privateJWK);
 
   res.send(`
-    <pre style="border: 1px solid #ccc; padding: 10px; white-space: break-spaces; background: whitesmoke;">curl -X POST http://localhost:3000/backchannel-logout -d "logout_token=${logoutToken}"</pre>
+    <pre style="border: 1px solid #ccc; padding: 10px; white-space: break-spaces; background: whitesmoke;">curl -X POST http://127.0.0.1:3000/backchannel-logout -d "logout_token=${logoutToken}"</pre>
   `);
 };
 

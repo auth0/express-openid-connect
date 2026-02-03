@@ -11,8 +11,8 @@ const initializeProvider = async () => {
     token_endpoint_auth_method: 'client_secret_post',
     response_types: ['id_token', 'code', 'code id_token'],
     grant_types: ['implicit', 'authorization_code', 'refresh_token'],
-    redirect_uris: ['http://localhost:3000/callback'],
-    post_logout_redirect_uris: ['http://localhost:3000'],
+    redirect_uris: ['http://127.0.0.1:3000/callback'],
+    post_logout_redirect_uris: ['http://127.0.0.1:3000'],
   };
 
   const config = {
@@ -25,12 +25,12 @@ const initializeProvider = async () => {
       }),
       Object.assign({}, client, {
         client_id: 'backchannel-logout-client',
-        backchannel_logout_uri: 'http://localhost:3000/backchannel-logout',
+        backchannel_logout_uri: 'http://127.0.0.1:3000/backchannel-logout',
         backchannel_logout_session_required: true,
       }),
       Object.assign({}, client, {
         client_id: 'backchannel-logout-client-no-sid',
-        backchannel_logout_uri: 'http://localhost:3000/backchannel-logout',
+        backchannel_logout_uri: 'http://127.0.0.1:3000/backchannel-logout',
         backchannel_logout_session_required: false,
       }),
       Object.assign({}, client, {
@@ -63,9 +63,9 @@ const initializeProvider = async () => {
 
   const PORT = process.env.PROVIDER_PORT || 3001;
 
-  const provider = new Provider(`http://localhost:${PORT}`, config);
+  const provider = new Provider(`http://127.0.0.1:${PORT}`, config);
 
-  // Monkey patch the provider to allow localhost and http redirect uris
+  // Monkey patch the provider to allow 127.0.0.1 and http redirect uris
   const { invalidate: orig } = provider.Client.Schema.prototype;
   provider.Client.Schema.prototype.invalidate = function invalidate(
     message,
