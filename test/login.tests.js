@@ -1,7 +1,6 @@
 import { assert } from 'chai';
 import url from 'url';
 import querystring from 'querystring';
-import nock from 'nock';
 import request from 'request-promise-native';
 
 import { decodeState } from '../lib/hooks/getLoginState.js';

@@ -1,4 +1,3 @@
-import nock from 'nock';
 import { assert } from 'chai';
 import { URL } from 'url';
 import { create as createServer } from './fixture/server.js';
