@@ -20,7 +20,8 @@ const waitForServer = (port, maxAttempts = 50, delay = 100) => {
     let attempts = 0;
     const tryConnect = () => {
       attempts++;
-      const req = http.get(`http://localhost:${port}/`, (res) => {
+      // Use 127.0.0.1 to avoid DNS resolution issues in CI
+      const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
         res.resume();
         resolve();
       });
@@ -56,6 +57,7 @@ const getPuppeteerLaunchOptions = () => ({
     '--disable-setuid-sandbox',
     '--disable-dev-shm-usage',
     '--disable-gpu',
+    '--host-resolver-rules=MAP localhost 127.0.0.1',
   ],
 });
 
