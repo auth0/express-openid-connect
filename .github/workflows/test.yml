@@ -98,11 +98,34 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      - uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: ${{ env.CACHE_KEY }}
+
       - name: Install dependencies
         run: npm ci
 
       - name: Install Puppeteer Chrome browser
         run: npx puppeteer browsers install chrome
+
+      - name: Debug - Check localhost resolution
+        run: |
+          echo "=== /etc/hosts ==="
+          cat /etc/hosts
+          echo ""
+          echo "=== Resolving localhost ==="
+          getent hosts localhost || echo "getent failed"
+          echo ""
+          echo "=== Network interfaces ==="
+          ip addr show lo || ifconfig lo || echo "Could not show loopback interface"
+          echo ""
+          echo "=== Test localhost connectivity ==="
+          nc -zv 127.0.0.1 22 2>&1 || echo "Port 22 not open (expected)"
+          echo ""
+          echo "=== Ping localhost ==="
+          ping -c 1 localhost || echo "Ping failed"
+          ping -c 1 127.0.0.1 || echo "Ping to 127.0.0.1 failed"
 
       - run: npm run test:end-to-end
 
