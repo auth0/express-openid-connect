@@ -24,9 +24,15 @@ jobs:
   build:
     name: Build Package
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Generate cache key
+        id: cache-key
+        run: echo "key=node-modules-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-node@v4
         with:
@@ -40,7 +46,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: ${{ steps.cache-key.outputs.key }}
 
   unit:
     needs: build
@@ -58,7 +64,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.build.outputs.cache-key }}
+          fail-on-cache-miss: true
 
       - run: npm run test:ci
 
@@ -80,7 +87,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.build.outputs.cache-key }}
+          fail-on-cache-miss: true
 
       - run: npm run test:types
 
@@ -100,7 +108,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.build.outputs.cache-key }}
+          fail-on-cache-miss: true
 
       - name: Install Puppeteer browser
         run: npx puppeteer browsers install chrome
@@ -123,6 +132,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
+          key: ${{ needs.build.outputs.cache-key }}
+          fail-on-cache-miss: true
 
       - run: npm run lint
