@@ -95,7 +95,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - uses: actions/cache/restore@v4
@@ -103,17 +103,13 @@ jobs:
           path: .
           key: ${{ env.CACHE_KEY }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies if cache missed
+        run: |
+          if [ ! -d "node_modules" ]; then
+            npm ci
+          fi
 
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
-
-      - name: Install Puppeteer Chrome browser
-        run: npx puppeteer browsers install chrome --install-deps
-
-      - name: Run end-to-end tests with xvfb
-        run: xvfb-run --auto-servernum npm run test:end-to-end
+      - run: npm run test:end-to-end
 
   lint:
     needs: build # Require build to complete before running tests

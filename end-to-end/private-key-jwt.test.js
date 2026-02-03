@@ -36,11 +36,11 @@ describe('private key jwt', async () => {
     const browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/127\.0\.0\.1:3000/);
+    assert.match(page.url(), /http:\/\/localhost:3000/);
     await page.click('a[href="/login"]');
     assert.match(
       page.url(),
-      /http:\/\/127\.0\.0\.1:3001\/interaction/,
+      /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     const resolvedProvider = await provider;

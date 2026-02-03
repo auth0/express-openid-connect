@@ -43,7 +43,7 @@ describe('back-channel logout', async () => {
     browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/127\.0\.0\.1:300/);
+    assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
     await login('username', 'password', page);
     assert.equal(
@@ -90,7 +90,7 @@ describe('back-channel logout', async () => {
     browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
-    assert.match(page.url(), /http:\/\/127\.0\.0\.1:300/);
+    assert.match(page.url(), /http:\/\/localhost:300/);
     await Promise.all([page.click('a'), page.waitForNavigation()]);
     await login('username', 'password', page);
     assert.equal(

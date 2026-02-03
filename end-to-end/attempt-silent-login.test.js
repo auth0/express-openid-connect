@@ -62,7 +62,7 @@ describe('attempt silent login', async () => {
     await goto(`${baseUrl}/login`, page);
     assert.match(
       page.url(),
-      /http:\/\/127\.0\.0\.1:3001\/interaction/,
+      /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
