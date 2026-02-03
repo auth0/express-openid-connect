@@ -5,11 +5,30 @@ import express from 'express';
 import { SignJWT } from 'jose';
 import { getPrivateJWK } from './jwk.js';
 import request from 'request-promise-native';
+import puppeteer from 'puppeteer';
 
 const requestDefaults = request.defaults({ json: true });
 
 // Use localhost consistently across all tests
 const baseUrl = 'http://localhost:3000';
+
+/**
+ * Get Puppeteer launch options for CI compatibility
+ */
+const getPuppeteerLaunchOptions = () => ({
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+  ],
+});
+
+/**
+ * Launch Puppeteer browser with CI-compatible options
+ */
+const launchBrowser = () => puppeteer.launch(getPuppeteerLaunchOptions());
 
 const start = (app, port) =>
   new Promise((resolve, reject) => {
@@ -228,4 +247,5 @@ export {
   logout,
   logoutTokenTester,
   shouldSkipPuppeteerTest,
+  launchBrowser,
 };

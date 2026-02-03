@@ -1,6 +1,5 @@
 import { assert } from 'chai';
 import { once } from 'events';
-import puppeteer from 'puppeteer';
 import provider from './fixture/oidc-provider.js';
 import {
   baseUrl,
@@ -10,6 +9,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  launchBrowser,
 } from './fixture/helpers.js';
 
 describe('private key jwt', async () => {
@@ -33,11 +33,7 @@ describe('private key jwt', async () => {
       return;
     }
 
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    const browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:3000/);

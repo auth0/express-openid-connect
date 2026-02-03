@@ -1,5 +1,4 @@
 import { assert } from 'chai';
-import puppeteer from 'puppeteer';
 import provider from './fixture/oidc-provider.js';
 import {
   baseUrl,
@@ -9,6 +8,7 @@ import {
   stubEnv,
   goto,
   shouldSkipPuppeteerTest,
+  launchBrowser,
 } from './fixture/helpers.js';
 
 describe('attempt silent login', async () => {
@@ -32,11 +32,7 @@ describe('attempt silent login', async () => {
       return;
     }
 
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    const browser = await launchBrowser();
     const page = await browser.newPage();
     const context = page.browserContext();
 
@@ -59,11 +55,7 @@ describe('attempt silent login', async () => {
       return;
     }
 
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    const browser = await launchBrowser();
     const page = await browser.newPage();
     const context = page.browserContext();
 

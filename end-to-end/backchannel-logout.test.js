@@ -1,5 +1,4 @@
 import { assert } from 'chai';
-import puppeteer from 'puppeteer';
 import request from 'request-promise-native';
 import provider from './fixture/oidc-provider.js';
 import {
@@ -11,6 +10,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  launchBrowser,
 } from './fixture/helpers.js';
 
 describe('back-channel logout', async () => {
@@ -40,11 +40,7 @@ describe('back-channel logout', async () => {
     }
 
     appServer = await runExample(example);
-    browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
@@ -91,11 +87,7 @@ describe('back-channel logout', async () => {
     await runTest('backchannel-logout');
 
     await browser.close();
-    browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);

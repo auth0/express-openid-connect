@@ -1,6 +1,5 @@
 import { assert } from 'chai';
 import sinon from 'sinon';
-import puppeteer from 'puppeteer';
 import provider from './fixture/oidc-provider.js';
 import {
   baseUrl,
@@ -12,6 +11,7 @@ import {
   goto,
   login,
   shouldSkipPuppeteerTest,
+  launchBrowser,
 } from './fixture/helpers.js';
 
 describe('access an api', async () => {
@@ -38,11 +38,7 @@ describe('access an api', async () => {
       return;
     }
 
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    const browser = await launchBrowser();
     const page = await browser.newPage();
 
     const clock = sinon.useFakeTimers({
