@@ -8,6 +8,7 @@ For most applications, configuration stays the same, but some legacy flows and h
 ## Summary of Changes
 
 - Requires Node.js 20 or newer
+- **SDK is now ESM-only** (ES Modules)
 - Uses openid-client v6 functional APIs
 - Enforces Authorization Code Flow with PKCE
 - Implicit flow is no longer supported
@@ -19,7 +20,51 @@ For most applications, configuration stays the same, but some legacy flows and h
 
 ## Breaking Changes
 
-### 1. Node.js 20+ Required
+### 1. ESM Import Syntax Required
+
+The SDK is now an ES Module (`"type": "module"`). Import syntax must change from CommonJS to ESM.
+
+**This will fail (CommonJS):**
+
+```js
+const { auth, requiresAuth } = require('express-openid-connect');
+// Error: require() of ES Module not supported
+```
+
+**Fix:** Use ESM import syntax:
+
+```js
+import { auth, requiresAuth } from 'express-openid-connect';
+```
+
+**All available exports:**
+
+```js
+import {
+  auth,
+  requiresAuth,
+  claimEquals,
+  claimIncludes,
+  claimCheck,
+  attemptSilentLogin,
+} from 'express-openid-connect';
+```
+
+**For CommonJS projects:** If you must use CommonJS, use dynamic import:
+
+```js
+// CommonJS project (not recommended)
+async function setup() {
+  const { auth, requiresAuth } = await import('express-openid-connect');
+  // use auth, requiresAuth...
+}
+```
+
+> **Note:** We recommend migrating your project to ESM by adding `"type": "module"` to your `package.json`.
+
+---
+
+### 2. Node.js 20+ Required
 
 openid-client v6 relies on native `fetch`, WebCrypto (`CryptoKey`), and modern ESM support.
 
@@ -50,7 +95,7 @@ openid-client v6 relies on native `fetch`, WebCrypto (`CryptoKey`), and modern E
 
 ---
 
-### 2. HTTP Base URLs Require Explicit Opt-in
+### 3. HTTP Base URLs Require Explicit Opt-in
 
 **This will fail with HTTP URLs:**
 
@@ -89,7 +134,7 @@ app.use(
 
 ---
 
-### 3. Implicit Flow Removed
+### 4. Implicit Flow Removed
 
 The implicit flow (`response_type: 'id_token'`, `response_type: 'token'`, `response_type: 'id_token token'`) is no longer supported.
 
@@ -164,7 +209,7 @@ authorizationParams: {
 
 ---
 
-### 4. Token Introspection Removed
+### 5. Token Introspection Removed
 
 The `client.introspect()` method is no longer available.
 
@@ -212,7 +257,7 @@ app.get('/introspect', async (req, res) => {
 
 ---
 
-### 5. Custom Client Helpers Removed
+### 6. Custom Client Helpers Removed
 
 Direct access to low-level client methods that relied on openid-client v4 internals will fail.
 
@@ -254,7 +299,7 @@ app.get('/userinfo-custom', async (req, res) => {
 
 ---
 
-### 6. Client Authentication Methods
+### 7. Client Authentication Methods
 
 The following client authentication methods are supported. The SDK auto-detects the appropriate method based on your configuration:
 
@@ -285,7 +330,7 @@ app.use(
 
 ---
 
-### 7. Private Key JWT Authentication
+### 8. Private Key JWT Authentication
 
 If using `private_key_jwt` client authentication, keys must be provided in a supported format.
 
@@ -345,7 +390,7 @@ app.use(
 
 ---
 
-### 8. Stricter Token Validation
+### 9. Stricter Token Validation
 
 openid-client v6 performs stricter OpenID Connect validation. Tokens that were previously accepted may now fail validation.
 
