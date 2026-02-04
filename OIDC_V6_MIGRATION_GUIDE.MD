@@ -1,156 +1,389 @@
-# OIDC V4 to V6 migration guide
+# OIDC V4 to V6 Migration Guide
 
 This release upgrades express-openid-connect to use openid-client v6 internally.
 openid-client v6 is a major rewrite that adopts modern Web APIs and removes legacy OAuth flows.
 
 For most applications, configuration stays the same, but some legacy flows and helper methods are no longer supported.
 
-## Summary of changes
+## Summary of Changes
 
 - Requires Node.js 20 or newer
-
 - Uses openid-client v6 functional APIs
-
 - Enforces Authorization Code Flow with PKCE
-
 - Implicit flow is no longer supported
-
 - Token introspection and request helpers are removed
-
 - Uses WebCrypto (CryptoKey) for client authentication
-
 - Stricter OpenID Connect validation
 
-### Configuration
+---
 
-## Required configuration changes
+## Breaking Changes
 
-# Before
+### 1. Node.js 20+ Required
+
+openid-client v6 relies on native `fetch`, WebCrypto (`CryptoKey`), and modern ESM support.
+
+**This will fail on Node.js 18 or earlier:**
 
 ```js
+// package.json
+{
+  "engines": {
+    "node": ">=18.0.0"  // Will fail - Node 18 not supported
+  }
+}
+
+// Running on Node 18:
+// Error: openid-client requires Node.js 20 or newer
+```
+
+**Fix:** Update to Node.js 20+
+
+```js
+// package.json
+{
+  "engines": {
+    "node": ">=20.0.0"  // Correct
+  }
+}
+```
+
+---
+
+### 2. HTTP Base URLs Require Explicit Opt-in
+
+**This will fail with HTTP URLs:**
+
+```js
+const { auth } = require('express-openid-connect');
+
 app.use(
   auth({
     issuerBaseURL: 'https://your-tenant.auth0.com',
-    baseURL: 'http://localhost:3000', // HTTP for dev
+    baseURL: 'http://localhost:3000', // HTTP URL
     clientID: 'client-id',
     secret: '',
   }),
 );
+
+// Error: "baseURL" must use HTTPS unless allowInsecureRequests is enabled
 ```
 
-# After
+**Fix:** Add `allowInsecureRequests: true` for local development:
 
 ```js
+import { auth } from 'express-openid-connect';
+
 app.use(
   auth({
     issuerBaseURL: 'https://your-tenant.auth0.com',
     baseURL: 'http://localhost:3000',
-    clientID: 'client-id',
-    secret: '',
-    allowInsecureRequests: true, // Only needed for HTTP
-    // response_type defaults to 'code' - authorization code flow with PKCE
+    clientID: 'your-client-id',
+    secret: 'your-secret',
+    allowInsecureRequests: true, // Required for HTTP URLs
   }),
 );
 ```
 
-### Node.js requirement
+> **Note:** Never use `allowInsecureRequests: true` in production. Always use HTTPS.
 
-This version requires Node.js 20+ .
+---
 
-openid-client v6 relies on: - Native fetch/request - Webcrypto (cryptoKey) - Modern ESM support
-Older Node.js versions are not supported.
+### 3. Implicit Flow Removed
 
-### Authorization flow changes (Breaking)
+The implicit flow (`response_type: 'id_token'`, `response_type: 'token'`, `response_type: 'id_token token'`) is no longer supported.
 
-## Implicit Flow removed
+**Why was implicit flow removed?**
 
-The implicit flow is no longer supported.
+1. **Security vulnerabilities:** Tokens are exposed in the URL fragment, making them susceptible to browser history, referrer headers, and XSS attacks
+2. **No refresh tokens:** Implicit flow cannot issue refresh tokens, requiring frequent re-authentication
+3. **Industry deprecation:** OAuth 2.0 Security Best Current Practice (RFC 9700) recommends against using implicit flow
+4. **PKCE is more secure:** Authorization Code Flow with PKCE provides the same benefits without exposing tokens in URLs
 
-This includes following `response_type` values;
+**This will fail:**
 
 ```js
-    id_token
-    token
-    id_token token
+const { auth } = require('express-openid-connect');
+
+app.use(
+  auth({
+    issuerBaseURL: 'https://your-tenant.auth0.com',
+    baseURL: 'https://your-app.com',
+    clientID: 'your-client-id',
+    secret: 'your-secret',
+    authorizationParams: {
+      response_type: 'id_token', // Implicit flow not supported
+      scope: 'openid profile email',
+    },
+  }),
+);
+
+// Error: Implicit flow (response_type: 'id_token') is not supported.
+// Use authorization code flow with response_type: 'code'
 ```
 
-If the application relied on recieving tokens directly in the authorization redirect, it will fail.
-Attemplting to use implicit flow will result in runtime error during callback phase.
-
-### Required flow: Authorization code + PKCE
-
-All application must use Authorization code with PKCE:
+**Also fails with:**
 
 ```js
-
 authorizationParams: {
-  response_type: 'code',
-  scope: 'openid profile email'
+  response_type: 'token', // Not supported
 }
 
+authorizationParams: {
+  response_type: 'id_token token', // Not supported
+}
 ```
 
-## Hybrid flow support
-
-Hybrid flow is supported
+**Fix:** Use Authorization Code Flow with PKCE (default):
 
 ```js
-response_type: 'code id_token';
+import { auth } from 'express-openid-connect';
+
+app.use(
+  auth({
+    issuerBaseURL: 'https://your-tenant.auth0.com',
+    baseURL: 'https://your-app.com',
+    clientID: 'client-id',
+    secret: '',
+    authorizationParams: {
+      response_type: 'code', // Authorization code flow (default)
+      scope: 'openid profile email',
+    },
+  }),
+);
 ```
 
-### Client authentication changes
+**Or use Hybrid Flow if you need an ID token in the authorization response:**
 
-Client authentication is handled using WebCrypto keys and oidc v6 authentication helpers.
+```js
+authorizationParams: {
+  response_type: 'code id_token', // Hybrid flow is supported
+  scope: 'openid profile email',
+}
+```
 
-Supported methods:
+---
 
-- private_key_jwt
-- client_secret_jwt
-- client_secret_basic
-- client_secret_post
-- none (public clients)
+### 4. Token Introspection Removed
 
-## Private key KWT
+The `client.introspect()` method is no longer available.
 
-If using private_jey_jwt, keys must be provided as:
+**This will fail:**
 
-- PEM
-- JWK
-- cryptoKey
-  PEM and JWK formats are automatically converted to cryptoKey internally.
+```js
+app.get('/introspect', async (req, res) => {
+  const client = req.oidc.client;
 
-### Removed helper methods
+  // introspect() method no longer exists
+  const result = await client.introspect(req.oidc.accessToken.access_token);
 
-THe following client helper methods are no longer supported in prod.
+  res.json(result);
+});
 
-- client.introspect() --- Not supported
-  -Previously used for token introspection
-- Now throws an error at runtime
-- Exist only as test shim
+// TypeError: client.introspect is not a function
+```
 
-## use instead:
+**Fix:** Use the standard `fetch` API or an HTTP client to call the introspection endpoint directly:
 
-- fetch
-- axios
-- standard HTTP client
+```js
+app.get('/introspect', async (req, res) => {
+  const accessToken = req.oidc.accessToken.access_token;
 
-## Token validation changes
+  // Use fetch to call introspection endpoint directly
+  const response = await fetch(
+    'https://your-tenant.auth0.com/oauth/introspect',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        token: accessToken,
+        client_id: process.env.CLIENT_ID,
+        client_secret: process.env.CLIENT_SECRET,
+      }),
+    },
+  );
 
-oidc v6 performs stricter OpenID connect validation:
+  const result = await response.json();
+  res.json(result);
+});
+```
 
-- ID tokens are validated against issuer metadata
-- JWKS signature verification is enforced
-- Invalid or non-compliant tokens now fail
+---
 
-## logout behaviour
+### 5. Custom Client Helpers Removed
 
-Logout behaviour is unchanged:
+Direct access to low-level client methods that relied on openid-client v4 internals will fail.
 
-- Auth0 tenants use /v2/logout
-- Other providers use end_session_endpoint if available
-- An error is thrown if the issuer does not support logout
+**This will fail:**
 
-## HTTP
+```js
+app.get('/userinfo-custom', async (req, res) => {
+  const client = req.oidc.client;
 
-- Custom HTTP headers, agents and timeouts are still supported
-- HTTP issuer require explicit opt-in via allowInsecure Requests
+  // requestResource is not available in v6
+  const response = await client.requestResource(
+    'https://api.example.com/userinfo',
+    req.oidc.accessToken.access_token,
+  );
+
+  res.json(response);
+});
+
+// TypeError: client.requestResource is not a function
+```
+
+**Fix:** Use `fetch` with the access token:
+
+```js
+app.get('/userinfo-custom', async (req, res) => {
+  const accessToken = req.oidc.accessToken.access_token;
+
+  // Use fetch with Bearer token
+  const response = await fetch('https://api.example.com/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const data = await response.json();
+  res.json(data);
+});
+```
+
+---
+
+### 6. Client Authentication Methods
+
+The following client authentication methods are supported. The SDK auto-detects the appropriate method based on your configuration:
+
+| Method                | When Used                                    | Configuration                         |
+| --------------------- | -------------------------------------------- | ------------------------------------- |
+| `private_key_jwt`     | When `clientAssertionSigningKey` is provided | Requires PEM, JWK, or CryptoKey       |
+| `client_secret_jwt`   | When explicitly set                          | Requires `clientSecret`               |
+| `client_secret_post`  | Default when `clientSecret` is provided      | Client secret in request body         |
+| `client_secret_basic` | When explicitly set                          | Client secret in Authorization header |
+| `none`                | When no secret or key provided               | Public client with PKCE               |
+
+**Example - Client Secret JWT:**
+
+```js
+import { auth } from 'express-openid-connect';
+
+app.use(
+  auth({
+    issuerBaseURL: 'https://your-tenant.auth0.com',
+    baseURL: 'https://your-app.com',
+    clientID: 'client-id',
+    clientSecret: 'client-secret',
+    secret: 'cookie-encryption-secret',
+    clientAuthMethod: 'client_secret_jwt', // Explicit method
+  }),
+);
+```
+
+---
+
+### 7. Private Key JWT Authentication
+
+If using `private_key_jwt` client authentication, keys must be provided in a supported format.
+
+**This will fail with invalid key format:**
+
+```js
+const { auth } = require('express-openid-connect');
+
+app.use(
+  auth({
+    issuerBaseURL: 'https://your-tenant.auth0.com',
+    baseURL: 'https://your-app.com',
+    clientID: 'client-id',
+    secret: '',
+    clientAuthMethod: 'private_key_jwt',
+    clientAssertionSigningKey: 'not-a-valid-key', // Invalid key format
+  }),
+);
+
+// Error: clientAssertionSigningKey must be a PEM string, JWK object, or CryptoKey
+```
+
+**Fix:** Provide a valid PEM, JWK, or CryptoKey:
+
+```js
+import { readFileSync } from 'fs';
+import { auth } from 'express-openid-connect';
+
+// Option 1: PEM string
+const privateKeyPem = readFileSync('./private-key.pem', 'utf8');
+
+app.use(
+  auth({
+    issuerBaseURL: 'https://your-tenant.auth0.com',
+    baseURL: 'https://your-app.com',
+    clientID: 'your-client-id',
+    secret: '',
+    clientAuthMethod: 'private_key_jwt',
+    clientAssertionSigningKey: privateKeyPem, // PEM string
+  }),
+);
+
+// Option 2: JWK object
+const privateKeyJwk = {
+  kty: 'RSA',
+  kid: 'my-key-id',
+  // ... other JWK properties
+};
+
+app.use(
+  auth({
+    // ...
+    clientAssertionSigningKey: privateKeyJwk, // JWK object
+  }),
+);
+```
+
+---
+
+### 8. Stricter Token Validation
+
+openid-client v6 performs stricter OpenID Connect validation. Tokens that were previously accepted may now fail validation.
+
+**This may fail with non-compliant tokens:**
+
+```js
+// If your identity provider returns non-standard tokens:
+// - Missing required claims (iss, sub, aud, exp, iat)
+// - Invalid signature
+// - Expired tokens
+// - Audience mismatch
+
+// Error: JWT validation failed: "aud" claim mismatch
+// Error: JWT validation failed: token is expired
+// Error: JWT validation failed: invalid signature
+```
+
+**Fix:** Ensure your identity provider is configured correctly and returns compliant tokens. Check:
+
+1. Token has all required claims (`iss`, `sub`, `aud`, `exp`, `iat`)
+2. `aud` claim matches your `clientID`
+3. `iss` claim matches your `issuerBaseURL`
+4. Token signature is valid against the provider's JWKS
+5. Token is not expired
+
+---
+
+## Unchanged Behavior
+
+The following behaviors remain the same:
+
+- **Logout:** Auth0 tenants use `/v2/logout`, other providers use `end_session_endpoint`
+- **Session management:** Cookie-based sessions work identically
+- **Custom routes:** `/login`, `/logout`, `/callback` routes remain the same
+- **Middleware:** `requiresAuth()`, `claimEquals()`, `claimIncludes()` work identically
+- **Access tokens:** `req.oidc.accessToken` structure is unchanged
+- **User info:** `req.oidc.user` contains the same claims
+- **Back-Channel Logout:** Fully supported with the same configuration API
+- **Pushed Authorization Requests (PAR):** Still supported via `pushedAuthorizationRequests: true`
+- **Discovery Cache:** `discoveryCacheMaxAge` option still supported (default: 10 minutes)
+- **HTTP Options:** `httpTimeout`, `httpUserAgent`, and `httpAgent` options still supported
