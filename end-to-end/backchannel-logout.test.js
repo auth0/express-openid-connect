@@ -1,7 +1,7 @@
 const { assert } = require('chai');
 const puppeteer = require('puppeteer');
 const request = require('request-promise-native');
-const provider = require('./fixture/oidc-provider');
+const createProvider = require('./fixture/oidc-provider');
 const {
   baseUrl,
   start,
@@ -19,6 +19,7 @@ describe('back-channel logout', async () => {
 
   beforeEach(async () => {
     stubEnv();
+    const provider = await createProvider();
     authServer = await start(provider, 3001);
   });
 

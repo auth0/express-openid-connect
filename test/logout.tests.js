@@ -23,7 +23,7 @@ const login = async (baseUrl = 'http://localhost:3000', idToken) => {
   await request.post({
     uri: '/session',
     json: {
-      id_token: idToken || makeIdToken(),
+      id_token: idToken || (await makeIdToken()),
     },
     baseUrl,
     jar,
@@ -87,18 +87,16 @@ describe('logout route', async () => {
       })
     );
 
-    const idToken = makeIdToken();
+    const idToken = await makeIdToken();
     const { jar } = await login('http://localhost:3000', idToken);
     const { response, session: loggedOutSession } = await logout(jar);
     assert.notOk(loggedOutSession.id_token);
     assert.equal(response.statusCode, 302);
-    assert.include(
-      response.headers,
-      {
-        location: `https://op.example.com/session/end?id_token_hint=${idToken}&post_logout_redirect_uri=http%3A%2F%2Fexample.org`,
-      },
-      'should redirect to the identity provider'
-    );
+    // openid-client v6 may include additional params like client_id
+    const location = new URL(response.headers.location);
+    assert.equal(location.origin + location.pathname, 'https://op.example.com/session/end');
+    assert.equal(location.searchParams.get('id_token_hint'), idToken);
+    assert.equal(location.searchParams.get('post_logout_redirect_uri'), 'http://example.org');
   });
 
   it('should perform an auth0 logout', async () => {
@@ -111,18 +109,17 @@ describe('logout route', async () => {
       })
     );
 
-    const { jar } = await login();
+    // Create ID token with matching issuer
+    const idToken = await makeIdToken({ iss: 'https://test.eu.auth0.com/' });
+    const { jar } = await login('http://localhost:3000', idToken);
     const { response, session: loggedOutSession } = await logout(jar);
     assert.notOk(loggedOutSession.id_token);
     assert.equal(response.statusCode, 302);
-    assert.include(
-      response.headers,
-      {
-        location:
-          'https://op.example.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
-      },
-      'should redirect to the identity provider'
-    );
+    // Auth0 logout URL uses /v2/logout with returnTo param
+    const location = new URL(response.headers.location);
+    assert.equal(location.origin + location.pathname, 'https://test.eu.auth0.com/v2/logout');
+    assert.equal(location.searchParams.get('returnTo'), 'http://example.org');
+    assert.equal(location.searchParams.get('client_id'), '__test_client_id__');
   });
 
   it('should redirect to postLogoutRedirect', async () => {
@@ -390,9 +387,10 @@ describe('logout route', async () => {
       json: true,
     });
     assert.equal(res.statusCode, 500);
+    // openid-client v6 returns different error message
     assert.match(
       res.body.err.message,
-      /^Issuer.discover\(\) failed/,
+      /unexpected HTTP response status code|Issuer.discover\(\) failed/,
       'Should get error json from server error middleware'
     );
   });

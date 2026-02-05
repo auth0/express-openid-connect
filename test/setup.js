@@ -2,11 +2,26 @@ const nock = require('nock');
 const sinon = require('sinon');
 const wellKnown = require('./fixture/well-known.json');
 const certs = require('./fixture/cert');
+const sessionEncryption = require('./fixture/sessionEncryption');
+const jwk = require('../end-to-end/fixture/jwk');
 
 let warn;
 
+// Initialize the cert keys, session encryption, and jwk before tests run
+before(async function () {
+  await certs.init;
+  await sessionEncryption.init;
+  await jwk.init;
+});
+
 beforeEach(function () {
   warn = sinon.stub(global.console, 'warn');
+
+  // Allow localhost connections for supertest, but block external
+  nock.disableNetConnect();
+  // Use regex to match localhost with any port
+  nock.enableNetConnect(/localhost|127\.0\.0\.1/);
+
   nock('https://op.example.com')
     .persist()
     .get('/.well-known/openid-configuration')
@@ -20,7 +35,11 @@ beforeEach(function () {
   nock('https://test.eu.auth0.com')
     .persist()
     .get('/.well-known/openid-configuration')
-    .reply(200, { ...wellKnown, end_session_endpoint: undefined });
+    .reply(200, {
+      ...wellKnown,
+      issuer: 'https://test.eu.auth0.com/',
+      end_session_endpoint: undefined,
+    });
 
   nock('https://test.eu.auth0.com')
     .persist()

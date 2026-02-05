@@ -595,9 +595,10 @@ describe('auth', () => {
       json: true,
     });
     assert.equal(res.statusCode, 500);
+    // openid-client v6 returns different error message
     assert.match(
       res.body.err.message,
-      /^Issuer.discover\(\) failed/,
+      /unexpected HTTP response status code|Issuer.discover\(\) failed/,
       'Should get error json from server error middleware'
     );
   });

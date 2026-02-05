@@ -1,5 +1,5 @@
 const express = require('express');
-const jose = require('jose');
+const { decodeJwt } = require('jose');
 const { auth } = require('../');
 
 const app = express();
@@ -10,7 +10,7 @@ app.use(
       response_type: 'code id_token',
     },
     afterCallback: (req, res, session) => {
-      const claims = jose.JWT.decode(session.id_token); 
+      const claims = decodeJwt(session.id_token);
 
       if (claims.org_id !== 'Required Organization') {
         throw new Error('User is not a part of the Required Organization');

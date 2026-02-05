@@ -22,7 +22,8 @@
 
 This library supports the following tooling versions:
 
-- Node.js `^10.19.0 || >=12.0.0`
+- Node.js `^20.19.0 || ^22.12.0 || >= 23.0.0`
+- Express.js `>= 5.0.0`
 
 ## Install
 

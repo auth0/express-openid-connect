@@ -1,7 +1,7 @@
 const { assert } = require('chai');
 const sinon = require('sinon');
 const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
+const createProvider = require('./fixture/oidc-provider');
 const {
   baseUrl,
   start,
@@ -20,6 +20,7 @@ describe('access an api', async () => {
 
   beforeEach(async () => {
     stubEnv();
+    const provider = await createProvider();
     authServer = await start(provider, 3001);
     appServer = await runExample('access-an-api');
     apiServer = await runApi();

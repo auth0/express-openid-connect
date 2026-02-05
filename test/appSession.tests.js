@@ -7,7 +7,7 @@ const request = require('request-promise-native').defaults({
 const sinon = require('sinon');
 
 const appSession = require('../lib/appSession');
-const { encrypted } = require('./fixture/sessionEncryption');
+const sessionEncryption = require('./fixture/sessionEncryption');
 const { makeIdToken } = require('./fixture/cert');
 const { get: getConfig } = require('../lib/config');
 const { create: createServer } = require('./fixture/server');
@@ -27,7 +27,7 @@ const login = async (claims) => {
     baseUrl,
     jar,
     json: {
-      id_token: makeIdToken(claims),
+      id_token: await makeIdToken(claims),
     },
   });
   return jar;
@@ -78,7 +78,7 @@ describe('appSession', () => {
       baseUrl,
       json: true,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -91,7 +91,7 @@ describe('appSession', () => {
       baseUrl,
       json: true,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     assert.equal(res.statusCode, 200);
@@ -301,7 +301,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -329,7 +329,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     // Secure cookies not set over http
@@ -356,7 +356,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -386,7 +386,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
 
@@ -409,7 +409,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `customName=${encrypted}`,
+        cookie: `customName=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -432,7 +432,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     const [cookie] = jar.getCookies(baseUrl);
@@ -454,7 +454,7 @@ describe('appSession', () => {
       json: true,
       jar,
       headers: {
-        cookie: `appSession=${encrypted}`,
+        cookie: `appSession=${sessionEncryption.encrypted}`,
       },
     });
     assert.equal(res.statusCode, 200);

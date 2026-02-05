@@ -1,7 +1,7 @@
-const { JWK, JWKS, JWT } = require('jose');
+const { importJWK, SignJWT } = require('jose');
 const crypto = require('crypto');
 
-const key = JWK.asKey({
+const privateJWK = {
   e: 'AQAB',
   n: 'wQrThQ9HKf8ksCQEzqOu0ofF8DtLJgexeFSQBNnMQetACzt4TbHPpjhTWUIlD8bFCkyx88d2_QV3TewMtfS649Pn5hV6adeYW2TxweAA8HVJxskcqTSa_ktojQ-cD43HIStsbqJhHoFv0UY6z5pwJrVPT-yt38ciKo9Oc9IhEl6TSw-zAnuNW0zPOhKjuiIqpAk1lT3e6cYv83ahx82vpx3ZnV83dT9uRbIbcgIpK4W64YnYb5uDH7hGI8-4GnalZDfdApTu-9Y8lg_1v5ul-eQDsLCkUCPkqBaNiCG3gfZUAKp9rrFRE_cJTv_MJn-y_XSTMWILvTY7vdSMRMo4kQ',
   d: 'EMHY1K8b1VhxndyykiGBVoM0uoLbJiT60eA9VD53za0XNSJncg8iYGJ5UcE9KF5v0lIQDIJfIN2tmpUIEW96HbbSZZWtt6xgbGaZ2eOREU6NJfVlSIbpgXOYUs5tFKiRBZ8YXY448gX4Z-k5x7W3UJTimqSH_2nw3FLuU32FI2vtf4ToUKEcoUdrIqoAwZ1et19E7Q_NCG2y1nez0LpD8PKgfeX1OVHdQm7434-9FS-R_eMcxqZ6mqZO2QDuign8SPHTR-KooAe8B-0MpZb7QF3YtMSQk8RlrMUcAYwv8R8dvFergCjauH0hOHvtKPq6Smj0VuimelEUZfp94r3pBQ',
@@ -13,14 +13,45 @@ const key = JWK.asKey({
   kty: 'RSA',
   use: 'sig',
   alg: 'RS256',
-});
+  kid: 'test-key-1',
+};
 
-module.exports.jwks = new JWKS.KeyStore(key).toJWKS(false);
+const publicJWK = {
+  e: privateJWK.e,
+  n: privateJWK.n,
+  kty: privateJWK.kty,
+  use: privateJWK.use,
+  alg: privateJWK.alg,
+  kid: privateJWK.kid,
+};
 
-module.exports.key = key.toPEM(true);
-module.exports.kid = key.kid;
+module.exports.jwks = { keys: [publicJWK] };
 
-module.exports.makeIdToken = (payload) => {
+module.exports.kid = privateJWK.kid;
+
+// Lazy-initialized private key and PEM
+let privateKey;
+let keyPEM;
+
+const ensureInitialized = async () => {
+  if (!privateKey) {
+    privateKey = await importJWK(privateJWK, privateJWK.alg);
+    keyPEM = crypto.KeyObject.from(privateKey).export({ format: 'pem', type: 'pkcs8' });
+  }
+};
+
+// Initialize immediately so tests can use sync functions
+const initPromise = ensureInitialized();
+
+module.exports.init = initPromise;
+
+module.exports.getKey = async () => {
+  await initPromise;
+  return keyPEM;
+};
+
+module.exports.makeIdToken = async (payload) => {
+  await initPromise;
   payload = Object.assign(
     {
       nickname: '__test_nickname__',
@@ -34,30 +65,44 @@ module.exports.makeIdToken = (payload) => {
     payload
   );
 
-  return JWT.sign(payload, key.toPEM(true), {
-    algorithm: 'RS256',
-    header: { kid: key.kid },
-  });
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'RS256', kid: privateJWK.kid })
+    .sign(privateKey);
 };
 
-module.exports.makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
-  return JWT.sign(
-    {
-      events: {
-        'http://schemas.openid.net/event/backchannel-logout': {},
-      },
-      ...(sid && { sid }),
-      ...(sub && { sub }),
+module.exports.makeLogoutToken = async ({ payload, sid, sub, secret } = {}) => {
+  await initPromise;
+  const claims = {
+    events: {
+      'http://schemas.openid.net/event/backchannel-logout': {},
     },
-    secret || key.toPEM(true),
-    {
-      issuer: 'https://op.example.com/',
-      audience: '__test_client_id__',
-      iat: true,
-      jti: crypto.randomBytes(16).toString('hex'),
-      algorithm: secret ? 'HS256' : 'RS256',
-      header: { typ: 'logout+jwt' },
-      ...payload,
-    }
-  );
+    ...(sid && { sid }),
+    ...(sub && { sub }),
+  };
+
+  let key;
+  let alg;
+  if (secret) {
+    // For HMAC, create a key from the secret
+    const encoder = new TextEncoder();
+    key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    alg = 'HS256';
+  } else {
+    key = privateKey;
+    alg = 'RS256';
+  }
+
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg, typ: 'logout+jwt', ...(secret ? {} : { kid: privateJWK.kid }) })
+    .setIssuer('https://op.example.com/')
+    .setAudience('__test_client_id__')
+    .setIssuedAt()
+    .setJti(crypto.randomBytes(16).toString('hex'))
+    .sign(key);
 };

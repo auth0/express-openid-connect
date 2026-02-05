@@ -586,8 +586,50 @@ describe('get config', () => {
         response_type: 'code',
       },
       clientAssertionSigningKey: 'foo',
+      clientAssertionSigningAlg: 'RS256',
     };
     assert.equal(getConfig(config).clientAuthMethod, 'private_key_jwt');
+  });
+
+  it('should require "clientAssertionSigningAlg" when "clientAssertionSigningKey" is a PEM string', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: '-----BEGIN PRIVATE KEY-----\nfoo\n-----END PRIVATE KEY-----',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientAssertionSigningAlg" is required when "clientAssertionSigningKey" is a PEM string'
+    );
+  });
+
+  it('should require "clientAssertionSigningAlg" when "clientAssertionSigningKey" is a JWK without "alg"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: { kty: 'RSA', n: 'foo', e: 'bar' },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientAssertionSigningAlg" is required when "clientAssertionSigningKey" is a JWK without an "alg" property'
+    );
+  });
+
+  it('should not require "clientAssertionSigningAlg" when "clientAssertionSigningKey" is a JWK with "alg"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertionSigningKey: { kty: 'RSA', alg: 'RS256', n: 'foo', e: 'bar' },
+    };
+    assert.doesNotThrow(() => getConfig(config));
   });
 
   it('should not allow "none" for idTokenSigningAlg', () => {

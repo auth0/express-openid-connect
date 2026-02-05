@@ -1,6 +1,5 @@
 const { promisify } = require('util');
 const express = require('express');
-const base64url = require('base64url');
 const { auth, requiresAuth } = require('../');
 const { logoutTokenTester } = require('../end-to-end/fixture/helpers');
 
@@ -18,7 +17,7 @@ const destroy = promisify(store.destroy).bind(store);
 
 const decodeJWT = (jwt) => {
   const [, payload] = jwt.split('.');
-  return JSON.parse(base64url.decode(payload));
+  return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
 };
 
 const onLogoutToken = async (token) => {

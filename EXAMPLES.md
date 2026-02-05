@@ -11,6 +11,7 @@
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
 11. [Back-Channel Logout](#11-back-channel-logout)
+12. [Use a proxy for OIDC requests](#12-use-a-proxy-for-oidc-requests)
 
 ## 1. Basic setup
 
@@ -347,3 +348,26 @@ app.use(
 - If the user logs in again, the SDK will remove any stale `sub` entry in the Back-Channel Logout store to ensure they are not logged out immediately (this is customisable using the [onLogin](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogin) config hook)
 
 The config options are [documented here](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html)
+
+## 12. Use a proxy for OIDC requests
+
+If you need to route all OIDC HTTP requests (discovery, token, userinfo, etc.) through a proxy, you can use the `customFetch` option with `undici`'s `ProxyAgent`:
+
+```js
+const express = require('express');
+const { auth } = require('express-openid-connect');
+const { ProxyAgent, fetch: undiciFetch } = require('undici');
+
+const app = express();
+
+const dispatcher = new ProxyAgent('http://proxy.example.com:8080');
+
+app.use(
+  auth({
+    customFetch: (url, options) => undiciFetch(url, { ...options, dispatcher }),
+    // ... other options
+  })
+);
+```
+
+The SDK wraps your `customFetch` function to add required headers (User-Agent, Auth0-Client telemetry) before making requests.

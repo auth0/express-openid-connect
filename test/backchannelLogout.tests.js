@@ -20,7 +20,7 @@ const login = async (idToken) => {
   await request.post({
     uri: '/session',
     json: {
-      id_token: idToken || makeIdToken(),
+      id_token: idToken || (await makeIdToken()),
     },
     jar,
   });
@@ -91,7 +91,7 @@ describe('back-channel logout', async () => {
 
     const res = await request.post('/backchannel-logout', {
       form: {
-        logout_token: makeLogoutToken({ sid: 'foo' }),
+        logout_token: await makeLogoutToken({ sid: 'foo' }),
       },
     });
     assert.equal(res.statusCode, 204);
@@ -104,7 +104,7 @@ describe('back-channel logout', async () => {
 
     const res = await request.post('/backchannel-logout', {
       form: {
-        logout_token: makeLogoutToken({
+        logout_token: await makeLogoutToken({
           sid: 'foo',
           secret: config.clientSecret,
         }),
@@ -120,7 +120,7 @@ describe('back-channel logout', async () => {
 
     const res = await request.post('/backchannel-logout', {
       form: {
-        logout_token: makeLogoutToken(),
+        logout_token: await makeLogoutToken(),
       },
     });
     assert.equal(res.statusCode, 400);
@@ -133,7 +133,7 @@ describe('back-channel logout', async () => {
 
     const res = await request.post('/backchannel-logout', {
       form: {
-        logout_token: makeLogoutToken({ sid: 'foo' }),
+        logout_token: await makeLogoutToken({ sid: 'foo' }),
       },
     });
     assert.equal(res.statusCode, 204);
@@ -150,7 +150,7 @@ describe('back-channel logout', async () => {
 
     const res = await request.post('/backchannel-logout', {
       form: {
-        logout_token: makeLogoutToken({ sid: 'foo' }),
+        logout_token: await makeLogoutToken({ sid: 'foo' }),
       },
     });
     assert.equal(res.statusCode, 204);
@@ -175,7 +175,7 @@ describe('back-channel logout', async () => {
 
     const res = await request.post('/backchannel-logout', {
       form: {
-        logout_token: makeLogoutToken({ sid: 'foo' }),
+        logout_token: await makeLogoutToken({ sid: 'foo' }),
       },
     });
     assert.equal(res.statusCode, 400);
@@ -184,7 +184,7 @@ describe('back-channel logout', async () => {
 
   it('should log sid out on subsequent requests', async () => {
     server = await createServer(auth(config));
-    const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
+    const { jar } = await login(await makeIdToken({ sid: '__foo_sid__' }));
     let body;
     ({ body } = await request.get('/session', {
       jar,
@@ -195,7 +195,7 @@ describe('back-channel logout', async () => {
     const res = await request.post('/backchannel-logout', {
       baseUrl,
       form: {
-        logout_token: makeLogoutToken({ sid: '__foo_sid__' }),
+        logout_token: await makeLogoutToken({ sid: '__foo_sid__' }),
       },
     });
     assert.equal(res.statusCode, 204);
@@ -212,7 +212,7 @@ describe('back-channel logout', async () => {
 
   it('should log sub out on subsequent requests', async () => {
     server = await createServer(auth(config));
-    const { jar } = await login(makeIdToken({ sub: '__foo_sub__' }));
+    const { jar } = await login(await makeIdToken({ sub: '__foo_sub__' }));
     let body;
     ({ body } = await request.get('/session', {
       jar,
@@ -223,7 +223,7 @@ describe('back-channel logout', async () => {
     const res = await request.post('/backchannel-logout', {
       baseUrl,
       form: {
-        logout_token: makeLogoutToken({ sub: '__foo_sub__' }),
+        logout_token: await makeLogoutToken({ sub: '__foo_sub__' }),
       },
     });
     assert.equal(res.statusCode, 204);
@@ -241,12 +241,12 @@ describe('back-channel logout', async () => {
   it('should not log sub out if login is after back-channel logout', async () => {
     server = await createServer(auth(config));
 
-    const { jar } = await login(makeIdToken({ sub: '__foo_sub__' }));
+    const { jar } = await login(await makeIdToken({ sub: '__foo_sub__' }));
 
     const res = await request.post('/backchannel-logout', {
       baseUrl,
       form: {
-        logout_token: makeLogoutToken({ sub: '__foo_sub__' }),
+        logout_token: await makeLogoutToken({ sub: '__foo_sub__' }),
       },
     });
     assert.equal(res.statusCode, 204);
@@ -279,7 +279,7 @@ describe('back-channel logout', async () => {
         },
       })
     );
-    const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
+    const { jar } = await login(await makeIdToken({ sid: '__foo_sid__' }));
     let body;
     ({ body } = await request.get('/session', {
       jar,

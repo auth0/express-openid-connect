@@ -1,7 +1,7 @@
 const { assert } = require('chai');
 const { once } = require('events');
 const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
+const createProvider = require('./fixture/oidc-provider');
 const {
   baseUrl,
   start,
@@ -14,9 +14,11 @@ const {
 describe('private key jwt', async () => {
   let authServer;
   let appServer;
+  let provider;
 
   beforeEach(async () => {
     stubEnv();
+    provider = await createProvider();
     authServer = await start(provider, 3001);
     appServer = await runExample('private-key-jwt');
   });

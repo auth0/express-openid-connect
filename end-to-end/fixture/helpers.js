@@ -2,8 +2,8 @@ const path = require('path');
 const crypto = require('crypto');
 const sinon = require('sinon');
 const express = require('express');
-const { JWT } = require('jose');
-const { privateJWK } = require('./jwk');
+const { SignJWT, importJWK } = require('jose');
+const jwkFixture = require('./jwk');
 const request = require('request-promise-native').defaults({ json: true });
 
 const baseUrl = 'http://localhost:3000';
@@ -37,6 +37,7 @@ const stubEnv = (
     BASE_URL: 'http://localhost:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
+    ALLOW_INSECURE_REQUESTS: 'true',
   }
 ) =>
   sinon.stub(process, 'env').value({
@@ -93,24 +94,20 @@ const logout = async (page) => {
 };
 
 const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
-  const logoutToken = JWT.sign(
-    {
-      events: {
-        'http://schemas.openid.net/event/backchannel-logout': {},
-      },
-      ...(sid && { sid: req.oidc.user.sid }),
-      ...(sub && { sub: req.oidc.user.sub }),
+  const privateKey = await importJWK(jwkFixture.privateJWK, 'RS256');
+  const logoutToken = await new SignJWT({
+    events: {
+      'http://schemas.openid.net/event/backchannel-logout': {},
     },
-    privateJWK,
-    {
-      issuer: `http://localhost:${process.env.PROVIDER_PORT || 3001}`,
-      audience: clientId,
-      iat: true,
-      jti: crypto.randomBytes(16).toString('hex'),
-      algorithm: 'RS256',
-      header: { typ: 'logout+jwt' },
-    }
-  );
+    ...(sid && { sid: req.oidc.user.sid }),
+    ...(sub && { sub: req.oidc.user.sub }),
+  })
+    .setProtectedHeader({ alg: 'RS256', typ: 'logout+jwt' })
+    .setIssuer(`http://localhost:${process.env.PROVIDER_PORT || 3001}`)
+    .setAudience(clientId)
+    .setIssuedAt()
+    .setJti(crypto.randomBytes(16).toString('hex'))
+    .sign(privateKey);
 
   res.send(`
     <pre style="border: 1px solid #ccc; padding: 10px; white-space: break-spaces; background: whitesmoke;">curl -X POST http://localhost:3000/backchannel-logout -d "logout_token=${logoutToken}"</pre>

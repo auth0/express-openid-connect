@@ -1,15 +1,72 @@
 // Type definitions for express-openid-connect
 
-import type { Agent as HttpAgent } from 'http';
-import type { Agent as HttpsAgent } from 'https';
-import {
-  AuthorizationParameters,
-  IdTokenClaims,
-  UserinfoResponse,
+import type {
+  IDToken,
+  UserInfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import type { JSONWebKey, KeyInput } from 'jose';
-import type { KeyObject } from 'crypto';
+
+/**
+ * JSON Web Key (JWK) representation of a cryptographic key.
+ */
+interface JSONWebKey {
+  kty: string;
+  alg?: string;
+  kid?: string;
+  use?: string;
+  key_ops?: string[];
+  // RSA keys
+  n?: string;
+  e?: string;
+  d?: string;
+  p?: string;
+  q?: string;
+  dp?: string;
+  dq?: string;
+  qi?: string;
+  // EC keys
+  crv?: string;
+  x?: string;
+  y?: string;
+  // Symmetric keys
+  k?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Authorization parameters for OpenID Connect requests.
+ */
+interface AuthorizationParameters {
+  acr_values?: string;
+  audience?: string;
+  claims?: string | object;
+  claims_locales?: string;
+  client_id?: string;
+  code_challenge_method?: string;
+  code_challenge?: string;
+  display?: string;
+  id_token_hint?: string;
+  login_hint?: string;
+  max_age?: number;
+  nonce?: string;
+  prompt?: string;
+  redirect_uri?: string;
+  registration?: string;
+  request_uri?: string;
+  request?: string;
+  resource?: string | string[];
+  response_mode?: string;
+  response_type?: string;
+  scope?: string;
+  state?: string;
+  ui_locales?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * ID Token claims
+ */
+type IdTokenClaims = IDToken;
 
 /**
  * Session object
@@ -133,7 +190,7 @@ interface RequestContext {
    * ```
    *
    */
-  fetchUserInfo(): Promise<UserinfoResponse>;
+  fetchUserInfo(): Promise<UserInfoResponse>;
 }
 
 /**
@@ -597,22 +654,24 @@ interface ConfigParams {
   /**
    * Private key for use with 'private_key_jwt' clients.
    *
-   * Can be a PEM:
+   * Can be a PKCS#8 PEM-encoded private key string (requires {@link ConfigParams.clientAssertionSigningAlg clientAssertionSigningAlg}):
    *
    * ```js
    * app.use(auth({
    *   ...
    *   clientAssertionSigningKey: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----',
+   *   clientAssertionSigningAlg: 'RS256',
    * }))
    * ```
    *
-   * Or JWK:
+   * Or JWK (requires `alg` in the JWK or {@link ConfigParams.clientAssertionSigningAlg clientAssertionSigningAlg}):
    *
    * ```js
    * app.use(auth({
    *   ...
    *   clientAssertionSigningKey: {
    *     kty: 'RSA',
+   *     alg: 'RS256',
    *     n: 'u2fhZ...XIqhQ',
    *     e: 'AQAB',
    *     d: 'Cmvt9...g__Jw',
@@ -625,22 +684,23 @@ interface ConfigParams {
    * }))
    * ```
    *
-   * Or KeyObject:
+   * Or CryptoKey:
    *
    * ```js
    * app.use(auth({
    *   ...
-   *   clientAssertionSigningKey: crypto.createPrivateKey({ key: '-----BEGIN PRIVATE KEY-----\nMIIEo...PgCaw\n-----END PRIVATE KEY-----' }),
+   *   clientAssertionSigningKey: await crypto.subtle.importKey(...),
    * }))
    * ```
    */
-  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
+  clientAssertionSigningKey?: string | CryptoKey | JSONWebKey;
 
   /**
    * The algorithm to sign the client assertion JWT.
    * Uses one of `token_endpoint_auth_signing_alg_values_supported` if not specified.
    * If the Authorization Server discovery document does not list `token_endpoint_auth_signing_alg_values_supported`
-   * this property will be required.
+   * this property will be required when {@link ConfigParams.clientAssertionSigningKey clientAssertionSigningKey}
+   * is a PKCS#8 PEM string or a JWK without an `alg` property.
    */
   clientAssertionSigningAlg?:
     | 'RS256'
@@ -650,10 +710,9 @@ interface ConfigParams {
     | 'PS384'
     | 'PS512'
     | 'ES256'
-    | 'ES256K'
     | 'ES384'
     | 'ES512'
-    | 'EdDSA';
+    | 'Ed25519';
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
@@ -671,25 +730,35 @@ interface ConfigParams {
   httpTimeout?: number;
 
   /**
-   * Specify an Agent or Agents to pass to the underlying http client https://github.com/sindresorhus/got/
-   *
-   * An object representing `http`, `https` and `http2` keys for [`http.Agent`](https://nodejs.org/api/http.html#http_class_http_agent),
-   * [`https.Agent`](https://nodejs.org/api/https.html#https_class_https_agent) and [`http2wrapper.Agent`](https://github.com/szmarczak/http2-wrapper#new-http2agentoptions) instance.
-   *
-   * See https://github.com/sindresorhus/got/blob/v11.8.6/readme.md#agent
-   *
-   * For a proxy agent see https://www.npmjs.com/package/proxy-agent
-   */
-  httpAgent?: {
-    http?: HttpAgent | false;
-    https?: HttpsAgent | false;
-    http2?: unknown | false;
-  };
-
-  /**
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
+
+  /**
+   * Custom fetch function to use for all OIDC HTTP requests (discovery, token, userinfo, etc.).
+   * The SDK will wrap this function to add required headers (User-Agent, Auth0-Client telemetry).
+   *
+   * This is useful for configuring proxies or custom HTTP behavior.
+   *
+   * @example
+   * ```js
+   * const { ProxyAgent, fetch: undiciFetch } = require('undici');
+   * const dispatcher = new ProxyAgent('http://proxy.example.com:8080');
+   *
+   * app.use(auth({
+   *   customFetch: (url, options) => undiciFetch(url, { ...options, dispatcher }),
+   *   // ... other options
+   * }));
+   * ```
+   */
+  customFetch?: typeof fetch;
+
+  /**
+   * Allow insecure HTTP requests to the issuer. Default is `false`.
+   * This should only be used for development purposes when the issuer is running on localhost without HTTPS.
+   * Do not enable this in production environments.
+   */
+  allowInsecureRequests?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
@@ -888,7 +957,7 @@ interface AccessToken {
   access_token: string;
 
   /**
-   * The type of access token, Usually "Bearer".
+   * The type of access token, Usually "bearer".
    */
   token_type: string;
 

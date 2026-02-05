@@ -30,7 +30,7 @@ const login = async (claims) => {
     baseUrl,
     jar,
     json: {
-      id_token: makeIdToken(claims),
+      id_token: await makeIdToken(claims),
     },
   });
   return jar;
@@ -358,8 +358,31 @@ describe('requiresAuth', () => {
   it('should collapse leading slashes on returnTo', async () => {
     server = await createServer(auth(defaultConfig));
     const payloads = ['//google.com', '///google.com', '//google.com'];
+    const net = require('net');
     for (const payload of payloads) {
-      const response = await request({ url: `${baseUrl}${payload}` });
+      const response = await new Promise((resolve, reject) => {
+        const client = net.createConnection({ port: 3000, host: 'localhost' }, () => {
+          client.write(`GET ${payload} HTTP/1.1\r\nHost: localhost:3000\r\nConnection: close\r\n\r\n`);
+        });
+        let data = '';
+        client.on('data', (chunk) => {
+          data += chunk.toString();
+        });
+        client.on('end', () => {
+          // Parse HTTP response
+          const [headersSection] = data.split('\r\n\r\n');
+          const lines = headersSection.split('\r\n');
+          const statusLine = lines[0];
+          const statusCode = parseInt(statusLine.split(' ')[1], 10);
+          const headers = {};
+          for (let i = 1; i < lines.length; i++) {
+            const [key, ...value] = lines[i].split(': ');
+            headers[key.toLowerCase()] = value.join(': ');
+          }
+          resolve({ statusCode, headers });
+        });
+        client.on('error', reject);
+      });
       const state = new URL(response.headers.location).searchParams.get(
         'state'
       );
