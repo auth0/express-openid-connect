@@ -1,5 +1,11 @@
 # Change Log
 
+## [v3.0.0-beta.0](https://github.com/auth0/express-openid-connect/tree/v3.0.0-beta.0) (2026-02-05)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.4...v3.0.0-beta.0)
+
+**⚠️ BREAKING CHANGES**
+- Migration: oidc v4 to v6  [\#770](https://github.com/auth0/express-openid-connect/pull/770) ([aks96](https://github.com/aks96))
+
 ## [v2.19.4](https://github.com/auth0/express-openid-connect/tree/v2.19.4) (2026-01-09)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.3...v2.19.4)
 
