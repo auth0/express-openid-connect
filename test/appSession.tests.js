@@ -1,16 +1,19 @@
-const assert = require('chai').assert;
-const crypto = require('crypto');
-const request = require('request-promise-native').defaults({
+import { assert } from 'chai';
+import crypto from 'crypto';
+import request from 'request-promise-native';
+import sinon from 'sinon';
+
+import appSession from '../lib/appSession.js';
+import sessionEncryption from './fixture/sessionEncryption.js';
+import { makeIdToken } from './fixture/cert.js';
+import { get as getConfig } from '../lib/config.js';
+import { create as createServer } from './fixture/server.js';
+
+const requestDefaults = request.defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
-const sinon = require('sinon');
-
-const appSession = require('../lib/appSession');
-const { encrypted } = require('./fixture/sessionEncryption');
-const { makeIdToken } = require('./fixture/cert');
-const { get: getConfig } = require('../lib/config');
-const { create: createServer } = require('./fixture/server');
+const { encrypted } = sessionEncryption;
 
 const defaultConfig = {
   clientID: '__test_client_id__',
@@ -22,8 +25,8 @@ const defaultConfig = {
 };
 
 const login = async (claims) => {
-  const jar = request.jar();
-  await request.post('/session', {
+  const jar = requestDefaults.jar();
+  await requestDefaults.post('/session', {
     baseUrl,
     jar,
     json: {
@@ -48,13 +51,13 @@ describe('appSession', () => {
 
   it('should not create a session when there are no cookies', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const res = await request.get('/session', { baseUrl, json: true });
+    const res = await requestDefaults.get('/session', { baseUrl, json: true });
     assert.isEmpty(res.body);
   });
 
   it('should not error for malformed sessions', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       headers: {
@@ -71,10 +74,10 @@ describe('appSession', () => {
         getConfig({
           ...defaultConfig,
           secret: 'another secret',
-        })
-      )
+        }),
+      ),
     );
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       headers: {
@@ -87,7 +90,7 @@ describe('appSession', () => {
 
   it('should get an existing session', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       headers: {
@@ -100,9 +103,9 @@ describe('appSession', () => {
 
   it('should chunk and accept chunked cookies over 4kb', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     const random = crypto.randomBytes(4000).toString('base64');
-    await request.post('/session', {
+    await requestDefaults.post('/session', {
       baseUrl,
       jar,
       json: {
@@ -112,9 +115,13 @@ describe('appSession', () => {
     });
     assert.deepEqual(
       jar.getCookies(baseUrl).map(({ key }) => key),
-      ['appSession.0', 'appSession.1']
+      ['appSession.0', 'appSession.1'],
     );
-    const res = await request.get('/session', { baseUrl, json: true, jar });
+    const res = await requestDefaults.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+    });
     assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, {
       sub: '__test_sub__',
@@ -124,9 +131,9 @@ describe('appSession', () => {
 
   it('should limit total cookie size to 4096 Bytes', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
 
-    await request.post('session', {
+    await requestDefaults.post('session', {
       baseUrl,
       jar,
       json: {
@@ -139,7 +146,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.exists(cookies);
@@ -153,11 +160,13 @@ describe('appSession', () => {
     const path =
       '/some-really-really-really-really-really-really-really-really-really-really-really-really-really-long-path';
     server = await createServer(
-      appSession(getConfig({ ...defaultConfig, session: { cookie: { path } } }))
+      appSession(
+        getConfig({ ...defaultConfig, session: { cookie: { path } } }),
+      ),
     );
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
 
-    await request.post('session', {
+    await requestDefaults.post('session', {
       baseUrl,
       jar,
       json: {
@@ -170,7 +179,7 @@ describe('appSession', () => {
       .getCookies(`${baseUrl}${path}`)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.exists(cookies);
@@ -182,18 +191,18 @@ describe('appSession', () => {
 
   it('should clean up single cookie when switching to chunked', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     jar.setCookie(`appSession=foo`, baseUrl);
 
     const firstCookies = jar
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
     assert.property(firstCookies, 'appSession');
 
-    await request.post('session', {
+    await requestDefaults.post('session', {
       baseUrl,
       jar,
       json: {
@@ -206,7 +215,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.property(cookies, 'appSession.0');
@@ -215,7 +224,7 @@ describe('appSession', () => {
 
   it('should clean up chunked cookies when switching to single cookie', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     jar.setCookie(`appSession.0=foo`, baseUrl);
     jar.setCookie(`appSession.1=foo`, baseUrl);
 
@@ -223,12 +232,12 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
     assert.property(firstCookies, 'appSession.0');
     assert.property(firstCookies, 'appSession.1');
 
-    await request.post('session', {
+    await requestDefaults.post('session', {
       baseUrl,
       jar,
       json: {
@@ -240,7 +249,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.property(cookies, 'appSession');
@@ -249,9 +258,9 @@ describe('appSession', () => {
 
   it('should handle unordered chunked cookies', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     const random = crypto.randomBytes(4000).toString('base64');
-    await request.post('/session', {
+    await requestDefaults.post('/session', {
       baseUrl,
       jar,
       json: {
@@ -259,18 +268,18 @@ describe('appSession', () => {
         random,
       },
     });
-    const newJar = request.jar();
+    const newJar = requestDefaults.jar();
     jar
       .getCookies(baseUrl)
       .reverse()
       .forEach(({ key, value }) =>
-        newJar.setCookie(`${key}=${value}`, baseUrl)
+        newJar.setCookie(`${key}=${value}`, baseUrl),
       );
     assert.deepEqual(
       newJar.getCookies(baseUrl).map(({ key }) => key),
-      ['appSession.1', 'appSession.0']
+      ['appSession.1', 'appSession.0'],
     );
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar: newJar,
@@ -284,19 +293,25 @@ describe('appSession', () => {
 
   it('should not throw for malformed cookie chunks', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     jar.setCookie('appSession.0=foo', baseUrl);
     jar.setCookie('appSession.1=bar', baseUrl);
-    const res = await request.get('/session', { baseUrl, json: true, jar });
+    const res = await requestDefaults.get('/session', {
+      baseUrl,
+      json: true,
+      jar,
+    });
     assert.equal(res.statusCode, 200);
   });
 
   it('should set the default cookie options over http', async () => {
     server = await createServer(
-      appSession(getConfig({ ...defaultConfig, baseURL: 'http://example.org' }))
+      appSession(
+        getConfig({ ...defaultConfig, baseURL: 'http://example.org' }),
+      ),
     );
-    const jar = request.jar();
-    await request.get('/session', {
+    const jar = requestDefaults.jar();
+    await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -320,11 +335,11 @@ describe('appSession', () => {
   it('should set the default cookie options over https', async () => {
     server = await createServer(
       appSession(
-        getConfig({ ...defaultConfig, baseURL: 'https://example.org' })
-      )
+        getConfig({ ...defaultConfig, baseURL: 'https://example.org' }),
+      ),
     );
-    const jar = request.jar();
-    await request.get('/session', {
+    const jar = requestDefaults.jar();
+    await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -347,11 +362,11 @@ describe('appSession', () => {
               sameSite: 'Strict',
             },
           },
-        })
-      )
+        }),
+      ),
     );
-    const jar = request.jar();
-    await request.get('/session', {
+    const jar = requestDefaults.jar();
+    await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -377,11 +392,11 @@ describe('appSession', () => {
               throw 'this should not be called';
             }, //consider using chai-spies
           },
-        })
-      )
+        }),
+      ),
     );
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -400,11 +415,11 @@ describe('appSession', () => {
         getConfig({
           ...defaultConfig,
           session: { name: 'customName' },
-        })
-      )
+        }),
+      ),
     );
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -423,11 +438,11 @@ describe('appSession', () => {
         getConfig({
           ...defaultConfig,
           session: { cookie: { transient: true } },
-        })
-      )
+        }),
+      ),
     );
-    const jar = request.jar();
-    const res = await request.get('/session', {
+    const jar = requestDefaults.jar();
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -447,9 +462,9 @@ describe('appSession', () => {
       toFake: ['Date'],
     });
     server = await createServer(appSession(getConfig(defaultConfig)));
-    const jar = request.jar();
+    const jar = requestDefaults.jar();
     clock.tick(twoWeeks);
-    const res = await request.get('/session', {
+    const res = await requestDefaults.get('/session', {
       baseUrl,
       json: true,
       jar,
@@ -466,11 +481,11 @@ describe('appSession', () => {
       req.appSession = {};
       appSession(getConfig(defaultConfig))(req, res, next);
     });
-    const res = await request.get('/session', { baseUrl, json: true });
+    const res = await requestDefaults.get('/session', { baseUrl, json: true });
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'req[appSession] is already set, did you run this middleware twice?'
+      'req[appSession] is already set, did you run this middleware twice?',
     );
   });
 
@@ -485,7 +500,7 @@ describe('appSession', () => {
         }
       });
     });
-    const res = await request.get('/session', { baseUrl, json: true });
+    const res = await requestDefaults.get('/session', { baseUrl, json: true });
     assert.equal(res.statusCode, 500);
     assert.equal(res.body.err.message, 'session object cannot be reassigned');
   });
@@ -498,7 +513,7 @@ describe('appSession', () => {
         next();
       });
     });
-    const res = await request.get('/session', { baseUrl, json: true });
+    const res = await requestDefaults.get('/session', { baseUrl, json: true });
     assert.equal(res.statusCode, 200);
   });
 
@@ -506,13 +521,17 @@ describe('appSession', () => {
     const clock = sinon.useFakeTimers({ toFake: ['Date'] });
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = await login({ sub: '__test_sub__' });
-    let res = await request.get('/session', { baseUrl, jar, json: true });
+    let res = await requestDefaults.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+    });
     assert.isNotEmpty(res.body);
     clock.tick(23 * HR_MS);
-    res = await request.get('/session', { baseUrl, jar, json: true });
+    res = await requestDefaults.get('/session', { baseUrl, jar, json: true });
     assert.isNotEmpty(res.body);
     clock.tick(25 * HR_MS);
-    res = await request.get('/session', { baseUrl, jar, json: true });
+    res = await requestDefaults.get('/session', { baseUrl, jar, json: true });
     assert.isEmpty(res.body);
     clock.restore();
   });
@@ -524,11 +543,19 @@ describe('appSession', () => {
     let days = 7;
     while (days--) {
       clock.tick(23 * HR_MS);
-      let res = await request.get('/session', { baseUrl, jar, json: true });
+      let res = await requestDefaults.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
       assert.isNotEmpty(res.body);
     }
     clock.tick(8 * HR_MS);
-    let res = await request.get('/session', { baseUrl, jar, json: true });
+    let res = await requestDefaults.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+    });
     assert.isEmpty(res.body);
     clock.restore();
   });
@@ -543,15 +570,19 @@ describe('appSession', () => {
             rolling: false,
             absoluteDuration: 10 * 60 * 60,
           },
-        })
-      )
+        }),
+      ),
     );
     const jar = await login({ sub: '__test_sub__' });
     clock.tick(9 * HR_MS);
-    let res = await request.get('/session', { baseUrl, jar, json: true });
+    let res = await requestDefaults.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+    });
     assert.isNotEmpty(res.body);
     clock.tick(2 * HR_MS);
-    res = await request.get('/session', { baseUrl, jar, json: true });
+    res = await requestDefaults.get('/session', { baseUrl, jar, json: true });
     assert.isEmpty(res.body);
     clock.restore();
   });
@@ -567,18 +598,26 @@ describe('appSession', () => {
             rollingDuration: 24 * 60 * 60,
             absoluteDuration: false,
           },
-        })
-      )
+        }),
+      ),
     );
     const jar = await login({ sub: '__test_sub__' });
     let days = 30;
     while (days--) {
       clock.tick(23 * HR_MS);
-      let res = await request.get('/session', { baseUrl, jar, json: true });
+      let res = await requestDefaults.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
       assert.isNotEmpty(res.body);
     }
     clock.tick(25 * HR_MS);
-    let res = await request.get('/session', { baseUrl, jar, json: true });
+    let res = await requestDefaults.get('/session', {
+      baseUrl,
+      jar,
+      json: true,
+    });
     assert.isEmpty(res.body);
     clock.restore();
   });

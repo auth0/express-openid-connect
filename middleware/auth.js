@@ -1,13 +1,12 @@
-const express = require('express');
-
-const debug = require('../lib/debug')('auth');
-const { get: getConfig } = require('../lib/config');
-const { requiresAuth } = require('./requiresAuth');
-const attemptSilentLogin = require('./attemptSilentLogin');
-const TransientCookieHandler = require('../lib/transientHandler');
-const { RequestContext, ResponseContext } = require('../lib/context');
-const appSession = require('../lib/appSession');
-const isLoggedOut = require('../lib/hooks/backchannelLogout/isLoggedOut');
+import express from 'express';
+import debug from '../lib/debug.js';
+import { get as getConfig } from '../lib/config.js';
+import { requiresAuth } from './requiresAuth.js';
+import attemptSilentLogin from './attemptSilentLogin.js';
+import TransientCookieHandler from '../lib/transientHandler.js';
+import { RequestContext, ResponseContext } from '../lib/context.js';
+import appSession, { replaceSession } from '../lib/appSession.js';
+import isLoggedOut from '../lib/hooks/backchannelLogout/isLoggedOut.js';
 
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
@@ -40,7 +39,7 @@ const auth = function (params) {
     const path = enforceLeadingSlash(config.routes.login);
     debug('adding GET %s route', path);
     router.get(path, express.urlencoded({ extended: false }), (req, res) =>
-      res.oidc.login({ returnTo: config.baseURL })
+      res.oidc.login({ returnTo: config.baseURL }),
     );
   } else {
     debug('login handling route not applied');
@@ -62,7 +61,7 @@ const auth = function (params) {
     router.get(path, (req, res) => res.oidc.callback());
     debug('adding POST %s route', path);
     router.post(path, express.urlencoded({ extended: false }), (req, res) =>
-      res.oidc.callback()
+      res.oidc.callback(),
     );
   } else {
     debug('callback handling route not applied');
@@ -72,7 +71,7 @@ const auth = function (params) {
     const path = enforceLeadingSlash(config.routes.backchannelLogout);
     debug('adding POST %s route', path);
     router.post(path, express.urlencoded({ extended: false }), (req, res) =>
-      res.oidc.backchannelLogout()
+      res.oidc.backchannelLogout(),
     );
 
     if (config.backchannelLogout.isLoggedOut !== false) {
@@ -85,7 +84,20 @@ const auth = function (params) {
         try {
           const loggedOut = await isLoggedOutFn(req, config);
           if (loggedOut) {
-            req[config.session.name] = undefined;
+            // If using external store, try to destroy the session first
+            if (config.session.store && req[config.session.name]) {
+              try {
+                const sessionObj = req[config.session.name];
+                if (sessionObj && typeof sessionObj.destroy === 'function') {
+                  sessionObj.destroy();
+                }
+              } catch {
+                // Ignore errors during session destruction
+              }
+            }
+
+            // Clear the session using replaceSession like it was originally
+            replaceSession(req, undefined, config);
           }
           next();
         } catch (e) {
@@ -97,13 +109,13 @@ const auth = function (params) {
 
   if (config.authRequired) {
     debug(
-      'authentication is required for all routes this middleware is applied to'
+      'authentication is required for all routes this middleware is applied to',
     );
     router.use(requiresAuth());
   } else {
     debug(
       'authentication is not required for any of the routes this middleware is applied to ' +
-        'see and apply `requiresAuth` middlewares to your protected resources'
+        'see and apply `requiresAuth` middlewares to your protected resources',
     );
   }
   if (config.attemptSilentLogin) {
@@ -118,12 +130,13 @@ const auth = function (params) {
  * Used for instantiating a custom session store. eg
  *
  * ```js
- * const { auth } = require('express-openid-connect');
- * const MemoryStore = require('memorystore')(auth);
+ * const { auth } = import('express-openid-connect');
+ * const MemoryStore = import('memorystore');
+ * const store = MemoryStore(auth);
  * ```
  *
  * @constructor
  */
 auth.Store = function () {};
 
-module.exports = auth;
+export default auth;

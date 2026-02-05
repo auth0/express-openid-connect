@@ -1,5 +1,5 @@
-const express = require('express');
-const { auth } = require('../');
+import express from 'express';
+import { auth } from '../index.js';
 
 const app = express();
 
@@ -11,7 +11,8 @@ app.use(
       response_type: 'code',
     },
     clientAuthMethod: 'client_secret_jwt',
-  })
+    allowInsecureRequests: true,
+  }),
 );
 
 app.get('/', (req, res) => {
@@ -22,4 +23,4 @@ app.get('/', (req, res) => {
   }
 });
 
-module.exports = app;
+export default app;

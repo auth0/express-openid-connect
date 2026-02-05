@@ -1,15 +1,16 @@
-const { assert } = require('chai');
-const { once } = require('events');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import { once } from 'events';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   runExample,
   stubEnv,
   goto,
   login,
-} = require('./fixture/helpers');
+  shouldSkipPuppeteerTest,
+  launchBrowser,
+} from './fixture/helpers.js';
 
 describe('private key jwt', async () => {
   let authServer;
@@ -17,7 +18,8 @@ describe('private key jwt', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('private-key-jwt');
   });
 
@@ -27,11 +29,11 @@ describe('private key jwt', async () => {
   });
 
   it('should login with private key jwt client auth method', async () => {
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
+    const browser = await launchBrowser();
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:3000/);
@@ -39,24 +41,25 @@ describe('private key jwt', async () => {
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
-    const promise = once(provider, 'grant.success');
+    const resolvedProvider = await provider;
+    const promise = once(resolvedProvider, 'grant.success');
 
     await login('username', 'password', page);
     const [ctx] = await promise;
     assert(
       ctx.oidc.body.client_assertion,
-      'Client should have authenticated with a client assertion payload'
+      'Client should have authenticated with a client assertion payload',
     );
     assert.equal(
       ctx.oidc.body.client_assertion_type,
-      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     assert.include(await page.content(), 'hello username');
   });

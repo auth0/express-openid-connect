@@ -1,12 +1,13 @@
-const express = require('express');
-const { auth, requiresAuth } = require('../');
+import express from 'express';
+import { auth, requiresAuth } from '../index.js';
 
 const app = express();
 
 app.use(
   auth({
-    authRequired: false
-  })
+    authRequired: false,
+    allowInsecureRequests: true,
+  }),
 );
 
 // Anyone can access the homepage
@@ -16,7 +17,7 @@ app.get('/', (req, res) => {
 
 // requiresAuth checks authentication.
 app.get('/admin', requiresAuth(), (req, res) =>
-  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
+  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`),
 );
 
-module.exports = app;
+export default app;

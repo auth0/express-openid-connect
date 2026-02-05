@@ -1,5 +1,7 @@
-const createError = require('http-errors');
-const debug = require('../lib/debug')('requiresAuth');
+import createError from 'http-errors';
+import debug from '../lib/debug.js';
+
+const debugRequiresAuth = debug('requiresAuth');
 
 const defaultRequiresLogin = (req) => !req.oidc.isAuthenticated();
 
@@ -11,37 +13,35 @@ const defaultRequiresLogin = (req) => !req.oidc.isAuthenticated();
 async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   if (!req.oidc) {
     next(
-      new Error('req.oidc is not found, did you include the auth middleware?')
+      new Error('req.oidc is not found, did you include the auth middleware?'),
     );
     return;
   }
 
   if (requiresLoginCheck(req)) {
     if (!res.oidc.errorOnRequiredAuth && req.accepts('html')) {
-      debug(
-        'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
+      debugRequiresAuth(
+        'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()',
       );
       return res.oidc.login();
     }
-    debug(
-      'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
+    debugRequiresAuth(
+      'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error',
     );
     next(
-      createError.Unauthorized('Authentication is required for this route.')
+      createError.Unauthorized('Authentication is required for this route.'),
     );
     return;
   }
 
-  debug('authentication requirements met, calling next()');
+  debugRequiresAuth('authentication requirements met, calling next()');
 
   next();
 }
 
-module.exports.requiresAuth = function requiresAuth(
-  requiresLoginCheck = defaultRequiresLogin
-) {
+export function requiresAuth(requiresLoginCheck = defaultRequiresLogin) {
   return requiresLoginMiddleware.bind(undefined, requiresLoginCheck);
-};
+}
 
 function checkJSONprimitive(value) {
   if (
@@ -54,7 +54,7 @@ function checkJSONprimitive(value) {
   }
 }
 
-module.exports.claimEquals = function claimEquals(claim, expected) {
+export function claimEquals(claim, expected) {
   // check that claim is a string value
   if (typeof claim !== 'string') {
     throw new TypeError('"claim" must be a string');
@@ -78,9 +78,9 @@ module.exports.claimEquals = function claimEquals(claim, expected) {
     return false;
   };
   return requiresLoginMiddleware.bind(undefined, authenticationCheck);
-};
+}
 
-module.exports.claimIncludes = function claimIncludes(claim, ...expected) {
+export function claimIncludes(claim, ...expected) {
   // check that claim is a string value
   if (typeof claim !== 'string') {
     throw new TypeError('"claim" must be a string');
@@ -101,9 +101,9 @@ module.exports.claimIncludes = function claimIncludes(claim, ...expected) {
     if (typeof actual === 'string') {
       actual = actual.split(' ');
     } else if (!Array.isArray(actual)) {
-      debug(
+      debugRequiresAuth(
         'unexpected claim type. expected array or string, got %o',
-        typeof actual
+        typeof actual,
       );
       return true;
     }
@@ -113,9 +113,9 @@ module.exports.claimIncludes = function claimIncludes(claim, ...expected) {
     return !expected.every(Set.prototype.has.bind(actual));
   };
   return requiresLoginMiddleware.bind(undefined, authenticationCheck);
-};
+}
 
-module.exports.claimCheck = function claimCheck(func) {
+export function claimCheck(func) {
   // check that func is a function
   if (typeof func !== 'function' || func.constructor.name !== 'Function') {
     throw new TypeError('"claimCheck" expects a function');
@@ -130,4 +130,4 @@ module.exports.claimCheck = function claimCheck(func) {
     return !func(req, idTokenClaims);
   };
   return requiresLoginMiddleware.bind(undefined, authenticationCheck);
-};
+}

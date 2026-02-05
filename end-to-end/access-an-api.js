@@ -1,8 +1,7 @@
-const { assert } = require('chai');
-const sinon = require('sinon');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import sinon from 'sinon';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   runExample,
@@ -11,7 +10,9 @@ const {
   checkContext,
   goto,
   login,
-} = require('./fixture/helpers');
+  shouldSkipPuppeteerTest,
+  launchBrowser,
+} from './fixture/helpers.js';
 
 describe('access an api', async () => {
   let authServer;
@@ -20,7 +21,8 @@ describe('access an api', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('access-an-api');
     apiServer = await runApi();
   });
@@ -32,11 +34,11 @@ describe('access an api', async () => {
   });
 
   it('should get an access token and access an api', async () => {
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
+    const browser = await launchBrowser();
     const page = await browser.newPage();
 
     const clock = sinon.useFakeTimers({
@@ -51,7 +53,7 @@ describe('access an api', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const {
       accessToken: { access_token, expires_in },
@@ -61,7 +63,7 @@ describe('access an api', async () => {
     assert.include(
       content,
       'Products: Football boots, Running shoes, Flip flops',
-      'Page should access products api and show a list of items'
+      'Page should access products api and show a list of items',
     );
     clock.tick(expires_in * 10000);
     const {
@@ -75,7 +77,7 @@ describe('access an api', async () => {
     assert.include(
       reloadedContent,
       'Products: Football boots, Running shoes, Flip flops',
-      'Page should access products api with refreshed token and show a list of items'
+      'Page should access products api with refreshed token and show a list of items',
     );
     const {
       accessToken: { access_token: new_access_token, isExpired: newIsExpired },

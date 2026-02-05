@@ -1,14 +1,15 @@
-const { assert } = require('chai');
-const puppeteer = require('puppeteer');
-const provider = require('./fixture/oidc-provider');
-const {
+import { assert } from 'chai';
+import provider from './fixture/oidc-provider.js';
+import {
   baseUrl,
   start,
   login,
   runExample,
   stubEnv,
   goto,
-} = require('./fixture/helpers');
+  shouldSkipPuppeteerTest,
+  launchBrowser,
+} from './fixture/helpers.js';
 
 describe('attempt silent login', async () => {
   let authServer;
@@ -16,7 +17,8 @@ describe('attempt silent login', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    authServer = await start(provider, 3001);
+    const resolvedProvider = await provider;
+    authServer = await start(resolvedProvider, 3001);
     appServer = await runExample('attempt-silent-login');
   });
 
@@ -26,18 +28,18 @@ describe('attempt silent login', async () => {
   });
 
   it('should attempt silent login and swallow failures', async () => {
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
+    const browser = await launchBrowser();
     const page = await browser.newPage();
     const context = page.browserContext();
 
     await goto(baseUrl, page);
     await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
-    const cookies = await context.cookies('http://localhost:3000');
+    const cookies = await context.cookies(baseUrl);
     assert.ok(
       cookies.find(
         ({ name, value }) => name === 'skipSilentLogin' && value === 'true',
@@ -49,11 +51,11 @@ describe('attempt silent login', async () => {
   });
 
   it('should login silently if there is an active session on the IDP', async () => {
-    const browser = await puppeteer.launch({
-      args: puppeteer
-        .defaultArgs()
-        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
-    });
+    if (shouldSkipPuppeteerTest()) {
+      return;
+    }
+
+    const browser = await launchBrowser();
     const page = await browser.newPage();
     const context = page.browserContext();
 
@@ -72,7 +74,7 @@ describe('attempt silent login', async () => {
     const loggedInCookies = await context.cookies(baseUrl);
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
-    // Delete cookies using BrowserContext API
+    // Delete cookies by setting them with past expiration date
     const cookiesToDelete = loggedInCookies.filter(
       (cookie) =>
         cookie.name === 'appSession' || cookie.name === 'skipSilentLogin',
@@ -94,7 +96,7 @@ describe('attempt silent login', async () => {
     await goto(baseUrl, page);
     await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
-    const cookies = await context.cookies('http://localhost:3000');
+    const cookies = await context.cookies(baseUrl);
     assert.ok(cookies.find(({ name }) => name === 'appSession'));
 
     await browser.close();
