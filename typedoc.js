@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   name: 'express-openid-connect',
   out: './docs/',
   excludeExternals: true,
