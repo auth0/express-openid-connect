@@ -68,7 +68,7 @@
     "tsd": "^0.33.0",
     "typedoc": "^0.28.7",
     "typescript": "^5.8.3",
-    "undici": "7.18.2"
+    "undici": "7.20.0"
   },
   "peerDependencies": {
     "express": ">= 4.17.0"
