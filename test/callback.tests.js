@@ -1073,10 +1073,267 @@ describe('callback response_mode: form_post', () => {
     assert.equal(tokens.isAuthenticated, true);
   });
 
-  // Note: Several session management tests have been removed because they relied on
-  // implicit flow patterns (only id_token in callback) which are not supported in openid-client v6.
-  // These tests covered edge cases around user switching scenarios that would need to be
-  // rewritten for authorization code flow to be relevant in v6.
+  it('should not strip claims when using custom claim filtering', async () => {
+    const { currentUser } = await setup({
+      authOpts: {
+        identityClaimFilter: [],
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: await makeIdToken(),
+      },
+    });
+    assert.equal(currentUser.iss, 'https://op.example.com/');
+    assert.equal(currentUser.aud, clientID);
+    assert.equal(currentUser.nonce, '__test_nonce__');
+    assert.exists(currentUser.iat);
+    assert.exists(currentUser.exp);
+  });
+
+  it('should expose the id token when id_token is valid (implicit flow)', async () => {
+    const idToken = await makeIdToken();
+    const {
+      response: { statusCode, headers },
+      currentUser,
+      tokens,
+    } = await setup({
+      authOpts: {
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+      },
+    });
+    assert.equal(statusCode, 302);
+    assert.equal(headers.location, 'https://example.org');
+    assert.ok(currentUser);
+    assert.equal(currentUser.sub, '__test_sub__');
+    assert.equal(currentUser.nickname, '__test_nickname__');
+    assert.notExists(currentUser.iat);
+    assert.notExists(currentUser.iss);
+    assert.notExists(currentUser.aud);
+    assert.notExists(currentUser.exp);
+    assert.notExists(currentUser.nonce);
+    assert.equal(tokens.isAuthenticated, true);
+    assert.equal(tokens.idToken, idToken);
+    assert.isUndefined(tokens.refreshToken);
+    assert.isUndefined(tokens.accessToken);
+    assert.include(tokens.idTokenClaims, {
+      sub: '__test_sub__',
+    });
+  });
+
+  it('should succeed even if custom transaction cookie name used (implicit flow)', async () => {
+    let customTxnCookieName = 'CustomTxnCookie';
+    const idToken = await makeIdToken();
+    const {
+      response: { statusCode, headers },
+      currentUser,
+      tokens,
+    } = await setup({
+      cookies: generateCookies(
+        {
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        },
+        customTxnCookieName,
+      ),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+      },
+      authOpts: {
+        transactionCookie: { name: customTxnCookieName },
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      },
+    });
+    assert.equal(statusCode, 302);
+    assert.equal(headers.location, 'https://example.org');
+    assert.ok(currentUser);
+    assert.equal(currentUser.sub, '__test_sub__');
+    assert.equal(currentUser.nickname, '__test_nickname__');
+    assert.notExists(currentUser.iat);
+    assert.notExists(currentUser.iss);
+    assert.notExists(currentUser.aud);
+    assert.notExists(currentUser.exp);
+    assert.notExists(currentUser.nonce);
+    assert.equal(tokens.isAuthenticated, true);
+    assert.equal(tokens.idToken, idToken);
+    assert.isUndefined(tokens.refreshToken);
+    assert.isUndefined(tokens.accessToken);
+    assert.include(tokens.idTokenClaims, {
+      sub: '__test_sub__',
+    });
+  });
+
+  it('should resume silent logins when user successfully logs in (implicit flow)', async () => {
+    const idToken = await makeIdToken();
+    const jar = requestDefaults.jar();
+    jar.setCookie('skipSilentLogin=true', baseUrl);
+    await setup({
+      authOpts: {
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+        skipSilentLogin: '1',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: idToken,
+      },
+      jar,
+    });
+    const cookies = jar.getCookies(baseUrl);
+    assert.notOk(cookies.find(({ key }) => key === 'skipSilentLogin'));
+  });
+
+  it('should replace the cookie session when a new user is logging in over an existing different user (implicit flow)', async () => {
+    const { currentSession, currentUser } = await setup({
+      authOpts: {
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: await makeIdToken({ sub: 'bar' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+        id_token: await makeIdToken({ sub: 'foo' }),
+      },
+    });
+    assert.equal(currentUser.sub, 'bar');
+    assert.isUndefined(currentSession.shoppingCartId);
+  });
+
+  it('should preserve the cookie session when a new user is logging in over an anonymous session (implicit flow)', async () => {
+    const { currentSession, currentUser } = await setup({
+      authOpts: {
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      },
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: await makeIdToken({ sub: 'foo' }),
+      },
+      existingSession: {
+        shoppingCartId: 'bar',
+      },
+    });
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+  });
+
+  it('should preserve session but regenerate session id when a new user is logging in over an anonymous session (implicit flow)', async () => {
+    const store = new memoryStoreFactory({
+      checkPeriod: 24 * 60 * 1000,
+    });
+    const { currentSession, currentUser, existingSessionCookie, jar } =
+      await setup({
+        authOpts: {
+          authorizationParams: {
+            response_type: 'id_token',
+          },
+          session: {
+            store,
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: await makeIdToken({ sub: 'foo' }),
+        },
+        existingSession: {
+          shoppingCartId: 'bar',
+        },
+      });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+
+    assert.equal(currentUser.sub, 'foo');
+    assert.equal(currentSession.shoppingCartId, 'bar');
+    assert.equal(
+      store.store.length,
+      1,
+      'There should only be one session in the store',
+    );
+    assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
+  });
+
+  it('should regenerate the session when a new user is logging in over an existing different user (implicit flow)', async () => {
+    const store = new memoryStoreFactory({
+      checkPeriod: 24 * 60 * 1000,
+    });
+    const { currentSession, currentUser, existingSessionCookie, jar } =
+      await setup({
+        authOpts: {
+          authorizationParams: {
+            response_type: 'id_token',
+          },
+          session: {
+            store,
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: await makeIdToken({ sub: 'bar' }),
+        },
+        existingSession: {
+          shoppingCartId: 'bar',
+          id_token: await makeIdToken({ sub: 'foo' }),
+        },
+      });
+
+    const cookies = jar.getCookies(baseUrl);
+    const newSessionCookie = cookies.find(({ key }) => key === 'appSession');
+
+    assert.equal(currentUser.sub, 'bar');
+    assert.isUndefined(currentSession.shoppingCartId);
+    assert.equal(
+      store.store.length,
+      1,
+      'There should only be one session in the store',
+    );
+    assert.notEqual(existingSessionCookie.value, newSessionCookie.value);
+  });
 
   it('should preserve session when the same user is logging in over their existing session', async () => {
     const store = new memoryStoreFactory({

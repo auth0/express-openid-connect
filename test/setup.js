@@ -44,6 +44,7 @@ beforeEach(async function () {
     .intercept({ path: /./, method: /.*/ })
     .reply((opts) => {
       const url = opts.path;
+      const requestHeaders = opts.headers || {};
 
       if (url.includes('/.well-known/openid-configuration')) {
         return {
@@ -85,10 +86,34 @@ beforeEach(async function () {
         };
       }
 
-      // Default response for other requests
+      // Handle introspection endpoint - return request headers in the response body
+      // This allows tests to verify telemetry headers are being sent
+      if (url.includes('/introspection')) {
+        return {
+          statusCode: 200,
+          data: JSON.stringify({
+            active: true,
+            // Echo back request headers for testing telemetry
+            _requestHeaders: requestHeaders,
+          }),
+          headers: { 'content-type': 'application/json' },
+        };
+      }
+
+      // Handle slow endpoint for timeout tests
+      if (url.includes('/slow')) {
+        return {
+          statusCode: 200,
+          data: JSON.stringify(requestHeaders),
+          headers: { 'content-type': 'application/json' },
+        };
+      }
+
+      // Default response for other requests - echo headers
       return {
-        statusCode: 404,
-        data: 'Not Found',
+        statusCode: 200,
+        data: JSON.stringify(requestHeaders),
+        headers: { 'content-type': 'application/json' },
       };
     })
     .persist();

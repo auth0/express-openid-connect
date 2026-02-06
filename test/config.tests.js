@@ -596,14 +596,27 @@ describe('get config', () => {
     assert.throws(() => config('noNE'), TypeError, expected);
   });
 
-  // v6: id_token response_type is not supported (implicit flow removed)
-  // Test HMAC requirement with code flow instead
   it('should require clientSecret for ID tokens with HMAC based algorithms', () => {
     const config = {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
       authorizationParams: {
         response_type: 'code',
+      },
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for ID tokens with HMAC based algorithms',
+    );
+  });
+
+  it('should require clientSecret for ID tokens in implicit flow with HMAC based algorithms', () => {
+    const config = {
+      ...defaultConfig,
+      idTokenSigningAlg: 'HS256',
+      authorizationParams: {
+        response_type: 'id_token',
       },
     };
     assert.throws(
@@ -681,17 +694,16 @@ describe('get config', () => {
     );
   });
 
-  // v6: Only 'code' and 'code id_token' are valid (no implicit 'id_token' flow)
   it('should not allow empty response_type', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_type: null }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code, token, id_token token]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: '' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code, token, id_token token]',
     );
   });
 
@@ -699,24 +711,18 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'foo' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code, token, id_token token]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'foo id_token' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code, token, id_token token]',
     );
-    // v6: 'id_token code' order is wrong, 'id_token' alone is not supported
+    // 'id_token code' order is wrong - should be 'code id_token'
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'id_token code' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
-    );
-    // v6: Implicit flow 'id_token' is not supported
-    assert.throws(
-      () => validateAuthorizationParams({ response_type: 'id_token' }),
-      TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code, token, id_token token]',
     );
   });
 
@@ -726,9 +732,16 @@ describe('get config', () => {
       clientSecret: 'foo',
       authorizationParams,
     });
-    // v6: 'id_token' implicit flow is no longer valid
-    assert.doesNotThrow(() => config({ response_type: 'code id_token' }));
-    assert.doesNotThrow(() => config({ response_type: 'code' }));
+    // All valid response types including implicit flow
+    assert.doesNotThrow(() => getConfig(config({ response_type: 'code' })));
+    assert.doesNotThrow(() =>
+      getConfig(config({ response_type: 'code id_token' })),
+    );
+    assert.doesNotThrow(() => getConfig(config({ response_type: 'id_token' })));
+    assert.doesNotThrow(() => getConfig(config({ response_type: 'token' })));
+    assert.doesNotThrow(() =>
+      getConfig(config({ response_type: 'id_token token' })),
+    );
   });
 
   it('should not allow empty response_mode', () => {
@@ -754,7 +767,7 @@ describe('get config', () => {
     );
   });
 
-  // v6: id_token is not a valid response_type anymore
+  // Hybrid flow requires form_post response_mode (not query)
   it('should not allow response_type code id_token and response_mode query', () => {
     assert.throws(
       () =>
@@ -779,9 +792,12 @@ describe('get config', () => {
     assert.doesNotThrow(() =>
       config({ response_type: 'code', response_mode: 'form_post' }),
     );
-    // v6: id_token alone is no longer valid
     assert.doesNotThrow(() =>
       config({ response_type: 'code id_token', response_mode: 'form_post' }),
+    );
+    // Implicit flow also requires form_post
+    assert.doesNotThrow(() =>
+      config({ response_type: 'id_token', response_mode: 'form_post' }),
     );
   });
 

@@ -269,8 +269,38 @@ describe('auth', () => {
     );
   });
 
-  // v6: Implicit flow (id_token response_type) is no longer supported
-  // The id_token flow test has been removed as openid-client v6 only supports authorization code flow
+  it('should redirect to the authorize url for /login in implicit flow', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      }),
+    );
+    const res = await requestDefaults.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+    // Implicit flow doesn't use PKCE
+    assert.notProperty(parsed.query, 'code_challenge');
+    assert.notProperty(parsed.query, 'code_challenge_method');
+  });
+
   it('should redirect to the authorize url for /login in hybrid flow', async () => {
     server = await createServer(
       auth({
@@ -410,7 +440,7 @@ describe('auth', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'response_type should be one of id_token, code id_token, code',
+      'response_type should be one of id_token, code id_token, code, token, id_token token',
     );
   });
 
@@ -439,7 +469,7 @@ describe('auth', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'response_type should be one of id_token, code id_token, code',
+      'response_type should be one of id_token, code id_token, code, token, id_token token',
     );
   });
 
