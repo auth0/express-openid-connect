@@ -1,6 +1,6 @@
-import { assert } from 'chai';
-import sinon from 'sinon';
-import { get as getConfig } from '../lib/config.js';
+const { assert } = require('chai');
+const sinon = require('sinon');
+const { get: getConfig } = require('../lib/config');
 
 const defaultConfig = {
   secret: '__test_session_secret__',
@@ -15,19 +15,18 @@ const validateAuthorizationParams = (authorizationParams) =>
 describe('get config', () => {
   afterEach(() => sinon.restore());
 
-  // v6: Default response_type is now 'code' (not 'id_token')
   it('should get config for default config', () => {
     const config = getConfig(defaultConfig);
     assert.deepInclude(config, {
       authorizationParams: {
-        response_type: 'code',
+        response_type: 'id_token',
+        response_mode: 'form_post',
         scope: 'openid profile email',
       },
       authRequired: true,
     });
   });
 
-  // v6: Default response_type is now 'code' (not 'id_token')
   it('should get config for default config with environment variables', () => {
     sinon.stub(process, 'env').value({
       ...process.env,
@@ -39,7 +38,8 @@ describe('get config', () => {
     const config = getConfig();
     assert.deepInclude(config, {
       authorizationParams: {
-        response_type: 'code',
+        response_type: 'id_token',
+        response_mode: 'form_post',
         scope: 'openid profile email',
       },
       authRequired: true,
@@ -521,32 +521,35 @@ describe('get config', () => {
     );
   });
 
-  // v6: Public clients with PKCE are now supported for code flow
-  it('should allow code flow without client secret (public client with PKCE)', () => {
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
         response_type: 'code',
       },
     };
-    const result = getConfig(config);
-    assert.equal(result.clientAuthMethod, 'none');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"',
+    );
   });
 
-  // v6: Public clients with PKCE are now supported for hybrid flow
-  it('should allow hybrid flow without client secret (public client with PKCE)', () => {
+  it('shouldn\'t allow hybrid flow without client authn when clientAuthMethod is "client_secret_basic" (by default)', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
         response_type: 'code id_token',
       },
     };
-    const result = getConfig(config);
-    assert.equal(result.clientAuthMethod, 'none');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientSecret" is required for the "clientAuthMethod" "client_secret_basic"',
+    );
   });
 
-  // v6: Explicit clientAuthMethod 'none' is allowed for code flow with PKCE
-  it('should allow code flow with explicit clientAuthMethod "none" (public client with PKCE)', () => {
+  it('shouldn\'t allow code flow without client authn when clientAuthMethod is "none"', () => {
     const config = {
       ...defaultConfig,
       authorizationParams: {
@@ -554,8 +557,11 @@ describe('get config', () => {
       },
       clientAuthMethod: 'none',
     };
-    const result = getConfig(config);
-    assert.equal(result.clientAuthMethod, 'none');
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      'Public code flow clients are not supported.',
+    );
   });
 
   it('should require "clientAssertionSigningKey" when clientAuthMethod is "private_key_jwt"', () => {
@@ -596,14 +602,12 @@ describe('get config', () => {
     assert.throws(() => config('noNE'), TypeError, expected);
   });
 
-  // v6: id_token response_type is not supported (implicit flow removed)
-  // Test HMAC requirement with code flow instead
   it('should require clientSecret for ID tokens with HMAC based algorithms', () => {
     const config = {
       ...defaultConfig,
       idTokenSigningAlg: 'HS256',
       authorizationParams: {
-        response_type: 'code',
+        response_type: 'id_token',
       },
     };
     assert.throws(
@@ -681,17 +685,16 @@ describe('get config', () => {
     );
   });
 
-  // v6: Only 'code' and 'code id_token' are valid (no implicit 'id_token' flow)
   it('should not allow empty response_type', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_type: null }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: '' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
   });
 
@@ -699,24 +702,17 @@ describe('get config', () => {
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'foo' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'foo id_token' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
-    // v6: 'id_token code' order is wrong, 'id_token' alone is not supported
     assert.throws(
       () => validateAuthorizationParams({ response_type: 'id_token code' }),
       TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
-    );
-    // v6: Implicit flow 'id_token' is not supported
-    assert.throws(
-      () => validateAuthorizationParams({ response_type: 'id_token' }),
-      TypeError,
-      '"authorizationParams.response_type" must be one of [code id_token, code]',
+      '"authorizationParams.response_type" must be one of [id_token, code id_token, code]',
     );
   });
 
@@ -726,22 +722,23 @@ describe('get config', () => {
       clientSecret: 'foo',
       authorizationParams,
     });
-    // v6: 'id_token' implicit flow is no longer valid
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({ response_type: 'id_token' }),
+    );
     assert.doesNotThrow(() => config({ response_type: 'code id_token' }));
     assert.doesNotThrow(() => config({ response_type: 'code' }));
   });
 
   it('should not allow empty response_mode', () => {
-    // v6: default response_type is 'code', which allows 'query' or 'form_post'
     assert.throws(
       () => validateAuthorizationParams({ response_mode: null }),
       TypeError,
-      '"authorizationParams.response_mode" must be one of [query, form_post]',
+      '"authorizationParams.response_mode" must be [form_post]',
     );
     assert.throws(
       () => validateAuthorizationParams({ response_mode: '' }),
       TypeError,
-      '"authorizationParams.response_mode" must be one of [query, form_post]',
+      '"authorizationParams.response_mode" must be [form_post]',
     );
     assert.throws(
       () =>
@@ -754,8 +751,16 @@ describe('get config', () => {
     );
   });
 
-  // v6: id_token is not a valid response_type anymore
-  it('should not allow response_type code id_token and response_mode query', () => {
+  it('should not allow response_type id_token and response_mode query', () => {
+    assert.throws(
+      () =>
+        validateAuthorizationParams({
+          response_type: 'id_token',
+          response_mode: 'query',
+        }),
+      TypeError,
+      '"authorizationParams.response_mode" must be [form_post]',
+    );
     assert.throws(
       () =>
         validateAuthorizationParams({
@@ -779,7 +784,12 @@ describe('get config', () => {
     assert.doesNotThrow(() =>
       config({ response_type: 'code', response_mode: 'form_post' }),
     );
-    // v6: id_token alone is no longer valid
+    assert.doesNotThrow(() =>
+      validateAuthorizationParams({
+        response_type: 'id_token',
+        response_mode: 'form_post',
+      }),
+    );
     assert.doesNotThrow(() =>
       config({ response_type: 'code id_token', response_mode: 'form_post' }),
     );
@@ -797,22 +807,22 @@ describe('get config', () => {
     assert.doesNotThrow(() => config('10000'));
   });
 
-  // v6: Default clientAuthMethod is 'none' when no clientSecret is provided (public client with PKCE)
-  it('should default clientAuthMethod to none when no clientSecret is provided', () => {
-    const config = getConfig(defaultConfig);
-    assert.deepInclude(config, {
-      clientAuthMethod: 'none',
-    });
-  });
-
-  it('should default clientAuthMethod to client_secret_post when clientSecret is provided', () => {
-    const config = getConfig({
-      ...defaultConfig,
-      clientSecret: '__test_client_secret__',
-    });
-    assert.deepInclude(config, {
-      clientAuthMethod: 'client_secret_post',
-    });
+  it('should default clientAuthMethod to none for id_token response type', () => {
+    {
+      const config = getConfig(defaultConfig);
+      assert.deepInclude(config, {
+        clientAuthMethod: 'none',
+      });
+    }
+    {
+      const config = getConfig({
+        ...defaultConfig,
+        authorizationParams: { response_type: 'id_token' },
+      });
+      assert.deepInclude(config, {
+        clientAuthMethod: 'none',
+      });
+    }
   });
 
   it('should default httpTimeout to 5000', () => {
@@ -824,7 +834,7 @@ describe('get config', () => {
     }
   });
 
-  it('should default clientAuthMethod to client_secret_post for other response types', () => {
+  it('should default clientAuthMethod to client_secret_basic for other response types', () => {
     {
       const config = getConfig({
         ...defaultConfig,
@@ -832,7 +842,7 @@ describe('get config', () => {
         authorizationParams: { response_type: 'code' },
       });
       assert.deepInclude(config, {
-        clientAuthMethod: 'client_secret_post',
+        clientAuthMethod: 'client_secret_basic',
       });
     }
 
@@ -843,7 +853,7 @@ describe('get config', () => {
         authorizationParams: { response_type: 'code id_token' },
       });
       assert.deepInclude(config, {
-        clientAuthMethod: 'client_secret_post',
+        clientAuthMethod: 'client_secret_basic',
       });
     }
   });

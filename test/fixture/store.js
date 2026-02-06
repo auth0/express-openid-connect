@@ -1,10 +1,8 @@
-import { promisify } from 'util';
-import redis from 'redis-mock';
-import connectRedis from 'connect-redis';
+const { promisify } = require('util');
+const redis = require('redis-mock');
+const RedisStore = require('connect-redis')({ Store: class Store {} });
 
-const RedisStore = connectRedis({ Store: class Store {} });
-
-export default () => {
+module.exports = () => {
   const client = redis.createClient();
   const store = new RedisStore({ client: client, prefix: '' });
   client.asyncSet = promisify(client.set).bind(client);

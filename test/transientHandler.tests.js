@@ -1,9 +1,9 @@
-import { assert } from 'chai';
-import sinon from 'sinon';
-import crypto from 'crypto';
+const { assert } = require('chai');
+const sinon = require('sinon');
+const { JWS } = require('jose');
 
-import COOKIES from '../lib/cookies.js';
-import TransientCookieHandler from '../lib/transientHandler.js';
+const COOKIES = require('../lib/cookies');
+const TransientCookieHandler = require('../lib/transientHandler');
 
 const reqWithCookies = (cookies) => ({ [COOKIES]: cookies });
 const secret = '__test_session_secret__';
@@ -18,14 +18,12 @@ describe('transientHandler', function () {
       secret,
       legacySameSiteCookie: true,
     });
-    generateSignature = (cookie, value) => {
-      // Use HMAC-based signing to match the updated crypto implementation
-      const payload = Buffer.from(`${cookie}=${value}`);
-      const key = transientHandler.keyStore[0]; // Get the first key
-      const hmac = crypto.createHmac('sha256', key);
-      hmac.update(payload);
-      return hmac.digest('base64url');
-    };
+    generateSignature = (cookie, value) =>
+      JWS.sign.flattened(
+        Buffer.from(`${cookie}=${value}`),
+        transientHandler.keyStore,
+        { alg: 'HS256', b64: false, crit: ['b64'] },
+      ).signature;
     res = { cookie: sinon.spy(), clearCookie: sinon.spy() };
   });
 

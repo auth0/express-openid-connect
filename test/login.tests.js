@@ -1,16 +1,16 @@
-import { assert } from 'chai';
-import url from 'url';
-import querystring from 'querystring';
-import request from 'request-promise-native';
-
-import { decodeState } from '../lib/hooks/getLoginState.js';
-import { auth } from '../index.js';
-import { create as createServer } from './fixture/server.js';
-
-const requestDefaults = request.defaults({
+const assert = require('chai').assert;
+const url = require('url');
+const querystring = require('querystring');
+const nock = require('nock');
+const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
+
+const { decodeState } = require('../lib/hooks/getLoginState');
+
+const { auth } = require('..');
+const { create: createServer } = require('./fixture/server');
 
 const filterRoute = (method, path) => {
   return (r) =>
@@ -85,13 +85,9 @@ describe('auth', () => {
     assert.ok(router.stack.some(filterRoute('GET', '/custom-callback')));
   });
 
-  // v6: Default response_type is now 'code' with PKCE
   it('should redirect to the authorize url for /login', async () => {
     server = await createServer(auth(defaultConfig));
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -99,19 +95,16 @@ describe('auth', () => {
     assert.equal(parsed.pathname, '/authorize');
     assert.equal(parsed.query.client_id, '__test_client_id__');
     assert.equal(parsed.query.scope, 'openid profile email');
-    assert.equal(parsed.query.response_type, 'code');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
     assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
     assert.property(parsed.query, 'nonce');
     assert.property(parsed.query, 'state');
-    // v6: PKCE is always used with code flow
-    assert.property(parsed.query, 'code_challenge');
-    assert.equal(parsed.query.code_challenge_method, 'S256');
 
     assert.equal(fetchFromAuthCookie(res, 'nonce'), parsed.query.nonce);
     assert.equal(fetchFromAuthCookie(res, 'state'), parsed.query.state);
   });
 
-  // v6: Default response_type is now 'code' with PKCE
   it('should redirect to the authorize url for /login when txn cookie name is custom', async () => {
     let customTxnCookieName = 'CustomTxnCookie';
 
@@ -121,10 +114,7 @@ describe('auth', () => {
         transactionCookie: { name: customTxnCookieName },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -132,13 +122,11 @@ describe('auth', () => {
     assert.equal(parsed.pathname, '/authorize');
     assert.equal(parsed.query.client_id, '__test_client_id__');
     assert.equal(parsed.query.scope, 'openid profile email');
-    assert.equal(parsed.query.response_type, 'code');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
     assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
     assert.property(parsed.query, 'nonce');
     assert.property(parsed.query, 'state');
-    // v6: PKCE is always used with code flow
-    assert.property(parsed.query, 'code_challenge');
-    assert.equal(parsed.query.code_challenge_method, 'S256');
 
     assert.equal(
       fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
@@ -157,7 +145,7 @@ describe('auth', () => {
         authRequired: true,
       }),
     );
-    const res = await requestDefaults.get('/session', {
+    const res = await request.get('/session', {
       baseUrl,
       followRedirect: false,
     });
@@ -172,7 +160,7 @@ describe('auth', () => {
         attemptSilentLogin: true,
       }),
     );
-    const res = await requestDefaults.get('/session', {
+    const res = await request.get('/session', {
       baseUrl,
       followRedirect: false,
     });
@@ -188,7 +176,7 @@ describe('auth', () => {
         transactionCookie: { name: 'CustomTxnCookie' },
       }),
     );
-    const res = await requestDefaults.get('/session', {
+    const res = await request.get('/session', {
       baseUrl,
       followRedirect: false,
     });
@@ -205,10 +193,7 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -240,10 +225,7 @@ describe('auth', () => {
         transactionCookie: { name: customTxnCookieName },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -269,8 +251,31 @@ describe('auth', () => {
     );
   });
 
-  // v6: Implicit flow (id_token response_type) is no longer supported
-  // The id_token flow test has been removed as openid-client v6 only supports authorization code flow
+  it('should redirect to the authorize url for /login in id_token flow', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        authorizationParams: {
+          response_type: 'id_token',
+        },
+      }),
+    );
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+
+    assert.equal(parsed.hostname, 'op.example.com');
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
+    assert.equal(parsed.query.scope, 'openid profile email');
+    assert.equal(parsed.query.response_type, 'id_token');
+    assert.equal(parsed.query.response_mode, 'form_post');
+    assert.equal(parsed.query.redirect_uri, 'https://example.org/callback');
+    assert.property(parsed.query, 'nonce');
+    assert.property(parsed.query, 'state');
+  });
+
   it('should redirect to the authorize url for /login in hybrid flow', async () => {
     server = await createServer(
       auth({
@@ -281,10 +286,7 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -311,7 +313,7 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/custom-login', {
+    const res = await request.get('/custom-login', {
       baseUrl,
       followRedirect: false,
     });
@@ -324,6 +326,39 @@ describe('auth', () => {
       parsed.query.redirect_uri,
       'https://example.org/custom-callback',
     );
+  });
+
+  it('should redirect to the authorize url when pushed authorize requests enabled', async () => {
+    nock(defaultConfig.issuerBaseURL)
+      .post('/oauth/par', {
+        client_id: '__test_client_id__',
+        client_secret: 'test-client-secret',
+        nonce: /.+/,
+        redirect_uri: 'https://example.org/callback',
+        response_mode: 'form_post',
+        response_type: 'id_token',
+        scope: 'openid profile email',
+        state: /.+/,
+      })
+      .reply(201, { request_uri: 'foo', expires_in: 100 });
+
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        clientSecret: 'test-client-secret',
+        pushedAuthorizationRequests: true,
+        clientAuthMethod: 'client_secret_post',
+      }),
+    );
+    const res = await request.get('/login', {
+      baseUrl,
+      followRedirect: false,
+    });
+    assert.equal(res.statusCode, 302);
+
+    const parsed = url.parse(res.headers.location, true);
+    assert.equal(parsed.query.request_uri, 'foo');
+    assert.equal(parsed.query.client_id, '__test_client_id__');
   });
 
   it('should allow custom login route with additional login params', async () => {
@@ -343,10 +378,7 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -375,8 +407,8 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const cookieJar = requestDefaults.jar();
-    const res = await requestDefaults.get('/login', {
+    const cookieJar = request.jar();
+    const res = await request.get('/login', {
       cookieJar,
       baseUrl,
       json: true,
@@ -400,8 +432,8 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const cookieJar = requestDefaults.jar();
-    const res = await requestDefaults.get('/login', {
+    const cookieJar = request.jar();
+    const res = await request.get('/login', {
       cookieJar,
       baseUrl,
       json: true,
@@ -429,8 +461,8 @@ describe('auth', () => {
     });
     server = await createServer(router);
 
-    const cookieJar = requestDefaults.jar();
-    const res = await requestDefaults.get('/login', {
+    const cookieJar = request.jar();
+    const res = await request.get('/login', {
       cookieJar,
       baseUrl,
       json: true,
@@ -455,10 +487,7 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -478,10 +507,7 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     const parsed = url.parse(res.headers.location, true);
@@ -508,10 +534,7 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=Strict');
@@ -531,85 +554,51 @@ describe('auth', () => {
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=Strict');
   });
 
-  // v6: Must explicitly set response_mode to form_post since default response_type is now 'code'
   it('should overwrite SameSite to None when response_mode is form_post', async () => {
     server = await createServer(
       auth({
         ...defaultConfig,
-        authorizationParams: {
-          response_type: 'code',
-          response_mode: 'form_post',
-        },
         transactionCookie: {
           sameSite: 'Strict',
         },
       }),
     );
-    const res = await requestDefaults.get('/login', {
-      baseUrl,
-      followRedirect: false,
-    });
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
 
     assert.include(fetchAuthCookie(res), 'SameSite=None');
   });
 
   it('should pass discovery errors to the express mw', async () => {
-    // Disable global mock discovery for this test
-    const originalMockDiscovery = global.__testMockDiscovery;
-    delete global.__testMockDiscovery;
+    nock('https://example.com')
+      .get('/.well-known/openid-configuration')
+      .reply(500);
+    nock('https://example.com')
+      .get('/.well-known/oauth-authorization-server')
+      .reply(500);
 
-    // Use undici MockAgent to mock the error response (works with native fetch in Node 20+)
-    const { MockAgent, setGlobalDispatcher, getGlobalDispatcher } =
-      await import('undici');
-    const originalDispatcher = getGlobalDispatcher();
-    const mockAgent = new MockAgent();
-    mockAgent.disableNetConnect();
-    setGlobalDispatcher(mockAgent);
-
-    const pool = mockAgent.get('https://example.com');
-    pool
-      .intercept({ path: '/.well-known/openid-configuration', method: 'GET' })
-      .reply(500, 'Internal Server Error');
-    pool
-      .intercept({
-        path: '/.well-known/oauth-authorization-server',
-        method: 'GET',
-      })
-      .reply(500, 'Internal Server Error');
-
-    try {
-      server = await createServer(
-        auth({
-          ...defaultConfig,
-          issuerBaseURL: 'https://example.com',
-        }),
-      );
-      const res = await requestDefaults.get('/login', {
-        baseUrl,
-        followRedirect: false,
-        json: true,
-      });
-      assert.equal(res.statusCode, 500);
-      assert.match(
-        res.body.err.message,
-        /^(Issuer\.discover\(\) failed|fetch failed|Discovery failed|"response" is not conforming|unexpected HTTP response status code)/,
-        'Should get error json from server error middleware',
-      );
-    } finally {
-      // Restore mock discovery and dispatcher
-      global.__testMockDiscovery = originalMockDiscovery;
-      setGlobalDispatcher(originalDispatcher);
-      await mockAgent.close();
-    }
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+      }),
+    );
+    const res = await request.get('/login', {
+      baseUrl,
+      followRedirect: false,
+      json: true,
+    });
+    assert.equal(res.statusCode, 500);
+    assert.match(
+      res.body.err.message,
+      /^Issuer.discover\(\) failed/,
+      'Should get error json from server error middleware',
+    );
   });
 });

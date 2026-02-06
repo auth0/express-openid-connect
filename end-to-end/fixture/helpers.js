@@ -1,141 +1,32 @@
-import path from 'path';
-import crypto from 'crypto';
-import http from 'http';
-import sinon from 'sinon';
-import express from 'express';
-import { SignJWT } from 'jose';
-import { getPrivateJWK } from './jwk.js';
-import request from 'request-promise-native';
-import puppeteer from 'puppeteer';
+const path = require('path');
+const crypto = require('crypto');
+const sinon = require('sinon');
+const express = require('express');
+const { JWT } = require('jose');
+const { privateJWK } = require('./jwk');
+const request = require('request-promise-native').defaults({ json: true });
 
-const requestDefaults = request.defaults({ json: true });
-
-// Use localhost for URLs
 const baseUrl = 'http://localhost:3000';
 
-/**
- * Wait for a server to be ready by attempting HTTP request
- */
-const waitForServer = (port, maxAttempts = 100, delay = 200) => {
-  return new Promise((resolve, reject) => {
-    let attempts = 0;
-    const tryConnect = () => {
-      attempts++;
-      // Use localhost for server check
-      const req = http.get(`http://localhost:${port}/`, (res) => {
-        res.resume();
-        resolve();
-      });
-      req.on('error', (err) => {
-        if (attempts >= maxAttempts) {
-          reject(
-            new Error(
-              `Server on port ${port} not ready after ${maxAttempts} attempts. Last error: ${err.message}`,
-            ),
-          );
-        } else {
-          setTimeout(tryConnect, delay);
-        }
-      });
-      req.setTimeout(1000, () => {
-        req.destroy();
-        if (attempts < maxAttempts) {
-          setTimeout(tryConnect, delay);
-        }
-      });
-    };
-    tryConnect();
-  });
-};
-
-/**
- * Get Puppeteer launch options for CI compatibility
- */
-const getPuppeteerLaunchOptions = () => ({
-  headless: true,
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-gpu',
-    '--disable-extensions',
-    '--disable-background-networking',
-    '--disable-software-rasterizer',
-    '--single-process',
-    '--no-zygote',
-  ],
-  protocolTimeout: 60000,
-});
-
-/**
- * Launch Puppeteer browser with CI-compatible options
- */
-const launchBrowser = () => puppeteer.launch(getPuppeteerLaunchOptions());
-
-const start = async (app, port) => {
-  return new Promise((resolve, reject) => {
-    // Bind to 0.0.0.0 to accept connections from all interfaces
-    const server = app.listen(port, '0.0.0.0', async (err) => {
+const start = (app, port) =>
+  new Promise((resolve, reject) => {
+    const server = app.listen(port, (err) => {
       if (err) {
         reject(err);
       } else {
-        try {
-          // Wait for server to be actually ready to accept connections
-          await waitForServer(port);
-          resolve(server);
-        } catch (waitErr) {
-          reject(waitErr);
-        }
+        resolve(server);
       }
     });
-    server.on('error', reject);
   });
+
+const runExample = (name) => {
+  const app = require(path.join('..', '..', 'examples', name));
+  app.use(testMw());
+  return start(app, 3000);
 };
 
-const runExample = async (name) => {
-  // Ensure environment variables are set BEFORE the dynamic import
-  // because auth() is called during module initialization
-  const env = {
-    ISSUER_BASE_URL: 'http://localhost:3001',
-    CLIENT_ID: 'test-express-openid-connect-client-id',
-    BASE_URL: 'http://localhost:3000',
-    SECRET: 'LONG_RANDOM_VALUE',
-    CLIENT_SECRET: 'test-express-openid-connect-client-secret',
-  };
-
-  // Set environment variables first
-  const originalEnv = {};
-  for (const [key, value] of Object.entries(env)) {
-    originalEnv[key] = process.env[key];
-    process.env[key] = value;
-  }
-
-  try {
-    // Use absolute path and ensure fresh import
-    const modulePath = path.resolve('examples', `${name}.js`);
-    const { default: appOrPromise } = await import(
-      `${modulePath}?t=${Date.now()}`
-    );
-
-    // Handle both sync apps and async app promises
-    const app = await Promise.resolve(appOrPromise);
-    app.use(testMw());
-    return start(app, 3000);
-  } catch (error) {
-    // Restore original environment on error
-    for (const [key, value] of Object.entries(originalEnv)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
-    }
-    throw error;
-  }
-};
-
-const runApi = async () => {
-  const { default: app } = await import(path.resolve('examples', 'api.js'));
+const runApi = () => {
+  const app = require(path.join('..', '..', 'examples', 'api'));
   return start(app, 3002);
 };
 
@@ -147,14 +38,11 @@ const stubEnv = (
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
   },
-) => {
-  // For ES modules and dynamic imports, set env vars directly
-  Object.assign(process.env, env);
-  return sinon.stub(process, 'env').value({
+) =>
+  sinon.stub(process, 'env').value({
     ...process.env,
     ...env,
   });
-};
 
 const testMw = () => {
   const router = new express.Router();
@@ -179,16 +67,15 @@ const testMw = () => {
 };
 
 const checkContext = async (cookies) => {
-  const jar = requestDefaults.jar();
+  const jar = request.jar();
   cookies.forEach(({ name, value }) =>
     jar.setCookie(`${name}=${value}`, baseUrl),
   );
-  return requestDefaults('/context', { jar, baseUrl });
+  return request('/context', { jar, baseUrl });
 };
 
-const goto = async (url, page) => {
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-};
+const goto = async (url, page) =>
+  Promise.all([page.goto(url), page.waitForNavigation()]);
 
 const login = async (username, password, page) => {
   await page.type('[name=login]', username);
@@ -206,46 +93,31 @@ const logout = async (page) => {
 };
 
 const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
-  const privateJWK = await getPrivateJWK();
-
-  const logoutToken = await new SignJWT({
-    events: {
-      'http://schemas.openid.net/event/backchannel-logout': {},
+  const logoutToken = JWT.sign(
+    {
+      events: {
+        'http://schemas.openid.net/event/backchannel-logout': {},
+      },
+      ...(sid && { sid: req.oidc.user.sid }),
+      ...(sub && { sub: req.oidc.user.sub }),
     },
-    ...(sid && { sid: req.oidc.user.sid }),
-    ...(sub && { sub: req.oidc.user.sub }),
-  })
-    .setProtectedHeader({
-      alg: 'RS256',
-      typ: 'logout+jwt',
-    })
-    .setIssuer(`http://localhost:${process.env.PROVIDER_PORT || 3001}`)
-    .setAudience(clientId)
-    .setIssuedAt()
-    .setJti(crypto.randomBytes(16).toString('hex'))
-    .sign(privateJWK);
+    privateJWK,
+    {
+      issuer: `http://localhost:${process.env.PROVIDER_PORT || 3001}`,
+      audience: clientId,
+      iat: true,
+      jti: crypto.randomBytes(16).toString('hex'),
+      algorithm: 'RS256',
+      header: { typ: 'logout+jwt' },
+    },
+  );
 
   res.send(`
     <pre style="border: 1px solid #ccc; padding: 10px; white-space: break-spaces; background: whitesmoke;">curl -X POST http://localhost:3000/backchannel-logout -d "logout_token=${logoutToken}"</pre>
   `);
 };
 
-const shouldSkipPuppeteerTest = () => {
-  const nodeVersion = process.version;
-  const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
-
-  // Skip on macOS with Node.js 20 due to Puppeteer DNS resolution issues
-  // Also skip on Node.js v24+ with macOS for similar reasons
-  if (process.platform === 'darwin') {
-    return majorVersion === 20 || majorVersion >= 24;
-  }
-  if (process.platform === 'linux' && majorVersion >= 24) {
-    return true;
-  }
-  return false;
-};
-
-export {
+module.exports = {
   baseUrl,
   start,
   runExample,
@@ -257,6 +129,4 @@ export {
   login,
   logout,
   logoutTokenTester,
-  shouldSkipPuppeteerTest,
-  launchBrowser,
 };

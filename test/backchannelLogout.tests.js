@@ -1,15 +1,14 @@
-import { assert } from 'chai';
-import onLogin from '../lib/hooks/backchannelLogout/onLogIn.js';
-import { get as getConfig } from '../lib/config.js';
-import { create as createServer } from './fixture/server.js';
-import { makeIdToken, makeLogoutToken } from './fixture/cert.js';
-import { auth } from '../index.js';
-import getRedisStore from './fixture/store.js';
+const { assert } = require('chai');
+const onLogin = require('../lib/hooks/backchannelLogout/onLogIn');
+const { get: getConfig } = require('../lib/config');
+const { create: createServer } = require('./fixture/server');
+const { makeIdToken, makeLogoutToken } = require('./fixture/cert');
+const { auth } = require('./..');
+const getRedisStore = require('./fixture/store');
 
 const baseUrl = 'http://localhost:3000';
 
-import request from 'request-promise-native';
-const requestDefaults = request.defaults({
+const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
   baseUrl,
@@ -17,16 +16,16 @@ const requestDefaults = request.defaults({
 });
 
 const login = async (idToken) => {
-  const jar = requestDefaults.jar();
-  await requestDefaults.post({
+  const jar = request.jar();
+  await request.post({
     uri: '/session',
     json: {
-      id_token: idToken || (await makeIdToken()),
+      id_token: idToken || makeIdToken(),
     },
     jar,
   });
 
-  const session = (await requestDefaults.get({ uri: '/session', jar })).body;
+  const session = (await request.get({ uri: '/session', jar })).body;
   return { jar, session };
 };
 
@@ -44,10 +43,7 @@ describe('back-channel logout', async () => {
       issuerBaseURL: 'https://op.example.com',
       secret: '__test_session_secret__',
       authRequired: false,
-      backchannelLogout: {
-        store,
-        isInsecure: true, // Required for tests since v6 migration doesn't have full JWT verification
-      },
+      backchannelLogout: { store },
     };
   });
 
@@ -65,7 +61,7 @@ describe('back-channel logout', async () => {
     server = await createServer(auth(config));
 
     for (const method of ['get', 'put', 'patch', 'delete']) {
-      const res = await requestDefaults('/backchannel-logout', {
+      const res = await request('/backchannel-logout', {
         method,
       });
       assert.equal(res.statusCode, 404);
@@ -75,7 +71,7 @@ describe('back-channel logout', async () => {
   it('should require a logout token', async () => {
     server = await createServer(auth(config));
 
-    const res = await requestDefaults.post('/backchannel-logout');
+    const res = await request.post('/backchannel-logout');
     assert.equal(res.statusCode, 400);
     assert.deepEqual(res.body, {
       error: 'invalid_request',
@@ -86,14 +82,14 @@ describe('back-channel logout', async () => {
   it('should not cache the response', async () => {
     server = await createServer(auth(config));
 
-    const res = await requestDefaults.post('/backchannel-logout');
+    const res = await request.post('/backchannel-logout');
     assert.equal(res.headers['cache-control'], 'no-store');
   });
 
   it('should accept and store a valid logout_token', async () => {
     server = await createServer(auth(config));
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       form: {
         logout_token: makeLogoutToken({ sid: 'foo' }),
       },
@@ -106,7 +102,7 @@ describe('back-channel logout', async () => {
   it('should accept and store a valid logout_token signed with HS256', async () => {
     server = await createServer(auth(config));
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       form: {
         logout_token: makeLogoutToken({
           sid: 'foo',
@@ -122,7 +118,7 @@ describe('back-channel logout', async () => {
   it('should require a sid or a sub', async () => {
     server = await createServer(auth(config));
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       form: {
         logout_token: makeLogoutToken(),
       },
@@ -135,7 +131,7 @@ describe('back-channel logout', async () => {
       auth({ ...config, session: { rollingDuration: 999 } }),
     );
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       form: {
         logout_token: makeLogoutToken({ sid: 'foo' }),
       },
@@ -152,7 +148,7 @@ describe('back-channel logout', async () => {
       auth({ ...config, session: { absoluteDuration: 999, rolling: false } }),
     );
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       form: {
         logout_token: makeLogoutToken({ sid: 'foo' }),
       },
@@ -177,7 +173,7 @@ describe('back-channel logout', async () => {
       }),
     );
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       form: {
         logout_token: makeLogoutToken({ sid: 'foo' }),
       },
@@ -188,15 +184,15 @@ describe('back-channel logout', async () => {
 
   it('should log sid out on subsequent requests', async () => {
     server = await createServer(auth(config));
-    const { jar } = await login(await makeIdToken({ sid: '__foo_sid__' }));
+    const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
     let body;
-    ({ body } = await requestDefaults.get('/session', {
+    ({ body } = await request.get('/session', {
       jar,
     }));
     assert.isNotEmpty(body);
     assert.isNotEmpty(jar.getCookies(baseUrl));
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       baseUrl,
       form: {
         logout_token: makeLogoutToken({ sid: '__foo_sid__' }),
@@ -207,7 +203,7 @@ describe('back-channel logout', async () => {
       'https://op.example.com/|__foo_sid__',
     );
     assert.ok(payload);
-    ({ body } = await requestDefaults.get('/session', {
+    ({ body } = await request.get('/session', {
       jar,
     }));
     assert.isEmpty(jar.getCookies(baseUrl));
@@ -216,15 +212,15 @@ describe('back-channel logout', async () => {
 
   it('should log sub out on subsequent requests', async () => {
     server = await createServer(auth(config));
-    const { jar } = await login(await makeIdToken({ sub: '__foo_sub__' }));
+    const { jar } = await login(makeIdToken({ sub: '__foo_sub__' }));
     let body;
-    ({ body } = await requestDefaults.get('/session', {
+    ({ body } = await request.get('/session', {
       jar,
     }));
     assert.isNotEmpty(body);
     assert.isNotEmpty(jar.getCookies(baseUrl));
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       baseUrl,
       form: {
         logout_token: makeLogoutToken({ sub: '__foo_sub__' }),
@@ -235,7 +231,7 @@ describe('back-channel logout', async () => {
       'https://op.example.com/|__foo_sub__',
     );
     assert.ok(payload);
-    ({ body } = await requestDefaults.get('/session', {
+    ({ body } = await request.get('/session', {
       jar,
     }));
     assert.isEmpty(jar.getCookies(baseUrl));
@@ -245,9 +241,9 @@ describe('back-channel logout', async () => {
   it('should not log sub out if login is after back-channel logout', async () => {
     server = await createServer(auth(config));
 
-    const { jar } = await login(await makeIdToken({ sub: '__foo_sub__' }));
+    const { jar } = await login(makeIdToken({ sub: '__foo_sub__' }));
 
-    const res = await requestDefaults.post('/backchannel-logout', {
+    const res = await request.post('/backchannel-logout', {
       baseUrl,
       form: {
         logout_token: makeLogoutToken({ sub: '__foo_sub__' }),
@@ -264,7 +260,7 @@ describe('back-channel logout', async () => {
     payload = await client.asyncGet('https://op.example.com/|__foo_sub__');
     assert.notOk(payload);
 
-    const { body } = await requestDefaults.get('/session', {
+    const { body } = await request.get('/session', {
       jar,
     });
     assert.isNotEmpty(jar.getCookies(baseUrl));
@@ -283,9 +279,9 @@ describe('back-channel logout', async () => {
         },
       }),
     );
-    const { jar } = await login(await makeIdToken({ sid: '__foo_sid__' }));
+    const { jar } = await login(makeIdToken({ sid: '__foo_sid__' }));
     let body;
-    ({ body } = await requestDefaults.get('/session', {
+    ({ body } = await request.get('/session', {
       jar,
     }));
     assert.deepEqual(body, { err: { message: 'storage failure' } });

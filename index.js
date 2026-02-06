@@ -1,24 +1,9 @@
-import auth from './middleware/auth.js';
-import * as requiresAuthExports from './middleware/requiresAuth.js';
-import attemptSilentLogin from './middleware/attemptSilentLogin.js';
+const auth = require('./middleware/auth');
+const requiresAuth = require('./middleware/requiresAuth');
+const attemptSilentLogin = require('./middleware/attemptSilentLogin');
 
-const { requiresAuth, claimEquals, claimIncludes, claimCheck } =
-  requiresAuthExports;
-
-export default {
+module.exports = {
   auth,
-  requiresAuth,
-  claimEquals,
-  claimIncludes,
-  claimCheck,
+  ...requiresAuth,
   attemptSilentLogin,
-};
-
-export {
-  auth,
-  attemptSilentLogin,
-  requiresAuth,
-  claimEquals,
-  claimIncludes,
-  claimCheck,
 };

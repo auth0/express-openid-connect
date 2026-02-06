@@ -1,12 +1,13 @@
-import express from 'express';
-import debug from '../lib/debug.js';
-import { get as getConfig } from '../lib/config.js';
-import { requiresAuth } from './requiresAuth.js';
-import attemptSilentLogin from './attemptSilentLogin.js';
-import TransientCookieHandler from '../lib/transientHandler.js';
-import { RequestContext, ResponseContext } from '../lib/context.js';
-import appSession, { replaceSession } from '../lib/appSession.js';
-import isLoggedOut from '../lib/hooks/backchannelLogout/isLoggedOut.js';
+const express = require('express');
+
+const debug = require('../lib/debug')('auth');
+const { get: getConfig } = require('../lib/config');
+const { requiresAuth } = require('./requiresAuth');
+const attemptSilentLogin = require('./attemptSilentLogin');
+const TransientCookieHandler = require('../lib/transientHandler');
+const { RequestContext, ResponseContext } = require('../lib/context');
+const appSession = require('../lib/appSession');
+const isLoggedOut = require('../lib/hooks/backchannelLogout/isLoggedOut');
 
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
@@ -84,20 +85,7 @@ const auth = function (params) {
         try {
           const loggedOut = await isLoggedOutFn(req, config);
           if (loggedOut) {
-            // If using external store, try to destroy the session first
-            if (config.session.store && req[config.session.name]) {
-              try {
-                const sessionObj = req[config.session.name];
-                if (sessionObj && typeof sessionObj.destroy === 'function') {
-                  sessionObj.destroy();
-                }
-              } catch {
-                // Ignore errors during session destruction
-              }
-            }
-
-            // Clear the session using replaceSession like it was originally
-            replaceSession(req, undefined, config);
+            req[config.session.name] = undefined;
           }
           next();
         } catch (e) {
@@ -130,13 +118,12 @@ const auth = function (params) {
  * Used for instantiating a custom session store. eg
  *
  * ```js
- * const { auth } = import('express-openid-connect');
- * const MemoryStore = import('memorystore');
- * const store = MemoryStore(auth);
+ * const { auth } = require('express-openid-connect');
+ * const MemoryStore = require('memorystore')(auth);
  * ```
  *
  * @constructor
  */
 auth.Store = function () {};
 
-export default auth;
+module.exports = auth;

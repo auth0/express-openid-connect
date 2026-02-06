@@ -1,15 +1,14 @@
-import { assert } from 'chai';
-import provider from './fixture/oidc-provider.js';
-import {
+const { assert } = require('chai');
+const puppeteer = require('puppeteer');
+const provider = require('./fixture/oidc-provider');
+const {
   baseUrl,
   start,
   runExample,
   stubEnv,
   goto,
   login,
-  shouldSkipPuppeteerTest,
-  launchBrowser,
-} from './fixture/helpers.js';
+} = require('./fixture/helpers');
 
 describe('fetch userinfo', async () => {
   let authServer;
@@ -17,8 +16,7 @@ describe('fetch userinfo', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    const resolvedProvider = await provider;
-    authServer = await start(resolvedProvider, 3001);
+    authServer = await start(provider, 3001);
     appServer = await runExample('userinfo');
   });
 
@@ -28,11 +26,11 @@ describe('fetch userinfo', async () => {
   });
 
   it('should login with hybrid flow and fetch userinfo', async () => {
-    if (shouldSkipPuppeteerTest()) {
-      return;
-    }
-
-    const browser = await launchBrowser();
+    const browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(

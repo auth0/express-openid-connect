@@ -1,12 +1,11 @@
-import express from 'express';
-import { auth, requiresAuth } from '../index.js';
+const express = require('express');
+const { auth, requiresAuth } = require('../');
 
 const app = express();
 
 app.use(
   auth({
     authRequired: false,
-    allowInsecureRequests: true,
   }),
 );
 
@@ -20,4 +19,4 @@ app.get('/admin', requiresAuth(), (req, res) =>
   res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`),
 );
 
-export default app;
+module.exports = app;

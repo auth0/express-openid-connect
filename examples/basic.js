@@ -1,13 +1,11 @@
-import express from 'express';
-import { auth } from '../index.js';
+const express = require('express');
+const { auth } = require('../');
 
 const app = express();
 
 app.use(
   auth({
     idpLogout: true,
-    // Allow HTTP for local development with mock provider
-    allowInsecureRequests: true,
   }),
 );
 
@@ -15,4 +13,4 @@ app.get('/', (req, res) => {
   res.send(`hello ${req.oidc.user.sub}`);
 });
 
-export default app;
+module.exports = app;

@@ -1,5 +1,5 @@
-import express from 'express';
-import { auth, requiresAuth } from '../index.js';
+const express = require('express');
+const { auth, requiresAuth } = require('../');
 
 const app = express();
 
@@ -15,7 +15,6 @@ app.use(
       postLogoutRedirect: '/custom-logout',
       callback: false,
     },
-    allowInsecureRequests: true,
   }),
 );
 
@@ -48,4 +47,4 @@ app.post('/callback', express.urlencoded({ extended: false }), (req, res) =>
   }),
 );
 
-export default app;
+module.exports = app;

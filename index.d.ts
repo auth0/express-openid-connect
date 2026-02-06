@@ -2,203 +2,14 @@
 
 import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
+import {
+  AuthorizationParameters,
+  IdTokenClaims,
+  UserinfoResponse,
+} from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import type { JWK, KeyLike } from 'jose';
+import type { JSONWebKey, KeyInput } from 'jose';
 import type { KeyObject } from 'crypto';
-
-/**
- * Authorization parameters for the OIDC authorization request.
- * These parameters are passed to the authorization endpoint.
- */
-interface AuthorizationParameters {
-  /**
-   * The response type. Defaults to 'code' for authorization code flow.
-   */
-  response_type?: 'code' | 'code id_token';
-  /**
-   * The scope of the access request.
-   */
-  scope?: string;
-  /**
-   * The response mode for returning authorization response parameters.
-   */
-  response_mode?: 'query' | 'form_post' | 'fragment';
-  /**
-   * The redirect URI for the authorization response.
-   */
-  redirect_uri?: string;
-  /**
-   * The nonce value for replay protection.
-   */
-  nonce?: string;
-  /**
-   * The state value for CSRF protection.
-   */
-  state?: string;
-  /**
-   * The code challenge for PKCE.
-   */
-  code_challenge?: string;
-  /**
-   * The code challenge method for PKCE.
-   */
-  code_challenge_method?: 'S256' | 'plain';
-  /**
-   * Audience for the authorization request.
-   */
-  audience?: string;
-  /**
-   * Additional custom parameters.
-   */
-  [key: string]: unknown;
-}
-
-/**
- * Claims from an ID Token.
- */
-interface IdTokenClaims {
-  /**
-   * Issuer Identifier.
-   */
-  iss?: string;
-  /**
-   * Subject Identifier.
-   */
-  sub?: string;
-  /**
-   * Audience(s).
-   */
-  aud?: string | string[];
-  /**
-   * Expiration time.
-   */
-  exp?: number;
-  /**
-   * Issued at time.
-   */
-  iat?: number;
-  /**
-   * Time when authentication occurred.
-   */
-  auth_time?: number;
-  /**
-   * Nonce value.
-   */
-  nonce?: string;
-  /**
-   * Access Token hash value.
-   */
-  at_hash?: string;
-  /**
-   * Code hash value.
-   */
-  c_hash?: string;
-  /**
-   * Session ID.
-   */
-  sid?: string;
-  /**
-   * Additional claims.
-   */
-  [key: string]: unknown;
-}
-
-/**
- * Response from the UserInfo endpoint.
- */
-interface UserinfoResponse {
-  /**
-   * Subject Identifier.
-   */
-  sub?: string;
-  /**
-   * Full name.
-   */
-  name?: string;
-  /**
-   * Given name.
-   */
-  given_name?: string;
-  /**
-   * Family name.
-   */
-  family_name?: string;
-  /**
-   * Middle name.
-   */
-  middle_name?: string;
-  /**
-   * Nickname.
-   */
-  nickname?: string;
-  /**
-   * Preferred username.
-   */
-  preferred_username?: string;
-  /**
-   * Profile URL.
-   */
-  profile?: string;
-  /**
-   * Picture URL.
-   */
-  picture?: string;
-  /**
-   * Website URL.
-   */
-  website?: string;
-  /**
-   * Email address.
-   */
-  email?: string;
-  /**
-   * Email verified.
-   */
-  email_verified?: boolean;
-  /**
-   * Gender.
-   */
-  gender?: string;
-  /**
-   * Birthdate.
-   */
-  birthdate?: string;
-  /**
-   * Timezone.
-   */
-  zoneinfo?: string;
-  /**
-   * Locale.
-   */
-  locale?: string;
-  /**
-   * Phone number.
-   */
-  phone_number?: string;
-  /**
-   * Phone number verified.
-   */
-  phone_number_verified?: boolean;
-  /**
-   * Address.
-   */
-  address?: {
-    formatted?: string;
-    street_address?: string;
-    locality?: string;
-    region?: string;
-    postal_code?: string;
-    country?: string;
-  };
-  /**
-   * Updated at time.
-   */
-  updated_at?: number;
-  /**
-   * Additional claims.
-   */
-  [key: string]: unknown;
-}
 
 /**
  * Session object
@@ -823,7 +634,7 @@ interface ConfigParams {
    * }))
    * ```
    */
-  clientAssertionSigningKey?: KeyLike | KeyObject | JWK | string;
+  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
 
   /**
    * The algorithm to sign the client assertion JWT.
