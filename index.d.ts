@@ -4,7 +4,7 @@ import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
 import type { IDToken, UserInfoResponse } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import type { JSONWebKey, KeyInput } from 'jose';
+import type { JWK, CryptoKey as JoseCryptoKey } from 'jose';
 import type { KeyObject } from 'crypto';
 
 /**
@@ -665,7 +665,12 @@ interface ConfigParams {
    * }))
    * ```
    */
-  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
+  clientAssertionSigningKey?:
+    | KeyObject
+    | JoseCryptoKey
+    | JWK
+    | string
+    | Uint8Array;
 
   /**
    * The algorithm to sign the client assertion JWT.
