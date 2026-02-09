@@ -1,7 +1,7 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+const express = require('express');
+const bodyParser = require('body-parser');
 
-export function create(router, protect, path) {
+module.exports.create = function (router, protect, path) {
   const app = express();
 
   app.use(bodyParser.urlencoded({ extended: false }));
@@ -28,33 +28,16 @@ export function create(router, protect, path) {
   });
 
   app.get('/tokens', (req, res) => {
-    // Return token information without exposing internal structure
-    const response = {
+    res.json({
       isAuthenticated: req.oidc.isAuthenticated(),
-      // Only expose behavior-relevant properties
-      hasIdToken: !!req.oidc.idToken,
-      hasAccessToken: !!req.oidc.accessToken,
-      hasRefreshToken: !!req.oidc.refreshToken,
-      idTokenClaims: req.oidc.idTokenClaims,
-    };
-
-    // Include token details for compatibility, but abstract the structure
-    if (req.oidc.idToken) {
-      response.idToken = req.oidc.idToken;
-    }
-
-    if (req.oidc.accessToken) {
-      response.accessToken = req.oidc.accessToken;
-      response.accessTokenExpired = req.oidc.accessToken.isExpired
+      idToken: req.oidc.idToken,
+      refreshToken: req.oidc.refreshToken,
+      accessToken: req.oidc.accessToken,
+      accessTokenExpired: req.oidc.accessToken
         ? req.oidc.accessToken.isExpired()
-        : false;
-    }
-
-    if (req.oidc.refreshToken) {
-      response.refreshToken = req.oidc.refreshToken;
-    }
-
-    res.json(response);
+        : undefined,
+      idTokenClaims: req.oidc.idTokenClaims,
+    });
   });
 
   if (protect) {
@@ -85,4 +68,4 @@ export function create(router, protect, path) {
   return new Promise((resolve) => {
     const server = mainApp.listen(3000, () => resolve(server));
   });
-}
+};

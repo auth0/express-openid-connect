@@ -1,5 +1,5 @@
-import express from 'express';
-import { auth } from '../index.js';
+const express = require('express');
+const { auth } = require('../');
 
 const app = express();
 
@@ -9,7 +9,6 @@ app.use(
     authorizationParams: {
       response_type: 'code id_token',
     },
-    allowInsecureRequests: true,
   }),
 );
 
@@ -18,4 +17,4 @@ app.get('/', async (req, res) => {
   res.send(`hello ${userInfo.sub}`);
 });
 
-export default app;
+module.exports = app;

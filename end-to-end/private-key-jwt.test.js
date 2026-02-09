@@ -1,16 +1,15 @@
-import { assert } from 'chai';
-import { once } from 'events';
-import provider from './fixture/oidc-provider.js';
-import {
+const { assert } = require('chai');
+const { once } = require('events');
+const puppeteer = require('puppeteer');
+const provider = require('./fixture/oidc-provider');
+const {
   baseUrl,
   start,
   runExample,
   stubEnv,
   goto,
   login,
-  shouldSkipPuppeteerTest,
-  launchBrowser,
-} from './fixture/helpers.js';
+} = require('./fixture/helpers');
 
 describe('private key jwt', async () => {
   let authServer;
@@ -18,8 +17,7 @@ describe('private key jwt', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    const resolvedProvider = await provider;
-    authServer = await start(resolvedProvider, 3001);
+    authServer = await start(provider, 3001);
     appServer = await runExample('private-key-jwt');
   });
 
@@ -29,11 +27,11 @@ describe('private key jwt', async () => {
   });
 
   it('should login with private key jwt client auth method', async () => {
-    if (shouldSkipPuppeteerTest()) {
-      return;
-    }
-
-    const browser = await launchBrowser();
+    const browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:3000/);
@@ -43,8 +41,7 @@ describe('private key jwt', async () => {
       /http:\/\/localhost:3001\/interaction/,
       'User should have been redirected to the auth server to login',
     );
-    const resolvedProvider = await provider;
-    const promise = once(resolvedProvider, 'grant.success');
+    const promise = once(provider, 'grant.success');
 
     await login('username', 'password', page);
     const [ctx] = await promise;

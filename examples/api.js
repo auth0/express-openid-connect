@@ -1,15 +1,11 @@
 process.env.AUDIENCE = 'https://api.example.com/products';
 process.env.TOKEN_SIGNING_ALG = 'RS256';
 
-import express from 'express';
-import { auth, requiredScopes } from 'express-oauth2-jwt-bearer';
+const express = require('express');
+const { auth, requiredScopes } = require('express-oauth2-jwt-bearer');
 
 const app = express();
-app.use(
-  auth({
-    secret: false,
-  }),
-);
+app.use(auth({ secret: false }));
 
 app.get('/products', requiredScopes('read:products'), (req, res) => {
   res.json([
@@ -19,4 +15,4 @@ app.get('/products', requiredScopes('read:products'), (req, res) => {
   ]);
 });
 
-export default app;
+module.exports = app;

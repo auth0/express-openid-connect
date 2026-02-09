@@ -1,5 +1,5 @@
-import express from 'express';
-import { auth } from '../index.js';
+const express = require('express');
+const { auth } = require('../');
 
 const app = express();
 
@@ -7,7 +7,6 @@ app.use(
   auth({
     attemptSilentLogin: true,
     authRequired: false,
-    allowInsecureRequests: true,
   }),
 );
 
@@ -19,4 +18,4 @@ app.get('/', (req, res) => {
   }
 });
 
-export default app;
+module.exports = app;

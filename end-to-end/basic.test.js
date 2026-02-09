@@ -1,6 +1,7 @@
-import { assert } from 'chai';
-import provider from './fixture/oidc-provider.js';
-import {
+const { assert } = require('chai');
+const puppeteer = require('puppeteer');
+const provider = require('./fixture/oidc-provider');
+const {
   baseUrl,
   start,
   runExample,
@@ -9,9 +10,7 @@ import {
   goto,
   login,
   logout,
-  shouldSkipPuppeteerTest,
-  launchBrowser,
-} from './fixture/helpers.js';
+} = require('./fixture/helpers');
 
 describe('basic login and logout', async () => {
   let authServer;
@@ -19,8 +18,7 @@ describe('basic login and logout', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    const resolvedProvider = await provider;
-    authServer = await start(resolvedProvider, 3001);
+    authServer = await start(provider, 3001);
     appServer = await runExample('basic');
   });
 
@@ -30,12 +28,11 @@ describe('basic login and logout', async () => {
   });
 
   it('should login and logout with default configuration', async () => {
-    // Check if we should skip this test due to known environment issues
-    if (shouldSkipPuppeteerTest()) {
-      return;
-    }
-
-    const browser = await launchBrowser();
+    const browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(
@@ -49,7 +46,7 @@ describe('basic login and logout', async () => {
       `${baseUrl}/`,
       'User is returned to the original page',
     );
-    const loggedInCookies = await page.cookies(baseUrl);
+    const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
     const response = await checkContext(await page.cookies());
@@ -61,7 +58,7 @@ describe('basic login and logout', async () => {
     );
     await logout(page);
 
-    const loggedOutCookies = await page.cookies(baseUrl);
+    const loggedOutCookies = await page.cookies('http://localhost:3000');
     assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   });
 });

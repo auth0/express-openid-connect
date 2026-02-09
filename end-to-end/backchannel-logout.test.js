@@ -1,7 +1,8 @@
-import { assert } from 'chai';
-import request from 'request-promise-native';
-import provider from './fixture/oidc-provider.js';
-import {
+const { assert } = require('chai');
+const puppeteer = require('puppeteer');
+const request = require('request-promise-native');
+const provider = require('./fixture/oidc-provider');
+const {
   baseUrl,
   start,
   runExample,
@@ -9,9 +10,7 @@ import {
   checkContext,
   goto,
   login,
-  shouldSkipPuppeteerTest,
-  launchBrowser,
-} from './fixture/helpers.js';
+} = require('./fixture/helpers');
 
 describe('back-channel logout', async () => {
   let authServer;
@@ -20,27 +19,22 @@ describe('back-channel logout', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    const resolvedProvider = await provider;
-    authServer = await start(resolvedProvider, 3001);
+    authServer = await start(provider, 3001);
   });
 
   afterEach(async () => {
     authServer.close();
-    if (appServer) {
-      appServer.close();
-    }
-    if (browser) {
-      await browser.close();
-    }
+    appServer.close();
+    await browser.close();
   });
 
   const runTest = async (example) => {
-    if (shouldSkipPuppeteerTest()) {
-      return;
-    }
-
     appServer = await runExample(example);
-    browser = await launchBrowser();
+    browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
@@ -51,7 +45,7 @@ describe('back-channel logout', async () => {
       `${baseUrl}/`,
       'User is returned to the original page',
     );
-    const loggedInCookies = await page.cookies(baseUrl);
+    const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
 
     const response = await checkContext(await page.cookies());
@@ -63,7 +57,7 @@ describe('back-channel logout', async () => {
     const element = await page.$('pre');
     const curl = await page.evaluate((el) => el.textContent, element);
     const [, logoutToken] = curl.match(/logout_token=([^"]+)/);
-    const res = await request.post(`${baseUrl}/backchannel-logout`, {
+    const res = await request.post('http://localhost:3000/backchannel-logout', {
       form: {
         logout_token: logoutToken,
       },
@@ -72,7 +66,7 @@ describe('back-channel logout', async () => {
     assert.equal(res.statusCode, 204);
 
     await goto(baseUrl, page);
-    const loggedOutCookies = await page.cookies(baseUrl);
+    const loggedOutCookies = await page.cookies('http://localhost:3000');
     assert.notOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
   };
 
@@ -80,14 +74,14 @@ describe('back-channel logout', async () => {
     runTest('backchannel-logout'));
 
   it('should not logout sub via back-channel logout if user logs in after', async () => {
-    if (shouldSkipPuppeteerTest()) {
-      return;
-    }
-
     await runTest('backchannel-logout');
 
     await browser.close();
-    browser = await launchBrowser();
+    browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
     await goto(baseUrl, page);
     assert.match(page.url(), /http:\/\/localhost:300/);
@@ -99,7 +93,7 @@ describe('back-channel logout', async () => {
       'User is returned to the original page',
     );
 
-    const loggedInCookies = await page.cookies(baseUrl);
+    const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
     const response = await checkContext(await page.cookies());
     assert.isOk(response.isAuthenticated);

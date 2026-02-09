@@ -1,8 +1,6 @@
-import COOKIES from '../lib/cookies.js';
-import weakRef from '../lib/weakCache.js';
-import debug from '../lib/debug.js';
-
-const debugAttemptSilentLogin = debug('attemptSilentLogin');
+const debug = require('../lib/debug')('attemptSilentLogin');
+const COOKIES = require('../lib/cookies');
+const weakRef = require('../lib/weakCache');
 
 const COOKIE_NAME = 'skipSilentLogin';
 
@@ -40,7 +38,7 @@ const resumeSilentLogin = (req, res) => {
   });
 };
 
-export default function attemptSilentLogin() {
+module.exports = function attemptSilentLogin() {
   return (req, res, next) => {
     if (!req.oidc) {
       next(
@@ -58,12 +56,13 @@ export default function attemptSilentLogin() {
       !req.oidc.isAuthenticated() &&
       req.accepts('html')
     ) {
-      debugAttemptSilentLogin('Attempting silent login');
+      debug('Attempting silent login');
       cancelSilentLogin(req, res);
       return res.oidc.silentLogin();
     }
     next();
   };
-}
+};
 
-export { cancelSilentLogin, resumeSilentLogin };
+module.exports.cancelSilentLogin = cancelSilentLogin;
+module.exports.resumeSilentLogin = resumeSilentLogin;

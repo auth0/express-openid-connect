@@ -1,7 +1,8 @@
-import { assert } from 'chai';
-import sinon from 'sinon';
-import provider from './fixture/oidc-provider.js';
-import {
+const { assert } = require('chai');
+const sinon = require('sinon');
+const puppeteer = require('puppeteer');
+const provider = require('./fixture/oidc-provider');
+const {
   baseUrl,
   start,
   runExample,
@@ -10,9 +11,7 @@ import {
   checkContext,
   goto,
   login,
-  shouldSkipPuppeteerTest,
-  launchBrowser,
-} from './fixture/helpers.js';
+} = require('./fixture/helpers');
 
 describe('access an api', async () => {
   let authServer;
@@ -21,8 +20,7 @@ describe('access an api', async () => {
 
   beforeEach(async () => {
     stubEnv();
-    const resolvedProvider = await provider;
-    authServer = await start(resolvedProvider, 3001);
+    authServer = await start(provider, 3001);
     appServer = await runExample('access-an-api');
     apiServer = await runApi();
   });
@@ -34,11 +32,11 @@ describe('access an api', async () => {
   });
 
   it('should get an access token and access an api', async () => {
-    if (shouldSkipPuppeteerTest()) {
-      return;
-    }
-
-    const browser = await launchBrowser();
+    const browser = await puppeteer.launch({
+      args: puppeteer
+        .defaultArgs()
+        .concat(['--no-sandbox', '--disable-setuid-sandbox']),
+    });
     const page = await browser.newPage();
 
     const clock = sinon.useFakeTimers({

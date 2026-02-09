@@ -1,20 +1,19 @@
-import { promisify } from 'util';
-import crypto from 'crypto';
-import express from 'express';
-import { auth, requiresAuth } from '../index.js';
-import { logoutTokenTester } from '../end-to-end/fixture/helpers.js';
-import MemoryStore from 'memorystore';
+const { promisify } = require('util');
+const crypto = require('crypto');
+const express = require('express');
+const { auth, requiresAuth } = require('../');
+const { logoutTokenTester } = require('../end-to-end/fixture/helpers');
 
 // This custom implementation uses a sessions with an id that matches the
 // Identity Provider's session id "sid" (by using the "genid" config).
 // When the SDK receives a logout token, it can identify the session that needs
 // to be destroyed by the logout token's "sid".
 
-const MemorySessionStore = MemoryStore(auth);
+const MemoryStore = require('memorystore')(auth);
 
 const app = express();
 
-const store = new MemorySessionStore();
+const store = new MemoryStore();
 const destroy = promisify(store.destroy).bind(store);
 
 const onLogoutToken = async (token) => {
@@ -49,7 +48,6 @@ app.use(
         }
       },
     },
-    allowInsecureRequests: true,
   }),
 );
 
@@ -68,4 +66,4 @@ app.get(
   logoutTokenTester('backchannel-logout-client', true),
 );
 
-export default app;
+module.exports = app;

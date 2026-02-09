@@ -1,11 +1,11 @@
-import { assert } from 'chai';
-import { URL } from 'url';
-import { create as createServer } from './fixture/server.js';
-import { makeIdToken } from './fixture/cert.js';
-import { auth } from '../index.js';
+const nock = require('nock');
+const { assert } = require('chai');
+const { URL } = require('url');
+const { create: createServer } = require('./fixture/server');
+const { makeIdToken } = require('./fixture/cert');
+const { auth } = require('./..');
 
-import request from 'request-promise-native';
-const requestDefaults = request.defaults({
+const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
 });
@@ -19,31 +19,31 @@ const defaultConfig = {
 };
 
 const login = async (baseUrl = 'http://localhost:3000', idToken) => {
-  const jar = requestDefaults.jar();
-  await requestDefaults.post({
+  const jar = request.jar();
+  await request.post({
     uri: '/session',
     json: {
-      id_token: idToken || (await makeIdToken()),
+      id_token: idToken || makeIdToken(),
     },
     baseUrl,
     jar,
   });
 
   const session = (
-    await requestDefaults.get({ uri: '/session', baseUrl, jar, json: true })
+    await request.get({ uri: '/session', baseUrl, jar, json: true })
   ).body;
   return { jar, session };
 };
 
 const logout = async (jar, baseUrl = 'http://localhost:3000') => {
-  const response = await requestDefaults.get({
+  const response = await request.get({
     uri: '/logout',
     baseUrl,
     jar,
     followRedirect: false,
   });
   const session = (
-    await requestDefaults.get({ uri: '/session', baseUrl, jar, json: true })
+    await request.get({ uri: '/session', baseUrl, jar, json: true })
   ).body;
   return { response, session };
 };
@@ -87,7 +87,7 @@ describe('logout route', async () => {
       }),
     );
 
-    const idToken = await makeIdToken();
+    const idToken = makeIdToken();
     const { jar } = await login('http://localhost:3000', idToken);
     const { response, session: loggedOutSession } = await logout(jar);
     assert.notOk(loggedOutSession.id_token);
@@ -119,7 +119,7 @@ describe('logout route', async () => {
       response.headers,
       {
         location:
-          'https://test.eu.auth0.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
+          'https://op.example.com/v2/logout?returnTo=http%3A%2F%2Fexample.org&client_id=__test_client_id__',
       },
       'should redirect to the identity provider',
     );
@@ -370,55 +370,30 @@ describe('logout route', async () => {
   });
 
   it('should pass discovery errors to the express mw', async () => {
-    // Disable global mock discovery for this test
-    const originalMockDiscovery = global.__testMockDiscovery;
-    delete global.__testMockDiscovery;
+    nock('https://example.com')
+      .get('/.well-known/openid-configuration')
+      .reply(500);
+    nock('https://example.com')
+      .get('/.well-known/oauth-authorization-server')
+      .reply(500);
 
-    // Use undici MockAgent to mock the error response (works with native fetch in Node 20+)
-    const { MockAgent, setGlobalDispatcher, getGlobalDispatcher } =
-      await import('undici');
-    const originalDispatcher = getGlobalDispatcher();
-    const mockAgent = new MockAgent();
-    mockAgent.disableNetConnect();
-    setGlobalDispatcher(mockAgent);
-
-    const pool = mockAgent.get('https://example.com');
-    pool
-      .intercept({ path: '/.well-known/openid-configuration', method: 'GET' })
-      .reply(500, 'Internal Server Error');
-    pool
-      .intercept({
-        path: '/.well-known/oauth-authorization-server',
-        method: 'GET',
-      })
-      .reply(500, 'Internal Server Error');
-
-    try {
-      server = await createServer(
-        auth({
-          ...defaultConfig,
-          issuerBaseURL: 'https://example.com',
-        }),
-      );
-      const res = await requestDefaults.get({
-        uri: '/logout',
-        baseUrl: 'http://localhost:3000',
-        followRedirect: false,
-        json: true,
-      });
-      assert.equal(res.statusCode, 500);
-      assert.match(
-        res.body.err.message,
-        /^(Issuer\.discover\(\) failed|fetch failed|Discovery failed|"response" is not conforming|unexpected HTTP response status code)/,
-        'Should get error json from server error middleware',
-      );
-    } finally {
-      // Restore global mock discovery and dispatcher
-      if (originalMockDiscovery) {
-        global.__testMockDiscovery = originalMockDiscovery;
-      }
-      setGlobalDispatcher(originalDispatcher);
-      await mockAgent.close();
-    }
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+      }),
+    );
+    const res = await request.get({
+      uri: '/logout',
+      baseUrl: 'http://localhost:3000',
+      followRedirect: false,
+      json: true,
+    });
+    assert.equal(res.statusCode, 500);
+    assert.match(
+      res.body.err.message,
+      /^Issuer.discover\(\) failed/,
+      'Should get error json from server error middleware',
+    );
   });
 });
