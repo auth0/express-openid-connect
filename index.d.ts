@@ -2,14 +2,45 @@
 
 import type { Agent as HttpAgent } from 'http';
 import type { Agent as HttpsAgent } from 'https';
-import {
-  AuthorizationParameters,
-  IdTokenClaims,
-  UserinfoResponse,
-} from 'openid-client';
+import type { IDToken, UserInfoResponse } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import type { JSONWebKey, KeyInput } from 'jose';
+import type { JWK, CryptoKey as JoseCryptoKey } from 'jose';
 import type { KeyObject } from 'crypto';
+
+/**
+ * Authorization parameters for OpenID Connect requests.
+ */
+interface AuthorizationParameters {
+  acr_values?: string;
+  audience?: string;
+  claims?: string | object;
+  claims_locales?: string;
+  client_id?: string;
+  code_challenge_method?: string;
+  code_challenge?: string;
+  display?: string;
+  id_token_hint?: string;
+  login_hint?: string;
+  max_age?: number;
+  nonce?: string;
+  prompt?: string;
+  redirect_uri?: string;
+  registration?: string;
+  request_uri?: string;
+  request?: string;
+  resource?: string | string[];
+  response_mode?: string;
+  response_type?: string;
+  scope?: string;
+  state?: string;
+  ui_locales?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * ID Token claims
+ */
+type IdTokenClaims = IDToken;
 
 /**
  * Session object
@@ -133,7 +164,7 @@ interface RequestContext {
    * ```
    *
    */
-  fetchUserInfo(): Promise<UserinfoResponse>;
+  fetchUserInfo(): Promise<UserInfoResponse>;
 }
 
 /**
@@ -634,7 +665,12 @@ interface ConfigParams {
    * }))
    * ```
    */
-  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
+  clientAssertionSigningKey?:
+    | KeyObject
+    | JoseCryptoKey
+    | JWK
+    | string
+    | Uint8Array;
 
   /**
    * The algorithm to sign the client assertion JWT.
