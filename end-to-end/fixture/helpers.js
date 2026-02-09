@@ -2,7 +2,7 @@ const path = require('path');
 const crypto = require('crypto');
 const sinon = require('sinon');
 const express = require('express');
-const { JWT } = require('jose');
+const jose = require('jose');
 const { privateJWK } = require('./jwk');
 const request = require('request-promise-native').defaults({ json: true });
 
@@ -93,24 +93,24 @@ const logout = async (page) => {
 };
 
 const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
-  const logoutToken = JWT.sign(
-    {
-      events: {
-        'http://schemas.openid.net/event/backchannel-logout': {},
-      },
-      ...(sid && { sid: req.oidc.user.sid }),
-      ...(sub && { sub: req.oidc.user.sub }),
+  // Create private key from JWK for signing
+  const privateKey = await jose.importJWK(privateJWK, 'RS256');
+
+  const claims = {
+    events: {
+      'http://schemas.openid.net/event/backchannel-logout': {},
     },
-    privateJWK,
-    {
-      issuer: `http://localhost:${process.env.PROVIDER_PORT || 3001}`,
-      audience: clientId,
-      iat: true,
-      jti: crypto.randomBytes(16).toString('hex'),
-      algorithm: 'RS256',
-      header: { typ: 'logout+jwt' },
-    },
-  );
+    ...(sid && { sid: req.oidc.user.sid }),
+    ...(sub && { sub: req.oidc.user.sub }),
+  };
+
+  const logoutToken = await new jose.SignJWT(claims)
+    .setProtectedHeader({ alg: 'RS256', typ: 'logout+jwt' })
+    .setIssuer(`http://localhost:${process.env.PROVIDER_PORT || 3001}`)
+    .setAudience(clientId)
+    .setIssuedAt()
+    .setJti(crypto.randomBytes(16).toString('hex'))
+    .sign(privateKey);
 
   res.send(`
     <pre style="border: 1px solid #ccc; padding: 10px; white-space: break-spaces; background: whitesmoke;">curl -X POST http://localhost:3000/backchannel-logout -d "logout_token=${logoutToken}"</pre>

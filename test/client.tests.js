@@ -1,5 +1,5 @@
 const { Agent } = require('https');
-const client = require('openid-client6');
+const client = require('openid-client');
 const fs = require('fs');
 const { assert, expect } = require('chai').use(require('chai-as-promised'));
 const { get: getConfig } = require('../lib/config');

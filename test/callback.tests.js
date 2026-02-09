@@ -1,6 +1,6 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
-const jose = require('jose6');
+const jose = require('jose');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,

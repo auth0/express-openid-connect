@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 const sinon = require('sinon');
-const { FlattenedSign } = require('jose6');
+const { FlattenedSign } = require('jose');
 
 const COOKIES = require('../lib/cookies');
 const TransientCookieHandler = require('../lib/transientHandler');

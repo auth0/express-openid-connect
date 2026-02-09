@@ -34,11 +34,9 @@
     "futoin-hkdf": "^1.5.3",
     "http-errors": "^1.8.1",
     "joi": "^17.13.3",
-    "jose": "^2.0.7",
-    "jose6": "npm:jose@^5.9.6",
+    "jose": "^6.1.3",
     "on-headers": "^1.1.0",
-    "openid-client": "^4.9.1",
-    "openid-client6": "npm:openid-client@^6.1.3",
+    "openid-client": "^6.1.3",
     "url-join": "^4.0.1",
     "util-promisify": "3.0.0"
   },
@@ -75,7 +73,7 @@
     "express": ">= 4.17.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^20.19.0 || ^22.12.0 || >= 23.0.0"
   },
   "husky": {
     "hooks": {

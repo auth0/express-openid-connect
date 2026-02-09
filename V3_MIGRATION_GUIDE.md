@@ -6,10 +6,9 @@
 
 ---
 
-## TL;DR
-
 **Public API:** No breaking changes - all configuration, middleware, and context APIs work exactly the same  
- **Node.js Version:** Now requires Node.js 20.0.0 or higher (previously Node.js 14+)
+**Node.js Version:** Now requires `^20.19.0 || ^22.12.0 || >= 23.0.0` (previously Node.js 14+)  
+**Module Support:** Works with BOTH CommonJS and ESM apps
 
 ---
 
@@ -17,20 +16,38 @@
 
 ### Node.js Version Requirement
 
-**The only breaking change is the minimum Node.js version requirement.**
+**The only breaking change is the specific Node.js version requirement.**
 
-| Version | Minimum Node.js | Status  |
-| ------- | --------------- | ------- |
-| v2.x    | Node.js 14+     | Old     |
-| v3.x    | Node.js 20+     | **New** |
+| Version | Minimum Node.js                         | Status  |
+| ------- | --------------------------------------- | ------- |
+| v2.x    | Node.js 14+                             | Old     |
+| v3.x    | `^20.19.0 \|\| ^22.12.0 \|\| >= 23.0.0` | **New** |
 
-#### Why Node.js 20+?
+#### Why These Specific Versions?
 
-The updated dependencies (`openid-client` v6 and `jose` v6) require:
+The updated dependencies (`openid-client` v6 and `jose` v6) are **ESM-only packages**.
 
-- **Native Fetch API** - Built-in `fetch()` support (stable in Node.js 20+)
-- **ES2022+ Features** - Modern JavaScript features for better performance
-- **Security** - Latest security patches and cryptographic standards
+Node.js added `require(ESM)` support in:
+
+- **v20.19.0** (backported to v20.x LTS)
+- **v22.12.0** (backported to v22.x LTS)
+- **v23.0.0+** (included by default)
+
+There is **no workaround** - you must upgrade to a supported Node.js version.
+
+#### Module System Support
+
+**Works with BOTH CommonJS and ESM apps** - same Node.js requirements for both:
+
+```javascript
+// CommonJS - Works on supported Node.js versions
+const { auth } = require('express-openid-connect');
+
+// ESM - Works on supported Node.js versions
+import { auth } from 'express-openid-connect';
+```
+
+**Note:** ESM apps need `"type": "module"` in `package.json` but have identical Node.js version requirements as CommonJS apps.
 
 ### Configuration
 
@@ -160,19 +177,18 @@ const config = {
 
 ---
 
-## Migration Steps
-
-### For Applications on Node.js 20+
-
-**You're ready to upgrade! No code changes needed.**
+### Step 1: Check Your Node.js Version
 
 ```bash
-# Update to v3.x
-npm install express-openid-connect@^3.0.0
-
-# Or with yarn
-yarn add express-openid-connect@^3.0.0
-
-# Run your tests to verify
-npm test
+node --version
 ```
+
+**Required:** `v20.19.0+`, `v22.12.0+`, or `v23.0.0+`
+
+If your version is older:
+
+- **v20.0.0 - v20.18.0** → Upgrade to v20.19.0+
+- **v22.0.0 - v22.11.0** → Upgrade to v22.12.0+
+- **v18.x or earlier** → Upgrade to v22.12.0+ (recommended LTS)
+
+### Step 2: Upgrade express-openid-connect
