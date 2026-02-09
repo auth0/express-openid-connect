@@ -177,8 +177,6 @@ const config = {
 
 ---
 
-### Step 1: Check Your Node.js Version
-
 ```bash
 node --version
 ```
@@ -190,5 +188,3 @@ If your version is older:
 - **v20.0.0 - v20.18.0** → Upgrade to v20.19.0+
 - **v22.0.0 - v22.11.0** → Upgrade to v22.12.0+
 - **v18.x or earlier** → Upgrade to v22.12.0+ (recommended LTS)
-
-### Step 2: Upgrade express-openid-connect
