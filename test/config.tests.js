@@ -75,6 +75,94 @@ describe('get config', () => {
     );
   });
 
+  // MCD Multiple Issuer Configuration
+  describe('issuerBaseURL as function (MCD support)', () => {
+    it('should accept a function issuerBaseURL', () => {
+      const resolverFn = async () => {
+        return 'https://tenant.auth0.com';
+      };
+
+      const config = getConfig({
+        issuerBaseURL: resolverFn,
+        baseURL: 'https://example.com',
+        clientID: 'test-client-id',
+        secret: 'long-random-secret-value',
+      });
+
+      assert.equal(typeof config.issuerBaseURL, 'function');
+      assert.equal(config.issuerBaseURL, resolverFn);
+    });
+
+    it('should accept a sync function issuerBaseURL', () => {
+      const resolverFn = () => {
+        return 'https://tenant.auth0.com';
+      };
+
+      const config = getConfig({
+        issuerBaseURL: resolverFn,
+        baseURL: 'https://example.com',
+        clientID: 'test-client-id',
+        secret: 'long-random-secret-value',
+      });
+
+      assert.equal(typeof config.issuerBaseURL, 'function');
+      assert.equal(config.issuerBaseURL, resolverFn);
+    });
+
+    it('should reject functions with more than 1 parameter', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            // eslint-disable-next-line no-unused-vars
+            issuerBaseURL: (context, extra) => 'https://tenant.auth0.com',
+            baseURL: 'https://example.com',
+            clientID: 'test-client-id',
+            secret: 'long-random-secret-value',
+          }),
+        '"issuerBaseURL" must have an arity lesser or equal to 1',
+      );
+    });
+
+    it('should reject null issuerBaseURL', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            issuerBaseURL: null,
+            baseURL: 'https://example.com',
+            clientID: 'test-client-id',
+            secret: 'long-random-secret-value',
+          }),
+        '"issuerBaseURL" must be a string URI or a function that returns a string URI',
+      );
+    });
+
+    it('should reject arrays', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            issuerBaseURL: ['https://tenant.auth0.com'],
+            baseURL: 'https://example.com',
+            clientID: 'test-client-id',
+            secret: 'long-random-secret-value',
+          }),
+        '"issuerBaseURL" must be a string URI or a function that returns a string URI',
+      );
+    });
+
+    it('should reject objects', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            issuerBaseURL: { url: 'https://tenant.auth0.com' },
+            baseURL: 'https://example.com',
+            clientID: 'test-client-id',
+            secret: 'long-random-secret-value',
+          }),
+        '"issuerBaseURL" must be a string URI or a function that returns a string URI',
+      );
+    });
+  });
+
   it('should set idpLogout to true when auth0Logout is true', () => {
     const config = getConfig({
       ...defaultConfig,

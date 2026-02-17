@@ -2,6 +2,7 @@ const assert = require('chai').assert;
 const url = require('url');
 const querystring = require('querystring');
 const nock = require('nock');
+const sinon = require('sinon');
 const request = require('request-promise-native').defaults({
   simple: false,
   resolveWithFullResponse: true,
@@ -11,6 +12,9 @@ const { decodeState } = require('../lib/hooks/getLoginState');
 
 const { auth } = require('..');
 const { create: createServer } = require('./fixture/server');
+const { resetIssuerManager } = require('../lib/issuerManager');
+const wellKnown = require('./fixture/well-known.json');
+const certs = require('./fixture/cert');
 
 const filterRoute = (method, path) => {
   return (r) =>
@@ -34,12 +38,30 @@ const fetchFromAuthCookie = (res, cookieName, txnCookieName) => {
   }
 
   const decodedAuthCookie = querystring.decode(authCookie);
-  const cookieValuePart = decodedAuthCookie[txnCookieName]
-    .split('; ')[0]
-    .split('.')[0];
+  const cookieWithAttributes = decodedAuthCookie[txnCookieName].split('; ')[0];
+  // The cookie format is: JSON_VALUE.SIGNATURE
+  // Use lastIndexOf to find the signature separator since JSON value may contain dots (e.g., in URLs)
+  const lastDotIndex = cookieWithAttributes.lastIndexOf('.');
+  const cookieValuePart = cookieWithAttributes.substring(0, lastDotIndex);
   const authCookieParsed = JSON.parse(cookieValuePart);
 
   return authCookieParsed[cookieName];
+};
+
+// Helper to parse entire auth cookie object (used for MCD tests)
+const parseAuthCookie = (res, txnCookieName) => {
+  txnCookieName = txnCookieName || 'auth_verification';
+  const authCookie = fetchAuthCookie(res, txnCookieName);
+
+  if (!authCookie) {
+    return null;
+  }
+
+  const decodedAuthCookie = querystring.decode(authCookie);
+  const cookieWithAttributes = decodedAuthCookie[txnCookieName].split('; ')[0];
+  const lastDotIndex = cookieWithAttributes.lastIndexOf('.');
+  const cookieValuePart = cookieWithAttributes.substring(0, lastDotIndex);
+  return JSON.parse(cookieValuePart);
 };
 
 const defaultConfig = {
@@ -600,5 +622,332 @@ describe('auth', () => {
       /^Issuer.discover\(\) failed/,
       'Should get error json from server error middleware',
     );
+  });
+});
+
+describe('auth - MCD (Multiple Custom Domains)', () => {
+  let server;
+  const baseUrl = 'http://localhost:3000';
+
+  beforeEach(() => {
+    // Mock OIDC discovery for various tenant issuers used in MCD tests
+    const tenants = [
+      'tenant',
+      'tenant-a',
+      'tenant-b',
+      'default',
+      'sync-tenant',
+      'context-test',
+      'cached-tenant',
+      'test-tenant',
+    ];
+
+    tenants.forEach((tenant) => {
+      nock(`https://${tenant}.auth0.com`)
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: `https://${tenant}.auth0.com`,
+          authorization_endpoint: `https://${tenant}.auth0.com/authorize`,
+          token_endpoint: `https://${tenant}.auth0.com/oauth/token`,
+          userinfo_endpoint: `https://${tenant}.auth0.com/userinfo`,
+        });
+
+      nock(`https://${tenant}.auth0.com`)
+        .persist()
+        .get('/.well-known/jwks.json')
+        .reply(200, certs.jwks);
+    });
+  });
+
+  afterEach(async () => {
+    if (server) {
+      server.close();
+    }
+    nock.cleanAll();
+    resetIssuerManager();
+  });
+
+  describe('Dynamic issuer resolution', () => {
+    it('should resolve issuer from function and store origin_issuer', async () => {
+      const issuerResolverFn = sinon
+        .stub()
+        .resolves('https://tenant-a.auth0.com');
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+        headers: {
+          host: 'tenant-a.example.org',
+        },
+      });
+
+      assert.equal(res.statusCode, 302);
+
+      // Verify resolver was called
+      assert.ok(issuerResolverFn.calledOnce);
+      const callContext = issuerResolverFn.firstCall.args[0];
+      assert.ok(callContext.req);
+
+      // Verify redirect to correct issuer
+      const parsed = url.parse(res.headers.location, true);
+      assert.equal(parsed.hostname, 'tenant-a.auth0.com');
+      assert.equal(parsed.pathname, '/authorize');
+
+      // Verify origin_issuer is stored in transaction cookie
+      const authCookieData = parseAuthCookie(res);
+      assert.ok(authCookieData);
+      assert.equal(authCookieData.origin_issuer, 'https://tenant-a.auth0.com');
+      assert.property(authCookieData, 'nonce');
+      assert.property(authCookieData, 'state');
+    });
+
+    it('should resolve different issuers for different requests', async () => {
+      const issuerResolverFn = async (context) => {
+        const hostname = context.req.headers.host || context.req.hostname;
+        if (hostname.includes('tenant-a')) {
+          return 'https://tenant-a.auth0.com';
+        } else if (hostname.includes('tenant-b')) {
+          return 'https://tenant-b.auth0.com';
+        }
+        return 'https://default.auth0.com';
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+
+      // Request 1: tenant-a
+      const res1 = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+        headers: {
+          host: 'tenant-a.example.org',
+        },
+      });
+
+      const parsed1 = url.parse(res1.headers.location, true);
+      assert.equal(parsed1.hostname, 'tenant-a.auth0.com');
+
+      const authCookie1 = parseAuthCookie(res1);
+      assert.equal(authCookie1.origin_issuer, 'https://tenant-a.auth0.com');
+
+      // Request 2: tenant-b
+      const res2 = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+        headers: {
+          host: 'tenant-b.example.org',
+        },
+      });
+
+      const parsed2 = url.parse(res2.headers.location, true);
+      assert.equal(parsed2.hostname, 'tenant-b.auth0.com');
+
+      const authCookie2 = parseAuthCookie(res2);
+      assert.equal(authCookie2.origin_issuer, 'https://tenant-b.auth0.com');
+    });
+
+    it('should handle sync issuer resolver functions', async () => {
+      const issuerResolverFn = () => 'https://sync-tenant.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+      assert.equal(parsed.hostname, 'sync-tenant.auth0.com');
+
+      const authCookieData = parseAuthCookie(res);
+      assert.equal(
+        authCookieData.origin_issuer,
+        'https://sync-tenant.auth0.com',
+      );
+    });
+
+    it('should pass correct context to resolver function', async () => {
+      const issuerResolverFn = sinon
+        .stub()
+        .resolves('https://context-test.auth0.com');
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+      const res = await request.get('/login?foo=bar', {
+        baseUrl,
+        followRedirect: false,
+        headers: {
+          host: 'custom-host.example.org',
+          'x-custom-header': 'test-value',
+        },
+      });
+
+      assert.equal(res.statusCode, 302);
+
+      // Verify context structure
+      assert.ok(issuerResolverFn.calledOnce);
+      const context = issuerResolverFn.firstCall.args[0];
+
+      assert.ok(context.req, 'context should have req');
+
+      // Verify request headers are accessible
+      assert.equal(context.req.headers['x-custom-header'], 'test-value');
+      assert.equal(context.req.headers.host, 'custom-host.example.org');
+
+      // Verify URL info is accessible from req
+      assert.include(context.req.originalUrl || context.req.url, '/login');
+    });
+
+    it('should handle resolver errors gracefully', async () => {
+      const issuerResolverFn = async () => {
+        throw new Error('Database connection failed');
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+
+      // Should return error response
+      assert.equal(res.statusCode, 500);
+      assert.include(res.body, 'Failed to resolve issuer');
+    });
+
+    it('should cache issuer clients per issuer URL', async () => {
+      let callCount = 0;
+      const issuerResolverFn = async () => {
+        callCount++;
+        return 'https://cached-tenant.auth0.com';
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+
+      // First request
+      const res1 = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+      assert.equal(res1.statusCode, 302);
+
+      // Second request - should use cached client
+      const res2 = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+      assert.equal(res2.statusCode, 302);
+
+      // Resolver should be called twice (once per request)
+      // But OIDC discovery should be cached
+      assert.equal(callCount, 2);
+    });
+  });
+
+  describe('Transaction state with origin_issuer', () => {
+    it('should include origin_issuer in authVerification for static issuer', async () => {
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: 'https://tenant.auth0.com',
+        authRequired: false,
+      };
+
+      server = await createServer(auth(config));
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+
+      const authCookieData = parseAuthCookie(res);
+      assert.ok(authCookieData);
+      assert.equal(authCookieData.origin_issuer, 'https://tenant.auth0.com');
+    });
+
+    it('should include all required fields in authVerification for code flow', async () => {
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'https://example.org',
+        issuerBaseURL: () => 'https://test-tenant.auth0.com',
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          scope: 'openid profile email',
+        },
+        clientSecret: '__test_client_secret__',
+      };
+
+      server = await createServer(auth(config));
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+
+      const authCookieData = parseAuthCookie(res);
+      assert.ok(authCookieData);
+
+      // Verify standard fields
+      assert.property(authCookieData, 'nonce');
+      assert.property(authCookieData, 'state');
+      assert.property(authCookieData, 'code_verifier'); // PKCE for code flow
+
+      // Verify MCD field
+      assert.property(authCookieData, 'origin_issuer');
+      assert.equal(
+        authCookieData.origin_issuer,
+        'https://test-tenant.auth0.com',
+      );
+    });
   });
 });

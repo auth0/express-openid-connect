@@ -11,6 +11,7 @@
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
 11. [Back-Channel Logout](#11-back-channel-logout)
+12. [Multiple Custom Domains (MCD)](#12-multiple-custom-domains-mcd)
 
 ## 1. Basic setup
 
@@ -56,7 +57,7 @@ const { auth, requiresAuth } = require('express-openid-connect');
 app.use(
   auth({
     authRequired: false,
-  })
+  }),
 );
 
 // Anyone can access the homepage
@@ -66,7 +67,7 @@ app.get('/', (req, res) => {
 
 // requiresAuth checks authentication.
 app.get('/admin', requiresAuth(), (req, res) =>
-  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
+  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`),
 );
 ```
 
@@ -90,7 +91,7 @@ app.use(
       // Override the default callback route to use your own callback route as shown below
       callback: false,
     },
-  })
+  }),
 );
 
 app.get('/login', (req, res) =>
@@ -99,7 +100,7 @@ app.get('/login', (req, res) =>
     authorizationParams: {
       redirect_uri: 'http://localhost:3000/callback',
     },
-  })
+  }),
 );
 
 app.get('/custom-logout', (req, res) => res.send('Bye!'));
@@ -107,13 +108,13 @@ app.get('/custom-logout', (req, res) => res.send('Bye!'));
 app.get('/callback', (req, res) =>
   res.oidc.callback({
     redirectUri: 'http://localhost:3000/callback',
-  })
+  }),
 );
 
 app.post('/callback', express.urlencoded({ extended: false }), (req, res) =>
   res.oidc.callback({
     redirectUri: 'http://localhost:3000/callback',
-  })
+  }),
 );
 
 module.exports = app;
@@ -135,7 +136,7 @@ app.use(
       audience: 'https://api.example.com/products',
       scope: 'openid profile email read:products',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -163,7 +164,7 @@ app.use(
       audience: 'https://api.example.com/products',
       scope: 'openid profile email offline_access read:products',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -212,12 +213,12 @@ const {
 app.use(
   auth({
     authRequired: false,
-  })
+  }),
 );
 
 // claimEquals checks if a claim equals the given value
 app.get('/admin', claimEquals('isAdmin', true), (req, res) =>
-  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
+  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`),
 );
 
 // claimIncludes checks if a claim includes all the given values
@@ -225,7 +226,7 @@ app.get(
   '/sales-managers',
   claimIncludes('roles', 'sales', 'manager'),
   (req, res) =>
-    res.send(`Hello ${req.oidc.user.sub}, this is the sales managers section.`)
+    res.send(`Hello ${req.oidc.user.sub}, this is the sales managers section.`),
 );
 
 // claimCheck takes a function that checks the claims and returns true to allow access
@@ -233,7 +234,7 @@ app.get(
   '/payroll',
   claimCheck(({ isAdmin, roles }) => isAdmin || roles.includes('payroll')),
   (req, res) =>
-    res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`)
+    res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`),
 );
 ```
 
@@ -248,7 +249,7 @@ app.use(
   auth({
     idpLogout: true,
     // auth0Logout: true // if using custom domain with Auth0
-  })
+  }),
 );
 ```
 
@@ -266,7 +267,7 @@ app.use(
       }
       return session;
     },
-  })
+  }),
 );
 ```
 
@@ -295,7 +296,7 @@ app.use(
     session: {
       store: new RedisStore({ client: redisClient }),
     },
-  })
+  }),
 );
 ```
 
@@ -321,7 +322,7 @@ app.use(
     backchannelLogout: {
       store: new RedisStore({ client: redisClient }),
     },
-  })
+  }),
 );
 ```
 
@@ -335,7 +336,7 @@ app.use(
       store: new RedisStore({ client: redisClient }),
     },
     backchannelLogout: true,
-  })
+  }),
 );
 ```
 
@@ -347,3 +348,43 @@ app.use(
 - If the user logs in again, the SDK will remove any stale `sub` entry in the Back-Channel Logout store to ensure they are not logged out immediately (this is customisable using the [onLogin](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogin) config hook)
 
 The config options are [documented here](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html)
+
+## 12. Multiple Custom Domains (MCD)
+
+If your application needs to support multiple Auth0 tenants or custom domains, you can configure `issuerBaseURL` as a function that dynamically resolves the issuer based on the request context.
+
+```js
+const { auth } = require('express-openid-connect');
+
+// Simulated tenant configuration (in production, fetch from database)
+const tenantConfig = {
+  'tenant-a': { issuerBaseURL: 'https://tenant-a.us.auth0.com' },
+  'tenant-b': { issuerBaseURL: 'https://tenant-b.eu.auth0.com' },
+  default: { issuerBaseURL: 'https://default.auth0.com' },
+};
+
+app.use(
+  auth({
+    // Dynamic issuer resolution based on request
+    issuerBaseURL: async (context) => {
+      const { req } = context;
+
+      // Resolve tenant from hostname, query param, header, etc.
+      const tenantId = req.hostname.split('.')[0]; // e.g., 'tenant-a' from 'tenant-a.yourapp.com'
+      // Or: const tenantId = req.query.tenant;
+      // Or: const tenantId = req.headers['x-tenant-id'];
+
+      const tenant = tenantConfig[tenantId] || tenantConfig['default'];
+      return tenant.issuerBaseURL;
+    },
+  }),
+);
+```
+
+### How MCD Works
+
+1. **Login**: The resolver function determines which issuer to redirect to for authentication
+2. **Callback**: The SDK validates the issuer matches what was stored in the transaction cookie (`origin_issuer`)
+3. **Session**: After successful authentication, `session.issuer` stores the issuer URL
+4. **Token Refresh**: Uses `session.issuer` to call the correct token endpoint
+5. **Logout**: Uses `session.issuer` to redirect to the correct IDP's logout endpoint
