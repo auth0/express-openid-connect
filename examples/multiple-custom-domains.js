@@ -14,6 +14,7 @@
 const express = require('express');
 const { auth } = require('../');
 const RateLimit = require('express-rate-limit');
+const escapeHtml = require('escape-html');
 
 const app = express();
 
@@ -51,7 +52,7 @@ app.get('/', limiter, (req, res) => {
   const tenant = tenantConfig[requestedTenant] ? requestedTenant : 'default';
 
   if (req.oidc.isAuthenticated()) {
-    res.send(`Hello ${req.oidc.user.sub} (tenant: ${tenant})`);
+    res.send(`Hello ${escapeHtml(req.oidc.user.sub)} (tenant: ${tenant})`);
   } else {
     res.send(
       `<a href="/login?tenant=tenant-a">Login as tenant-a</a> | ` +
