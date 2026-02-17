@@ -13,8 +13,15 @@
 
 const express = require('express');
 const { auth } = require('../');
+const RateLimit = require('express-rate-limit');
 
 const app = express();
+
+// Rate limiter to prevent brute-force attacks on auth endpoints
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 // Simulated tenant configuration - keys are the only valid tenant values
 const tenantConfig = {
@@ -38,7 +45,7 @@ app.use(
   }),
 );
 
-app.get('/', (req, res) => {
+app.get('/', limiter, (req, res) => {
   // Validate tenant against known keys to prevent XSS
   const requestedTenant = req.query.tenant || 'default';
   const tenant = tenantConfig[requestedTenant] ? requestedTenant : 'default';

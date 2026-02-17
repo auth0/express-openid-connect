@@ -50,6 +50,7 @@
     "eslint": "^9.31.0",
     "express": "^4.21.2",
     "express-oauth2-jwt-bearer": "^1.6.1",
+    "express-rate-limit": "8.2.1",
     "husky": "^4.3.8",
     "lodash": "^4.17.21",
     "memorystore": "^1.6.7",
