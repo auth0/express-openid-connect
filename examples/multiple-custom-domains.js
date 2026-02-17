@@ -16,7 +16,7 @@ const { auth } = require('../');
 
 const app = express();
 
-// Simulated tenant configuration
+// Simulated tenant configuration - keys are the only valid tenant values
 const tenantConfig = {
   'tenant-a': process.env.TENANT_A_ISSUER || process.env.ISSUER_BASE_URL,
   'tenant-b': process.env.TENANT_B_ISSUER || process.env.ISSUER_BASE_URL,
@@ -39,14 +39,16 @@ app.use(
 );
 
 app.get('/', (req, res) => {
-  const tenant = req.query.tenant || 'default';
+  // Validate tenant against known keys to prevent XSS
+  const requestedTenant = req.query.tenant || 'default';
+  const tenant = tenantConfig[requestedTenant] ? requestedTenant : 'default';
+
   if (req.oidc.isAuthenticated()) {
-    res.send(
-      `Hello ${req.oidc.user.sub} (tenant: ${tenant}, session issuer: ${req.appSession.issuer})`,
-    );
+    res.send(`Hello ${req.oidc.user.sub} (tenant: ${tenant})`);
   } else {
     res.send(
-      `<a href="/login?tenant=${tenant}">Login with tenant: ${tenant}</a>`,
+      `<a href="/login?tenant=tenant-a">Login as tenant-a</a> | ` +
+        `<a href="/login?tenant=tenant-b">Login as tenant-b</a>`,
     );
   }
 });
