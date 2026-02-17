@@ -52,7 +52,9 @@ app.get('/', limiter, (req, res) => {
   const tenant = tenantConfig[requestedTenant] ? requestedTenant : 'default';
 
   if (req.oidc.isAuthenticated()) {
-    res.send(`Hello ${escapeHtml(req.oidc.user.sub)} (tenant: ${tenant})`);
+    res.send(
+      `Hello ${escapeHtml(req.oidc.user.sub)} (tenant: ${escapeHtml(tenant)})`,
+    );
   } else {
     res.send(
       `<a href="/login?tenant=tenant-a">Login as tenant-a</a> | ` +
