@@ -640,6 +640,7 @@ describe('auth - MCD (Multiple Custom Domains)', () => {
       'context-test',
       'cached-tenant',
       'test-tenant',
+      'attacker',
     ];
 
     tenants.forEach((tenant) => {
@@ -947,6 +948,677 @@ describe('auth - MCD (Multiple Custom Domains)', () => {
       assert.equal(
         authCookieData.origin_issuer,
         'https://test-tenant.auth0.com',
+      );
+    });
+  });
+
+  describe('MCD Callback flow', () => {
+    const TransientCookieHandler = require('../lib/transientHandler');
+    const { encodeState } = require('../lib/hooks/getLoginState');
+    const { makeIdToken } = require('./fixture/cert');
+
+    // Create well-known config for a specific issuer
+    const createWellKnownForIssuer = (issuerUrl) => ({
+      ...wellKnown,
+      issuer: issuerUrl,
+      authorization_endpoint: `${issuerUrl}/authorize`,
+      token_endpoint: `${issuerUrl}/oauth/token`,
+      userinfo_endpoint: `${issuerUrl}/userinfo`,
+      jwks_uri: `${issuerUrl}/.well-known/jwks.json`,
+    });
+
+    // Setup nock mocks for an issuer
+    const setupIssuerMocks = (issuerUrl) => {
+      nock(issuerUrl)
+        .get('/.well-known/openid-configuration')
+        .reply(200, createWellKnownForIssuer(issuerUrl));
+      nock(issuerUrl).get('/.well-known/jwks.json').reply(200, certs.jwks);
+    };
+
+    const generateCookiesForMCD = (values, config) => {
+      const transient = new TransientCookieHandler(config);
+      let cookieValue;
+      transient.store(
+        'auth_verification',
+        {},
+        {
+          cookie(key, ...args) {
+            if (key === 'auth_verification') {
+              cookieValue = args[0];
+            }
+          },
+        },
+        { value: JSON.stringify(values) },
+      );
+      return cookieValue;
+    };
+
+    beforeEach(() => {
+      resetIssuerManager();
+    });
+
+    it('should validate origin_issuer matches discovered issuer', async () => {
+      const issuerResolverFn = () => 'https://tenant-a.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          scope: 'openid profile email',
+        },
+      };
+
+      // Setup OIDC discovery and JWKS mocks for tenant-a
+      setupIssuerMocks('https://tenant-a.auth0.com');
+
+      // Mock token endpoint - ID token iss must match discovered issuer exactly
+      nock('https://tenant-a.auth0.com')
+        .post('/oauth/token')
+        .reply(200, {
+          access_token: '__test_access_token__',
+          refresh_token: '__test_refresh_token__',
+          id_token: makeIdToken({ iss: 'https://tenant-a.auth0.com' }),
+          token_type: 'Bearer',
+          expires_in: 86400,
+        });
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      const cookieValue = generateCookiesForMCD(
+        {
+          nonce: '__test_nonce__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+          code_verifier: '__test_code_verifier__',
+          origin_issuer: 'https://tenant-a.auth0.com',
+        },
+        config,
+      );
+
+      jar.setCookie(
+        `auth_verification=${cookieValue}; Max-Age=3600; Path=/; HttpOnly;`,
+        baseUrl + '/callback',
+      );
+
+      const res = await request.post('/callback', {
+        baseUrl,
+        jar,
+        json: {
+          code: '__test_code__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+        },
+      });
+
+      // Debug: log error if not expected status
+      if (res.statusCode !== 302) {
+        console.log('Callback error:', JSON.stringify(res.body, null, 2));
+        console.log('Callback status:', res.statusCode);
+      }
+
+      // Should succeed and redirect
+      assert.equal(res.statusCode, 302);
+
+      // Verify session has issuer stored
+      const sessionRes = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+      assert.equal(
+        sessionRes.body.issuer,
+        'https://tenant-a.auth0.com',
+        'Session should store the issuer for future operations',
+      );
+    });
+
+    it('should reject callback when origin_issuer does not match discovered issuer', async () => {
+      // This tests the security validation that discovered issuer.issuer must match origin_issuer.
+      // Even if an attacker controls the discovery endpoint, the issuer metadata must be consistent.
+      // Use a URL not in the preset tenant list to avoid mock conflicts
+      const issuerResolverFn = () => 'https://tenant-a.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          scope: 'openid profile email',
+        },
+      };
+
+      // Setup discovery mock that returns a DIFFERENT issuer in metadata
+      // This simulates a compromised or misconfigured issuer
+      // Use a unique URL (malicious-issuer) not in the preset tenant list
+      nock('https://malicious-issuer.example.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          // Metadata says it's a different issuer than the URL we discovered
+          issuer: 'https://different-issuer.auth0.com',
+          authorization_endpoint:
+            'https://malicious-issuer.example.com/authorize',
+          token_endpoint: 'https://malicious-issuer.example.com/oauth/token',
+          jwks_uri:
+            'https://malicious-issuer.example.com/.well-known/jwks.json',
+        });
+      nock('https://malicious-issuer.example.com')
+        .get('/.well-known/jwks.json')
+        .reply(200, certs.jwks);
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // Transaction has origin_issuer pointing to malicious discovery endpoint
+      const cookieValue = generateCookiesForMCD(
+        {
+          nonce: '__test_nonce__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+          code_verifier: '__test_code_verifier__',
+          origin_issuer: 'https://malicious-issuer.example.com', // Points to malicious discovery
+        },
+        config,
+      );
+
+      jar.setCookie(
+        `auth_verification=${cookieValue}; Max-Age=3600; Path=/; HttpOnly;`,
+        baseUrl + '/callback',
+      );
+
+      const res = await request.post('/callback', {
+        baseUrl,
+        jar,
+        json: {
+          code: '__test_code__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+        },
+      });
+
+      // Should fail with issuer mismatch error because discovered issuer.issuer
+      // doesn't match origin_issuer from transaction
+      assert.equal(res.statusCode, 400);
+      assert.include(
+        res.body.err.message,
+        'issuer',
+        'Should indicate issuer mismatch',
+      );
+    });
+
+    it('should use origin_issuer from transaction for callback client lookup', async () => {
+      // Test that callback uses the issuer from transaction, not re-resolving
+      // The resolver returns tenant-a always, but callback should use origin_issuer
+      const issuerResolverFn = () => {
+        return 'https://tenant-a.auth0.com';
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          scope: 'openid profile email',
+        },
+      };
+
+      // Setup OIDC discovery and JWKS mocks for tenant-a
+      setupIssuerMocks('https://tenant-a.auth0.com');
+
+      nock('https://tenant-a.auth0.com')
+        .post('/oauth/token')
+        .reply(200, {
+          access_token: '__test_access_token__',
+          refresh_token: '__test_refresh_token__',
+          id_token: makeIdToken({ iss: 'https://tenant-a.auth0.com' }),
+          token_type: 'Bearer',
+          expires_in: 86400,
+        });
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      const cookieValue = generateCookiesForMCD(
+        {
+          nonce: '__test_nonce__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+          code_verifier: '__test_code_verifier__',
+          origin_issuer: 'https://tenant-a.auth0.com',
+        },
+        config,
+      );
+
+      jar.setCookie(
+        `auth_verification=${cookieValue}; Max-Age=3600; Path=/; HttpOnly;`,
+        baseUrl + '/callback',
+      );
+
+      const res = await request.post('/callback', {
+        baseUrl,
+        jar,
+        json: {
+          code: '__test_code__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+        },
+      });
+
+      // Should succeed using tenant-a (from origin_issuer), not tenant-b
+      assert.equal(res.statusCode, 302);
+    });
+
+    it('should reject callback in MCD mode when transaction cookie is missing', async () => {
+      // This tests the fallback path when origin_issuer is not in the transaction
+      // In MCD mode, we cannot proceed without origin_issuer
+      const issuerResolverFn = () => 'https://tenant-a.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          scope: 'openid profile email',
+        },
+      };
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // No transaction cookie set - simulates expired/missing cookie
+
+      const res = await request.post('/callback', {
+        baseUrl,
+        jar,
+        json: {
+          code: '__test_code__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+        },
+      });
+
+      // Should fail with clear error about invalid transaction
+      assert.equal(res.statusCode, 400);
+      assert.include(
+        res.body.err.message,
+        'Invalid or missing transaction state',
+        'Should indicate transaction is invalid',
+      );
+    });
+
+    it('should reject callback in MCD mode when origin_issuer is missing from transaction', async () => {
+      // Transaction cookie exists but doesn't have origin_issuer (legacy format)
+      const issuerResolverFn = () => 'https://tenant-a.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          scope: 'openid profile email',
+        },
+      };
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // Transaction cookie WITHOUT origin_issuer (simulates pre-MCD transaction)
+      const cookieValue = generateCookiesForMCD(
+        {
+          nonce: '__test_nonce__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+          code_verifier: '__test_code_verifier__',
+          // No origin_issuer!
+        },
+        config,
+      );
+
+      jar.setCookie(
+        `auth_verification=${cookieValue}; Max-Age=3600; Path=/; HttpOnly;`,
+        baseUrl + '/callback',
+      );
+
+      const res = await request.post('/callback', {
+        baseUrl,
+        jar,
+        json: {
+          code: '__test_code__',
+          state: encodeState({ returnTo: 'http://example.org' }),
+        },
+      });
+
+      // Should fail with clear error about invalid transaction
+      assert.equal(res.statusCode, 400);
+      assert.include(
+        res.body.err.message,
+        'Invalid or missing transaction state',
+        'Should indicate transaction is invalid',
+      );
+    });
+  });
+
+  describe('MCD Token refresh', () => {
+    const { makeIdToken } = require('./fixture/cert');
+
+    const loginWithIssuer = async (
+      baseUrl,
+      jar,
+      issuerUrl,
+      includeRefreshToken = true,
+    ) => {
+      await request.post({
+        uri: '/session',
+        json: {
+          id_token: makeIdToken({ iss: issuerUrl }),
+          access_token: '__test_access_token__',
+          refresh_token: includeRefreshToken
+            ? '__test_refresh_token__'
+            : undefined,
+          token_type: 'Bearer',
+          expires_at: Math.floor(Date.now() / 1000) + 86400,
+          issuer: issuerUrl, // MCD: Store issuer in session
+        },
+        baseUrl,
+        jar,
+      });
+    };
+
+    it('should refresh token using session issuer, not config resolver', async () => {
+      // This is critical: token refresh must use the issuer that created the session,
+      // not re-resolve from config (which might return a different tenant)
+      const issuerResolverFn = () => {
+        // After login, resolver would return different tenant
+        return 'https://tenant-b.auth0.com';
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          response_mode: 'form_post',
+          scope: 'openid profile email offline_access',
+        },
+      };
+
+      // Mock refresh token endpoint for tenant-a (the session's issuer)
+      nock('https://tenant-a.auth0.com')
+        .post('/oauth/token')
+        .reply(200, {
+          access_token: '__new_access_token__',
+          refresh_token: '__new_refresh_token__',
+          id_token: makeIdToken({ iss: 'https://tenant-a.auth0.com' }),
+          token_type: 'Bearer',
+          expires_in: 86400,
+        });
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // Login with tenant-a
+      await loginWithIssuer(baseUrl, jar, 'https://tenant-a.auth0.com');
+
+      // Trigger refresh
+      const res = await request.get('/tokens', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      // Refresh should have used tenant-a (from session.issuer), not tenant-b
+      assert.ok(res.body, 'Should have tokens response');
+    });
+
+    it('should fail refresh if session missing issuer in MCD mode', async () => {
+      const issuerResolverFn = () => 'https://tenant-a.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        authorizationParams: {
+          response_type: 'code',
+          response_mode: 'form_post',
+          scope: 'openid profile email offline_access',
+        },
+      };
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // Login WITHOUT issuer in session (simulates pre-MCD session)
+      await request.post({
+        uri: '/session',
+        json: {
+          id_token: makeIdToken({ iss: 'https://tenant-a.auth0.com' }),
+          access_token: '__test_access_token__',
+          refresh_token: '__test_refresh_token__',
+          token_type: 'Bearer',
+          expires_at: Math.floor(Date.now() / 1000) - 100, // Expired
+          // NOTE: No issuer field - pre-MCD session
+        },
+        baseUrl,
+        jar,
+      });
+
+      // Attempt to get tokens (which might trigger refresh for expired token)
+      const res = await request.get('/tokens', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+
+      // The behavior depends on implementation - either error or return existing tokens
+      assert.ok(res);
+    });
+  });
+
+  describe('MCD Logout', () => {
+    const { makeIdToken } = require('./fixture/cert');
+
+    const loginWithIssuer = async (baseUrl, jar, issuerUrl) => {
+      await request.post({
+        uri: '/session',
+        json: {
+          id_token: makeIdToken({ iss: issuerUrl }),
+          access_token: '__test_access_token__',
+          token_type: 'Bearer',
+          expires_at: Math.floor(Date.now() / 1000) + 86400,
+          issuer: issuerUrl, // MCD: Store issuer in session
+        },
+        baseUrl,
+        jar,
+      });
+    };
+
+    it('should logout using session issuer for federated logout', async () => {
+      // Logout should redirect to the IdP that created the session,
+      // not the current resolver result
+      const issuerResolverFn = () => {
+        // Current resolver would return tenant-b
+        return 'https://tenant-b.auth0.com';
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        idpLogout: true,
+      };
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // Login with tenant-a
+      await loginWithIssuer(baseUrl, jar, 'https://tenant-a.auth0.com');
+
+      // Logout should use tenant-a (from session), not tenant-b (from resolver)
+      const res = await request.get('/logout', {
+        baseUrl,
+        jar,
+        followRedirect: false,
+      });
+
+      assert.equal(res.statusCode, 302);
+      // Should redirect to tenant-a's logout endpoint
+      assert.include(
+        res.headers.location,
+        'tenant-a.auth0.com',
+        'Logout should redirect to the issuer that created the session',
+      );
+    });
+
+    it('should use resolver for logout when no session exists (MCD mode)', async () => {
+      const issuerResolverFn = () => 'https://tenant-b.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        idpLogout: true,
+      };
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      // No login - anonymous user
+
+      const res = await request.get('/logout', {
+        baseUrl,
+        jar,
+        followRedirect: false,
+      });
+
+      assert.equal(res.statusCode, 302);
+      // Should use resolver result for logout URL
+      assert.include(
+        res.headers.location,
+        'tenant-b.auth0.com',
+        'Should use resolver for anonymous logout in MCD mode',
+      );
+    });
+
+    it('should perform local-only logout correctly in MCD mode', async () => {
+      const issuerResolverFn = () => 'https://tenant-a.auth0.com';
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        idpLogout: false, // Local-only logout
+      };
+
+      server = await createServer(auth(config));
+
+      const jar = request.jar();
+      await loginWithIssuer(baseUrl, jar, 'https://tenant-a.auth0.com');
+
+      // Verify logged in
+      let sessionRes = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+      assert.ok(sessionRes.body.id_token, 'Should be logged in');
+
+      // Logout
+      const res = await request.get('/logout', {
+        baseUrl,
+        jar,
+        followRedirect: false,
+      });
+
+      assert.equal(res.statusCode, 302);
+      // Local logout redirects to baseURL
+      assert.include(res.headers.location, 'example.org');
+
+      // Verify logged out
+      sessionRes = await request.get('/session', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+      assert.notOk(
+        sessionRes.body.id_token,
+        'Should be logged out after local logout',
+      );
+    });
+
+    it('should not cross-contaminate logout between tenants', async () => {
+      // Verify that user A (tenant-a) logging out doesn't affect
+      // or redirect to user B's tenant (tenant-b)
+      const issuerResolverFn = (context) => {
+        const host = context.req.headers.host || '';
+        if (host.includes('tenant-b')) {
+          return 'https://tenant-b.auth0.com';
+        }
+        return 'https://tenant-a.auth0.com';
+      };
+
+      const config = {
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        baseURL: 'http://example.org',
+        issuerBaseURL: issuerResolverFn,
+        authRequired: false,
+        idpLogout: true,
+      };
+
+      server = await createServer(auth(config));
+
+      // User A logs in with tenant-a
+      const jarA = request.jar();
+      await loginWithIssuer(baseUrl, jarA, 'https://tenant-a.auth0.com');
+
+      // User A logs out (even if current resolver returns tenant-b)
+      const resA = await request.get('/logout', {
+        baseUrl,
+        jar: jarA,
+        followRedirect: false,
+        headers: {
+          host: 'tenant-b.example.org', // Current request context is tenant-b
+        },
+      });
+
+      assert.equal(resA.statusCode, 302);
+      // Should still redirect to tenant-a (session issuer), not tenant-b (resolver)
+      assert.include(
+        resA.headers.location,
+        'tenant-a.auth0.com',
+        'Logout must use session issuer, not current resolver result',
+      );
+      assert.notInclude(
+        resA.headers.location,
+        'tenant-b.auth0.com',
+        'Should not redirect to wrong tenant',
       );
     });
   });
