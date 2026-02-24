@@ -690,6 +690,34 @@ interface ConfigParams {
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
+
+  /**
+   * Use mTLS (Mutual TLS) to authenticate to the authorization server.
+   * When `true`, the SDK will use `mtls_endpoint_aliases` from the OIDC discovery document
+   * (where available) and set the default `clientAuthMethod` to `tls_client_auth`.
+   *
+   * You must provide an `httpAgent.https` configured with a TLS client certificate.
+   *
+   * ```js
+   * const https = require('https');
+   * const fs = require('fs');
+   *
+   * app.use(auth({
+   *   ...
+   *   useMtls: true,
+   *   httpAgent: {
+   *     https: new https.Agent({
+   *       cert: fs.readFileSync('client-cert.pem'),
+   *       key: fs.readFileSync('client-key.pem'),
+   *       ca: fs.readFileSync('ca.pem'),
+   *     }),
+   *   },
+   * }));
+   * ```
+   *
+   * Default is `false`.
+   */
+  useMtls?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {

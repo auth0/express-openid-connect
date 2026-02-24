@@ -516,4 +516,30 @@ describe('client initialization', function () {
       expect(spy.callCount).to.eq(1);
     });
   });
+
+  describe('client respects useMtls configuration', function () {
+    const baseConfig = {
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+    };
+
+    it('should set use_mtls_endpoint_aliases on the client when useMtls is true', async function () {
+      const config = getConfig({
+        ...baseConfig,
+        useMtls: true,
+        httpAgent: { https: {} },
+      });
+      const { client } = await getClient(config);
+      expect(client.use_mtls_endpoint_aliases).to.equal(true);
+    });
+
+    it('should not set use_mtls_endpoint_aliases on the client when useMtls is false', async function () {
+      const config = getConfig({ ...baseConfig });
+      const { client } = await getClient(config);
+      expect(client.use_mtls_endpoint_aliases).to.be.undefined;
+    });
+  });
 });

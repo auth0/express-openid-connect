@@ -896,4 +896,94 @@ describe('get config', () => {
       }),
     );
   });
+
+  describe('useMtls configuration', () => {
+    const agentConfig = { https: {} };
+
+    it('should default useMtls to false', () => {
+      const config = getConfig(defaultConfig);
+      assert.equal(config.useMtls, false);
+    });
+
+    it('should throw when useMtls is true without httpAgent', () => {
+      assert.throws(
+        () => getConfig({ ...defaultConfig, useMtls: true }),
+        TypeError,
+        '"useMtls" requires an "httpAgent" with a TLS client certificate to be provided',
+      );
+    });
+
+    it('should not throw when useMtls is true with httpAgent provided', () => {
+      assert.doesNotThrow(() =>
+        getConfig({ ...defaultConfig, useMtls: true, httpAgent: agentConfig }),
+      );
+    });
+
+    it('should default clientAuthMethod to tls_client_auth when useMtls is true', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        httpAgent: agentConfig,
+      });
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
+
+    it('should allow explicit clientAuthMethod of self_signed_tls_client_auth when useMtls is true', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        httpAgent: agentConfig,
+        clientAuthMethod: 'self_signed_tls_client_auth',
+      });
+      assert.equal(config.clientAuthMethod, 'self_signed_tls_client_auth');
+    });
+
+    it('should allow code flow with mTLS and no clientSecret', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        httpAgent: agentConfig,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+      assert.isUndefined(config.clientSecret);
+    });
+
+    it('should throw when clientAuthMethod is tls_client_auth without useMtls', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            clientAuthMethod: 'tls_client_auth',
+          }),
+        TypeError,
+        '"clientAuthMethod" of "tls_client_auth" requires "useMtls" to be true',
+      );
+    });
+
+    it('should throw when clientAuthMethod is self_signed_tls_client_auth without useMtls', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            clientAuthMethod: 'self_signed_tls_client_auth',
+          }),
+        TypeError,
+        '"clientAuthMethod" of "self_signed_tls_client_auth" requires "useMtls" to be true',
+      );
+    });
+
+    it('should allow useMtls with explicit client_secret_basic for mTLS transport + secret auth', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        httpAgent: agentConfig,
+        clientAuthMethod: 'client_secret_basic',
+        clientSecret: '__test_client_secret__',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.clientAuthMethod, 'client_secret_basic');
+      assert.equal(config.useMtls, true);
+    });
+  });
 });
