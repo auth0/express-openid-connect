@@ -5,6 +5,7 @@ import type { Agent as HttpsAgent } from 'https';
 import {
   AuthorizationParameters,
   IdTokenClaims,
+  TokenSet,
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
@@ -67,6 +68,32 @@ interface OpenidResponse extends Response {
    * Library namespace for authentication methods and data.
    */
   oidc: ResponseContext;
+}
+
+/**
+ * Options for {@link RequestContext.customTokenExchange}.
+ * All fields are optional — unset fields fall back to `authorizationParams` config or
+ * RFC 8693 defaults where applicable.
+ */
+interface CustomTokenExchangeOptions {
+  /** The security token to exchange. Defaults to the current user's access token. */
+  subject_token?: string;
+  /**
+   * URI identifying the type of `subject_token`.
+   * Defaults to `urn:ietf:params:oauth:token-type:access_token`.
+   */
+  subject_token_type?: string;
+  /** Requested audience. Defaults to `authorizationParams.audience`. */
+  audience?: string;
+  /** Requested scope(s). Defaults to `authorizationParams.scope`. */
+  scope?: string;
+  /** Requested organization. Defaults to `authorizationParams.organization`. */
+  organization?: string;
+  /**
+   * Additional parameters forwarded to the token endpoint.
+   * Parameters in the security denylist are silently stripped.
+   */
+  extra?: Record<string, string>;
 }
 
 /**
@@ -134,6 +161,20 @@ interface RequestContext {
    *
    */
   fetchUserInfo(): Promise<UserinfoResponse>;
+
+  /**
+   * Performs a token exchange (RFC 8693) using the token endpoint.
+   *
+   * ```js
+   * app.get('/api', requiresAuth(), async (req, res) => {
+   *   const tokenSet = await req.oidc.customTokenExchange({
+   *     audience: 'https://downstream-api.example.com',
+   *   });
+   *   res.json({ access_token: tokenSet.access_token });
+   * });
+   * ```
+   */
+  customTokenExchange(options?: CustomTokenExchangeOptions): Promise<TokenSet>;
 }
 
 /**
