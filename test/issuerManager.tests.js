@@ -425,4 +425,122 @@ describe('MCD Requirement 2: IssuerManager', () => {
       assert.isTrue(manager.cache.has('https://tenant-a.auth0.com'));
     });
   });
+
+  describe('LRU cache eviction', () => {
+    const wellKnown = require('./fixture/well-known.json');
+    const certs = require('./fixture/cert');
+
+    const makeIssuerUrl = (n) => `https://lru-tenant-${n}.auth0.com`;
+
+    const setupNock = (n) => {
+      const issuerUrl = makeIssuerUrl(n);
+      nock(issuerUrl)
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: issuerUrl,
+          authorization_endpoint: `${issuerUrl}/authorize`,
+          token_endpoint: `${issuerUrl}/oauth/token`,
+          userinfo_endpoint: `${issuerUrl}/userinfo`,
+        });
+
+      nock(issuerUrl)
+        .persist()
+        .get('/.well-known/jwks.json')
+        .reply(200, certs.jwks);
+    };
+
+    const smallCacheConfig = {
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      idTokenSigningAlg: 'RS256',
+      clientAuthMethod: 'client_secret_basic',
+      clockTolerance: 60,
+      httpTimeout: 5000,
+      enableTelemetry: false,
+      discoveryCacheMaxAge: 300000,
+      idpLogout: false,
+      authorizationParams: {
+        response_type: 'id_token',
+        scope: 'openid profile email',
+      },
+      maxCachedIssuers: 3, // Small cache for testing
+    };
+
+    it('should evict oldest issuer when cache exceeds maxCachedIssuers', async () => {
+      // Setup nocks for 4 issuers
+      for (let i = 1; i <= 4; i++) {
+        setupNock(i);
+      }
+
+      // Add 3 issuers (at capacity)
+      await manager.getClient(makeIssuerUrl(1), smallCacheConfig);
+      await manager.getClient(makeIssuerUrl(2), smallCacheConfig);
+      await manager.getClient(makeIssuerUrl(3), smallCacheConfig);
+
+      assert.equal(manager.cache.size, 3);
+      assert.isTrue(manager.cache.has(makeIssuerUrl(1)));
+      assert.isTrue(manager.cache.has(makeIssuerUrl(2)));
+      assert.isTrue(manager.cache.has(makeIssuerUrl(3)));
+
+      // Add 4th issuer - should evict issuer 1 (oldest)
+      await manager.getClient(makeIssuerUrl(4), smallCacheConfig);
+
+      assert.equal(manager.cache.size, 3);
+      assert.isFalse(manager.cache.has(makeIssuerUrl(1))); // Evicted
+      assert.isTrue(manager.cache.has(makeIssuerUrl(2)));
+      assert.isTrue(manager.cache.has(makeIssuerUrl(3)));
+      assert.isTrue(manager.cache.has(makeIssuerUrl(4)));
+    });
+
+    it('should update LRU order when accessing cached issuer', async () => {
+      // Setup nocks for 4 issuers
+      for (let i = 1; i <= 4; i++) {
+        setupNock(i);
+      }
+
+      // Add 3 issuers
+      await manager.getClient(makeIssuerUrl(1), smallCacheConfig);
+      await manager.getClient(makeIssuerUrl(2), smallCacheConfig);
+      await manager.getClient(makeIssuerUrl(3), smallCacheConfig);
+
+      // Access issuer 1 - moves it to the end (most recently used)
+      await manager.getClient(makeIssuerUrl(1), smallCacheConfig);
+
+      // Add 4th issuer - should evict issuer 2 (now the oldest)
+      await manager.getClient(makeIssuerUrl(4), smallCacheConfig);
+
+      assert.equal(manager.cache.size, 3);
+      assert.isTrue(manager.cache.has(makeIssuerUrl(1))); // Still present (was accessed)
+      assert.isFalse(manager.cache.has(makeIssuerUrl(2))); // Evicted (was oldest)
+      assert.isTrue(manager.cache.has(makeIssuerUrl(3)));
+      assert.isTrue(manager.cache.has(makeIssuerUrl(4)));
+    });
+
+    it('should use default maxCachedIssuers of 100 if not specified', async () => {
+      setupNock(1);
+
+      const configWithoutMax = {
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        idTokenSigningAlg: 'RS256',
+        clientAuthMethod: 'client_secret_basic',
+        clockTolerance: 60,
+        httpTimeout: 5000,
+        enableTelemetry: false,
+        discoveryCacheMaxAge: 300000,
+        idpLogout: false,
+        authorizationParams: {
+          response_type: 'id_token',
+          scope: 'openid profile email',
+        },
+        // No maxCachedIssuers specified - should default to 100
+      };
+
+      await manager.getClient(makeIssuerUrl(1), configWithoutMax);
+      assert.equal(manager.cache.size, 1);
+      // Default is 100, so no eviction with just 1 issuer
+    });
+  });
 });

@@ -740,6 +740,13 @@ interface ConfigParams {
   discoveryCacheMaxAge?: number;
 
   /**
+   * Maximum number of issuers to cache when using dynamic issuer resolution (MCD).
+   * When exceeded, the least recently used issuer is evicted.
+   * Default is 100.
+   */
+  maxCachedIssuers?: number;
+
+  /**
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.
    */
   httpTimeout?: number;

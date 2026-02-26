@@ -35,7 +35,6 @@ const tenantConfig = {
 async function issuerResolver(context) {
   const tenantId = context.req.query.tenant || 'default';
   const issuer = tenantConfig[tenantId] || tenantConfig.default;
-  console.log(`[MCD] Resolved tenant: ${tenantId} -> ${issuer}`);
   return issuer;
 }
 
