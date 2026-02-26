@@ -1557,8 +1557,8 @@ describe('auth - MCD (Multiple Custom Domains)', () => {
       });
 
       assert.equal(res.statusCode, 302);
-      // Local logout redirects to baseURL
-      assert.include(res.headers.location, 'example.org');
+      // Local logout redirects to request's host in MCD mode (derived from request, not config.baseURL)
+      assert.include(res.headers.location, 'localhost:3000');
 
       // Verify logged out
       sessionRes = await request.get('/session', {
