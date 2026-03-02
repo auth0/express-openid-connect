@@ -40,7 +40,7 @@ module.exports.makeIdToken = (payload) => {
   });
 };
 
-module.exports.makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
+module.exports.makeLogoutToken = ({ payload, sid, sub, secret, iss } = {}) => {
   return JWT.sign(
     {
       events: {
@@ -51,7 +51,7 @@ module.exports.makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
     },
     secret || key.toPEM(true),
     {
-      issuer: 'https://op.example.com/',
+      issuer: iss || 'https://op.example.com/',
       audience: '__test_client_id__',
       iat: true,
       jti: crypto.randomBytes(16).toString('hex'),

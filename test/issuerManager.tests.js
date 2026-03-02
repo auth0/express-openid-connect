@@ -543,4 +543,74 @@ describe('MCD Requirement 2: IssuerManager', () => {
       // Default is 100, so no eviction with just 1 issuer
     });
   });
+
+  describe('isKnownIssuer() - SSRF prevention', () => {
+    const wellKnown = require('./fixture/well-known.json');
+    const certs = require('./fixture/cert');
+
+    const defaultConfig = {
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      idTokenSigningAlg: 'RS256',
+      clientAuthMethod: 'client_secret_basic',
+      clockTolerance: 60,
+      httpTimeout: 5000,
+      enableTelemetry: false,
+      discoveryCacheMaxAge: 300000,
+      idpLogout: false,
+      authorizationParams: {
+        response_type: 'id_token',
+        scope: 'openid profile email',
+      },
+    };
+
+    beforeEach(() => {
+      nock('https://known-issuer.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://known-issuer.auth0.com',
+        });
+
+      nock('https://known-issuer.auth0.com')
+        .persist()
+        .get('/.well-known/jwks.json')
+        .reply(200, certs.jwks);
+    });
+
+    it('should return false for unknown issuer', () => {
+      assert.isFalse(manager.isKnownIssuer('https://unknown.auth0.com'));
+    });
+
+    it('should return false for null/undefined issuer', () => {
+      assert.isFalse(manager.isKnownIssuer(null));
+      assert.isFalse(manager.isKnownIssuer(undefined));
+      assert.isFalse(manager.isKnownIssuer(''));
+    });
+
+    it('should return true for cached issuer', async () => {
+      await manager.getClient('https://known-issuer.auth0.com', defaultConfig);
+
+      assert.isTrue(manager.isKnownIssuer('https://known-issuer.auth0.com'));
+    });
+
+    it('should handle trailing slash normalization', async () => {
+      await manager.getClient('https://known-issuer.auth0.com', defaultConfig);
+
+      // Should match with trailing slash
+      assert.isTrue(manager.isKnownIssuer('https://known-issuer.auth0.com/'));
+
+      // Should match without trailing slash
+      assert.isTrue(manager.isKnownIssuer('https://known-issuer.auth0.com'));
+    });
+
+    it('should return false after cache is cleared', async () => {
+      await manager.getClient('https://known-issuer.auth0.com', defaultConfig);
+      assert.isTrue(manager.isKnownIssuer('https://known-issuer.auth0.com'));
+
+      manager.clearCache();
+      assert.isFalse(manager.isKnownIssuer('https://known-issuer.auth0.com'));
+    });
+  });
 });
