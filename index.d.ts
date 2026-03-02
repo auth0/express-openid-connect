@@ -12,6 +12,64 @@ import type { JSONWebKey, KeyInput } from 'jose';
 import type { KeyObject } from 'crypto';
 
 /**
+ * Context object passed to the issuerBaseURL resolver function.
+ * Used for Multiple Custom Domains (MCD) support.
+ *
+ * This context is passed to the dynamic issuer resolver function during:
+ * - Login: to determine which issuer to redirect to for authentication
+ * - Logout: when no session exists, to determine which issuer to use for logout
+ *
+ * Note: During callback, token refresh, and logout (when session exists),
+ * the SDK uses the issuer stored in the session/transaction state rather than
+ * calling the resolver function again.
+ *
+ * @example
+ * ```js
+ * issuerBaseURL: async (context) => {
+ *   const hostname = context.req.hostname;
+ *   const tenant = await getTenantFromDB(context.req);
+ *   return `https://${tenant}.auth0.com`;
+ * }
+ * ```
+ */
+export interface IssuerResolverContext {
+  /**
+   * The Express request object.
+   * Use req.hostname, req.headers, req.originalUrl etc. to determine the issuer.
+   */
+  req: Request;
+}
+
+/**
+ * Function type for dynamic issuer resolution in Multiple Custom Domains (MCD) mode.
+ *
+ * The resolver function receives the request context and must return a valid issuer URL.
+ * The function can be synchronous or asynchronous.
+ *
+ * @example
+ * ```js
+ * // Async resolver with database lookup
+ * const resolver: IssuerBaseURLResolver = async (context) => {
+ *   const tenant = await getTenantFromDB(context.req);
+ *   return `https://${tenant}.auth0.com`;
+ * };
+ *
+ * // Sync resolver based on hostname
+ * const resolver: IssuerBaseURLResolver = (context) => {
+ *   const tenantMap = { 'app-a.example.com': 'tenant-a', 'app-b.example.com': 'tenant-b' };
+ *   const tenant = tenantMap[context.req.hostname];
+ *   return `https://${tenant}.auth0.com`;
+ * };
+ * ```
+ *
+ * @param context - The resolver context containing the Express request
+ * @returns The issuer URL as a string, or a Promise that resolves to the issuer URL
+ */
+export type IssuerBaseURLResolver = (
+  context: IssuerResolverContext,
+) => Promise<string> | string;
+
+/**
  * Session object
  */
 interface Session {
@@ -518,8 +576,24 @@ interface ConfigParams {
   /**
    * REQUIRED. The root URL for the token issuer with no trailing slash.
    * Can use env key ISSUER_BASE_URL instead.
+   *
+   * For Multiple Custom Domains support, you can provide a function that dynamically
+   * resolves the issuer based on the request context:
+   *
+   * ```js
+   * issuerBaseURL: async (context) => {
+   *   // context: { req }
+   *   const tenant = await getTenantFromDB(context.req);
+   *   return `https://${tenant}.auth0.com`;
+   * }
+   * ```
+   *
+   * Note: There is no separate `issuerBaseURLResolver` property. The `issuerBaseURL`
+   * property accepts either a string (static mode) or a function (MCD mode).
    */
-  issuerBaseURL?: string;
+  issuerBaseURL?:
+    | string
+    | ((context: IssuerResolverContext) => Promise<string> | string);
 
   /**
    * Set a fallback cookie with no SameSite attribute when response_mode is form_post.
@@ -664,6 +738,13 @@ interface ConfigParams {
    * Maximum time (in milliseconds) to wait before fetching the Identity Provider's Discovery document again. Default is 600000 (10 minutes).
    */
   discoveryCacheMaxAge?: number;
+
+  /**
+   * Maximum number of issuers to cache when using dynamic issuer resolution (MCD).
+   * When exceeded, the least recently used issuer is evicted.
+   * Default is 100.
+   */
+  maxCachedIssuers?: number;
 
   /**
    * Http timeout for oidc client requests in milliseconds.  Default is 5000.   Minimum is 500.

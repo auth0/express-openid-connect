@@ -1,10 +1,15 @@
 const { assert } = require('chai');
+const nock = require('nock');
 const onLogin = require('../lib/hooks/backchannelLogout/onLogIn');
 const { get: getConfig } = require('../lib/config');
 const { create: createServer } = require('./fixture/server');
 const { makeIdToken, makeLogoutToken } = require('./fixture/cert');
 const { auth } = require('./..');
 const getRedisStore = require('./fixture/store');
+const {
+  getIssuerManager,
+  resetIssuerManager,
+} = require('../lib/issuerManager');
 
 const baseUrl = 'http://localhost:3000';
 
@@ -285,5 +290,202 @@ describe('back-channel logout', async () => {
       jar,
     }));
     assert.deepEqual(body, { err: { message: 'storage failure' } });
+  });
+});
+
+describe('back-channel logout with MCD (Multiple Custom Domains)', () => {
+  let server;
+  let client;
+  let store;
+  const wellKnown = require('./fixture/well-known.json');
+  const certs = require('./fixture/cert');
+
+  beforeEach(() => {
+    resetIssuerManager();
+    ({ client, store } = getRedisStore());
+
+    // Setup nock for MCD issuers
+    ['tenant-a', 'tenant-b'].forEach((tenant) => {
+      nock(`https://${tenant}.auth0.com`)
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: `https://${tenant}.auth0.com`,
+        });
+
+      nock(`https://${tenant}.auth0.com`)
+        .persist()
+        .get('/.well-known/jwks.json')
+        .reply(200, certs.jwks);
+    });
+  });
+
+  afterEach(async () => {
+    nock.cleanAll();
+    resetIssuerManager();
+    if (server) {
+      server.close();
+    }
+    if (client) {
+      await new Promise((resolve) => client.flushall(resolve));
+      await new Promise((resolve) => client.quit(resolve));
+    }
+  });
+
+  const mcdConfig = {
+    clientID: '__test_client_id__',
+    baseURL: 'http://example.org',
+    issuerBaseURL: ({ req }) => {
+      // Resolve issuer based on subdomain
+      const host = req.get('host') || 'tenant-a.example.org';
+      if (host.includes('tenant-b')) {
+        return 'https://tenant-b.auth0.com';
+      }
+      return 'https://tenant-a.auth0.com';
+    },
+    secret: '__test_session_secret__',
+    authRequired: false,
+    backchannelLogout: null, // Will be set in each test
+  };
+
+  it('should reject backchannel logout from unknown issuer (SSRF prevention)', async () => {
+    server = await createServer(
+      auth({
+        ...mcdConfig,
+        backchannelLogout: { store },
+      }),
+    );
+
+    // Create a logout token with an unknown issuer
+    const maliciousToken = makeLogoutToken({
+      sid: 'foo',
+      iss: 'https://attacker.example.com',
+    });
+
+    const res = await request.post('/backchannel-logout', {
+      form: {
+        logout_token: maliciousToken,
+      },
+    });
+
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, {
+      error: 'invalid_request',
+      error_description: 'Unknown issuer',
+    });
+  });
+
+  it('should accept backchannel logout from known issuer in MCD mode', async () => {
+    server = await createServer(
+      auth({
+        ...mcdConfig,
+        backchannelLogout: { store },
+      }),
+    );
+
+    // First, "warm up" the cache by getting a client for the issuer
+    // This simulates a user having logged in via this issuer
+    const issuerManager = getIssuerManager();
+    await issuerManager.getClient('https://tenant-a.auth0.com', {
+      clientID: '__test_client_id__',
+      clientSecret: '__test_client_secret__',
+      idTokenSigningAlg: 'RS256',
+      clientAuthMethod: 'client_secret_basic',
+      clockTolerance: 60,
+      httpTimeout: 5000,
+      enableTelemetry: false,
+      discoveryCacheMaxAge: 300000,
+      idpLogout: false,
+      authorizationParams: {
+        response_type: 'id_token',
+        scope: 'openid profile email',
+      },
+    });
+
+    // Now the issuer is "known" - backchannel logout should work
+    const logoutToken = makeLogoutToken({
+      sid: 'foo',
+      iss: 'https://tenant-a.auth0.com',
+    });
+
+    const res = await request.post('/backchannel-logout', {
+      form: {
+        logout_token: logoutToken,
+      },
+    });
+
+    assert.equal(res.statusCode, 204);
+  });
+
+  it('should reject invalid JWT format in MCD mode', async () => {
+    server = await createServer(
+      auth({
+        ...mcdConfig,
+        backchannelLogout: { store },
+      }),
+    );
+
+    const res = await request.post('/backchannel-logout', {
+      form: {
+        logout_token: 'not.a.valid.jwt.token',
+      },
+    });
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.error, 'invalid_request');
+    assert.equal(res.body.error_description, 'Invalid logout_token format');
+  });
+
+  it('should reject logout token with missing iss claim in MCD mode', async () => {
+    server = await createServer(
+      auth({
+        ...mcdConfig,
+        backchannelLogout: { store },
+      }),
+    );
+
+    // Create a token without iss claim
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256' })).toString(
+      'base64url',
+    );
+    const payload = Buffer.from(
+      JSON.stringify({ sid: 'foo', aud: '__test_client_id__' }),
+    ).toString('base64url');
+    const tokenWithoutIss = `${header}.${payload}.fake_signature`;
+
+    const res = await request.post('/backchannel-logout', {
+      form: {
+        logout_token: tokenWithoutIss,
+      },
+    });
+
+    assert.equal(res.statusCode, 400);
+    assert.deepEqual(res.body, {
+      error: 'invalid_request',
+      error_description: 'logout_token missing iss claim',
+    });
+  });
+
+  it('should reject logout token with invalid payload in MCD mode', async () => {
+    server = await createServer(
+      auth({
+        ...mcdConfig,
+        backchannelLogout: { store },
+      }),
+    );
+
+    // Create a token with invalid base64 payload
+    const tokenWithBadPayload = 'header.!!!invalid_base64!!!.signature';
+
+    const res = await request.post('/backchannel-logout', {
+      form: {
+        logout_token: tokenWithBadPayload,
+      },
+    });
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.error, 'invalid_request');
+    assert.equal(res.body.error_description, 'Invalid logout_token payload');
   });
 });

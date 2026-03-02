@@ -586,4 +586,179 @@ describe('appSession', () => {
     assert.isEmpty(res.body);
     clock.restore();
   });
+
+  describe('MCD: Domain Migration Support', () => {
+    const { resetIssuerManager } = require('../lib/issuerManager');
+
+    beforeEach(() => {
+      resetIssuerManager();
+    });
+
+    afterEach(() => {
+      resetIssuerManager();
+    });
+
+    it('should accept session with issuer in MCD mode', async () => {
+      // Session has issuer - should be accepted (bound to original issuer)
+      const mcdConfig = {
+        ...defaultConfig,
+        issuerBaseURL: () => 'https://tenant-a.auth0.com',
+      };
+      server = await createServer(appSession(getConfig(mcdConfig)));
+
+      // Create session with issuer
+      const jar = request.jar();
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: {
+          sub: '__test_sub__',
+          issuer: 'https://tenant-a.auth0.com',
+        },
+      });
+
+      // Session should be valid - has issuer field
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.sub, '__test_sub__');
+      assert.equal(res.body.issuer, 'https://tenant-a.auth0.com');
+    });
+
+    it('should accept session bound to different issuer in MCD mode (no cross-issuer validation)', async () => {
+      // RFC: Sessions remain bound to their original issuer
+      // A session created with tenant-b should be accepted even when resolver returns tenant-a
+      const mcdConfig = {
+        ...defaultConfig,
+        issuerBaseURL: () => 'https://tenant-a.auth0.com', // Resolver returns tenant-a
+      };
+      server = await createServer(appSession(getConfig(mcdConfig)));
+
+      // Create session bound to tenant-b (different from resolver)
+      const jar = request.jar();
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: {
+          sub: '__test_sub__',
+          issuer: 'https://tenant-b.auth0.com', // Different issuer - should still be accepted
+        },
+      });
+
+      // Session should be accepted - it has a valid issuer (bound to original issuer)
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.sub, '__test_sub__');
+      assert.equal(res.body.issuer, 'https://tenant-b.auth0.com'); // Still bound to tenant-b
+    });
+
+    it('should reject session without issuer field in MCD mode', async () => {
+      // MCD mode with session missing issuer (pre-MCD legacy session)
+      const mcdConfig = {
+        ...defaultConfig,
+        issuerBaseURL: () => 'https://tenant-a.auth0.com',
+      };
+      server = await createServer(appSession(getConfig(mcdConfig)));
+
+      // Create session WITHOUT issuer field (simulates pre-MCD session)
+      const jar = request.jar();
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: {
+          sub: '__test_sub__',
+          // No issuer field!
+        },
+      });
+
+      // Session should be rejected in MCD mode - missing issuer
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.statusCode, 200);
+      assert.isEmpty(res.body); // Session cleared
+    });
+
+    it('should accept session without issuer in static mode', async () => {
+      // Static issuerBaseURL - should work without issuer field
+      server = await createServer(appSession(getConfig(defaultConfig)));
+
+      // Create session without issuer field
+      const jar = request.jar();
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: {
+          sub: '__test_sub__',
+          // No issuer field - should work in static mode
+        },
+      });
+
+      // Session should be valid - static mode doesn't require issuer
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.sub, '__test_sub__');
+    });
+
+    it('should work with async issuer resolver', async () => {
+      // Async resolver function
+      const mcdConfig = {
+        ...defaultConfig,
+        issuerBaseURL: async () => {
+          // Simulate async database lookup
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return 'https://tenant-a.auth0.com';
+        },
+      };
+      server = await createServer(appSession(getConfig(mcdConfig)));
+
+      // Create session with issuer
+      const jar = request.jar();
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: {
+          sub: '__test_sub__',
+          issuer: 'https://tenant-a.auth0.com',
+        },
+      });
+
+      // Session should be valid
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.body.sub, '__test_sub__');
+    });
+
+    it('should keep session bound to original issuer when switching domains', async () => {
+      // RFC: existing session remain bound to original issuer
+      // new session will be created with different issuer (when user re-authenticates)
+      let currentTenant = 'tenant-a';
+      const mcdConfig = {
+        ...defaultConfig,
+        issuerBaseURL: () => `https://${currentTenant}.auth0.com`,
+      };
+      server = await createServer(appSession(getConfig(mcdConfig)));
+
+      // Create session as tenant-a
+      const jar = request.jar();
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: {
+          sub: '__tenant_a_user__',
+          issuer: 'https://tenant-a.auth0.com',
+        },
+      });
+
+      // Verify session works for tenant-a
+      let res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.body.sub, '__tenant_a_user__');
+      assert.equal(res.body.issuer, 'https://tenant-a.auth0.com');
+
+      // Now switch resolver to tenant-b (simulating user visiting different domain)
+      currentTenant = 'tenant-b';
+
+      // Session should STILL be accepted - bound to original issuer (tenant-a)
+      res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.equal(res.body.sub, '__tenant_a_user__');
+      assert.equal(res.body.issuer, 'https://tenant-a.auth0.com'); // Still bound to tenant-a
+    });
+  });
 });
