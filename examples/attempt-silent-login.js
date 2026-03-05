@@ -7,7 +7,7 @@ app.use(
   auth({
     attemptSilentLogin: true,
     authRequired: false,
-  })
+  }),
 );
 
 app.get('/', (req, res) => {

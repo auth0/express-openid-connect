@@ -51,7 +51,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = request.jar();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -72,7 +72,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = request.jar();
     const response = await request({
@@ -91,7 +91,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = request.jar();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -108,7 +108,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = await login();
     const response = await request({ baseUrl, jar, url: '/protected' });
@@ -121,7 +121,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = await login();
     await request({ baseUrl, jar, url: '/protected' });
@@ -141,7 +141,7 @@ describe('attemptSilentLogin', () => {
         ...defaultConfig,
         authRequired: false,
       }),
-      attemptSilentLogin()
+      attemptSilentLogin(),
     );
     const jar = await login();
     await request.get({
@@ -161,7 +161,7 @@ describe('attemptSilentLogin', () => {
     } = await request({ baseUrl, url: '/protected', json: true });
     assert.equal(
       err.message,
-      'req.oidc is not found, did you include the auth middleware?'
+      'req.oidc is not found, did you include the auth middleware?',
     );
   });
 

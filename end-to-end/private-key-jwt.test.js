@@ -39,7 +39,7 @@ describe('private key jwt', async () => {
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
     const promise = once(provider, 'grant.success');
 
@@ -47,16 +47,16 @@ describe('private key jwt', async () => {
     const [ctx] = await promise;
     assert(
       ctx.oidc.body.client_assertion,
-      'Client should have authenticated with a client assertion payload'
+      'Client should have authenticated with a client assertion payload',
     );
     assert.equal(
       ctx.oidc.body.client_assertion_type,
-      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     assert.include(await page.content(), 'hello username');
   });

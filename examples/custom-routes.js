@@ -15,13 +15,13 @@ app.use(
       postLogoutRedirect: '/custom-logout',
       callback: false,
     },
-  })
+  }),
 );
 
 app.get('/', (req, res) => res.send('Welcome!'));
 
 app.get('/profile', requiresAuth(), (req, res) =>
-  res.send(`hello ${req.oidc.user.sub}`)
+  res.send(`hello ${req.oidc.user.sub}`),
 );
 
 app.get('/login', (req, res) =>
@@ -30,7 +30,7 @@ app.get('/login', (req, res) =>
     authorizationParams: {
       redirect_uri: 'http://localhost:3000/callback',
     },
-  })
+  }),
 );
 
 app.get('/custom-logout', (req, res) => res.send('Bye!'));
@@ -38,13 +38,13 @@ app.get('/custom-logout', (req, res) => res.send('Bye!'));
 app.get('/callback', (req, res) =>
   res.oidc.callback({
     redirectUri: 'http://localhost:3000/callback',
-  })
+  }),
 );
 
 app.post('/callback', express.urlencoded({ extended: false }), (req, res) =>
   res.oidc.callback({
     redirectUri: 'http://localhost:3000/callback',
-  })
+  }),
 );
 
 module.exports = app;

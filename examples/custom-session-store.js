@@ -12,7 +12,7 @@ app.use(
         checkPeriod: 24 * 60 * 1000,
       }),
     },
-  })
+  }),
 );
 
 app.get('/', (req, res) => {

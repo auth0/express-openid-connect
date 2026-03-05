@@ -9,7 +9,7 @@ app.use(
     authorizationParams: {
       response_type: 'code id_token',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {

@@ -12,7 +12,7 @@ app.use(
       response_type: 'code',
     },
     clientAssertionSigningKey: privateJWK,
-  })
+  }),
 );
 
 app.get('/', (req, res) => {

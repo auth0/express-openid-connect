@@ -36,13 +36,13 @@ describe('fetch userinfo', async () => {
     assert.match(
       page.url(),
       /http:\/\/localhost:3001\/interaction/,
-      'User should have been redirected to the auth server to login'
+      'User should have been redirected to the auth server to login',
     );
     await login('username', 'password', page);
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
 
     assert.include(await page.content(), 'hello username');

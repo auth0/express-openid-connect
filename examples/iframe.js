@@ -13,7 +13,7 @@ app.use(
         sameSite: 'None',
       },
     },
-  })
+  }),
 );
 
 app.get('/', (req, res) => {

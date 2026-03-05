@@ -11,7 +11,7 @@ app.use(
       response_type: 'code',
     },
     clientAuthMethod: 'client_secret_jwt',
-  })
+  }),
 );
 
 app.get('/', (req, res) => {

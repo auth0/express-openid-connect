@@ -48,7 +48,7 @@ app.use(
         }
       },
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -63,7 +63,7 @@ app.get('/', async (req, res) => {
 app.get(
   '/logout-token',
   requiresAuth(),
-  logoutTokenTester('backchannel-logout-client', true)
+  logoutTokenTester('backchannel-logout-client', true),
 );
 
 module.exports = app;

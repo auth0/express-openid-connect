@@ -10,7 +10,7 @@ const example = process.argv.pop();
 if (!process.env.CLIENT_ID) {
   const provider = require('../end-to-end/fixture/oidc-provider');
   console.log(
-    'Starting a mock authorization server. You can login with any credentials.'
+    'Starting a mock authorization server. You can login with any credentials.',
   );
   process.env = {
     ...process.env,
@@ -22,18 +22,18 @@ if (!process.env.CLIENT_ID) {
   };
   provider.listen(PROVIDER_PORT, () =>
     console.log(
-      `Authorization server started at http://localhost:${PROVIDER_PORT}`
-    )
+      `Authorization server started at http://localhost:${PROVIDER_PORT}`,
+    ),
   );
 }
 
 const api = require(path.join(__dirname, 'api'));
 api.listen(API_PORT, () =>
-  console.log(`API started at http://localhost:${API_PORT}`)
+  console.log(`API started at http://localhost:${API_PORT}`),
 );
 
 const app = require(path.join(__dirname, example));
 
 app.listen(PORT, () =>
-  console.log(`Example app started at http://localhost:${PORT}`)
+  console.log(`Example app started at http://localhost:${PORT}`),
 );

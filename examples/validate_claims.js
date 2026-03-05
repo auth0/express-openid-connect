@@ -10,14 +10,14 @@ app.use(
       response_type: 'code id_token',
     },
     afterCallback: (req, res, session) => {
-      const claims = jose.JWT.decode(session.id_token); 
+      const claims = jose.JWT.decode(session.id_token);
 
       if (claims.org_id !== 'Required Organization') {
         throw new Error('User is not a part of the Required Organization');
       }
       return session;
-    }
-  })
+    },
+  }),
 );
 
 app.get('/', async (req, res) => {

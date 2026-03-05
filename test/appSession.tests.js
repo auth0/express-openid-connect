@@ -71,8 +71,8 @@ describe('appSession', () => {
         getConfig({
           ...defaultConfig,
           secret: 'another secret',
-        })
-      )
+        }),
+      ),
     );
     const res = await request.get('/session', {
       baseUrl,
@@ -112,7 +112,7 @@ describe('appSession', () => {
     });
     assert.deepEqual(
       jar.getCookies(baseUrl).map(({ key }) => key),
-      ['appSession.0', 'appSession.1']
+      ['appSession.0', 'appSession.1'],
     );
     const res = await request.get('/session', { baseUrl, json: true, jar });
     assert.equal(res.statusCode, 200);
@@ -139,7 +139,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.exists(cookies);
@@ -153,7 +153,9 @@ describe('appSession', () => {
     const path =
       '/some-really-really-really-really-really-really-really-really-really-really-really-really-really-long-path';
     server = await createServer(
-      appSession(getConfig({ ...defaultConfig, session: { cookie: { path } } }))
+      appSession(
+        getConfig({ ...defaultConfig, session: { cookie: { path } } }),
+      ),
     );
     const jar = request.jar();
 
@@ -170,7 +172,7 @@ describe('appSession', () => {
       .getCookies(`${baseUrl}${path}`)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.exists(cookies);
@@ -189,7 +191,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
     assert.property(firstCookies, 'appSession');
 
@@ -206,7 +208,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.property(cookies, 'appSession.0');
@@ -223,7 +225,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
     assert.property(firstCookies, 'appSession.0');
     assert.property(firstCookies, 'appSession.1');
@@ -240,7 +242,7 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reduce(
         (obj, value) => Object.assign(obj, { [value.key]: value + '' }),
-        {}
+        {},
       );
 
     assert.property(cookies, 'appSession');
@@ -264,11 +266,11 @@ describe('appSession', () => {
       .getCookies(baseUrl)
       .reverse()
       .forEach(({ key, value }) =>
-        newJar.setCookie(`${key}=${value}`, baseUrl)
+        newJar.setCookie(`${key}=${value}`, baseUrl),
       );
     assert.deepEqual(
       newJar.getCookies(baseUrl).map(({ key }) => key),
-      ['appSession.1', 'appSession.0']
+      ['appSession.1', 'appSession.0'],
     );
     const res = await request.get('/session', {
       baseUrl,
@@ -293,7 +295,9 @@ describe('appSession', () => {
 
   it('should set the default cookie options over http', async () => {
     server = await createServer(
-      appSession(getConfig({ ...defaultConfig, baseURL: 'http://example.org' }))
+      appSession(
+        getConfig({ ...defaultConfig, baseURL: 'http://example.org' }),
+      ),
     );
     const jar = request.jar();
     await request.get('/session', {
@@ -320,8 +324,8 @@ describe('appSession', () => {
   it('should set the default cookie options over https', async () => {
     server = await createServer(
       appSession(
-        getConfig({ ...defaultConfig, baseURL: 'https://example.org' })
-      )
+        getConfig({ ...defaultConfig, baseURL: 'https://example.org' }),
+      ),
     );
     const jar = request.jar();
     await request.get('/session', {
@@ -347,8 +351,8 @@ describe('appSession', () => {
               sameSite: 'Strict',
             },
           },
-        })
-      )
+        }),
+      ),
     );
     const jar = request.jar();
     await request.get('/session', {
@@ -377,8 +381,8 @@ describe('appSession', () => {
               throw 'this should not be called';
             }, //consider using chai-spies
           },
-        })
-      )
+        }),
+      ),
     );
     const jar = request.jar();
     const res = await request.get('/session', {
@@ -400,8 +404,8 @@ describe('appSession', () => {
         getConfig({
           ...defaultConfig,
           session: { name: 'customName' },
-        })
-      )
+        }),
+      ),
     );
     const jar = request.jar();
     const res = await request.get('/session', {
@@ -423,8 +427,8 @@ describe('appSession', () => {
         getConfig({
           ...defaultConfig,
           session: { cookie: { transient: true } },
-        })
-      )
+        }),
+      ),
     );
     const jar = request.jar();
     const res = await request.get('/session', {
@@ -470,7 +474,7 @@ describe('appSession', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'req[appSession] is already set, did you run this middleware twice?'
+      'req[appSession] is already set, did you run this middleware twice?',
     );
   });
 
@@ -543,8 +547,8 @@ describe('appSession', () => {
             rolling: false,
             absoluteDuration: 10 * 60 * 60,
           },
-        })
-      )
+        }),
+      ),
     );
     const jar = await login({ sub: '__test_sub__' });
     clock.tick(9 * HR_MS);
@@ -567,8 +571,8 @@ describe('appSession', () => {
             rollingDuration: 24 * 60 * 60,
             absoluteDuration: false,
           },
-        })
-      )
+        }),
+      ),
     );
     const jar = await login({ sub: '__test_sub__' });
     let days = 30;

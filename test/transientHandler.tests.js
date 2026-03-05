@@ -22,7 +22,7 @@ describe('transientHandler', function () {
       JWS.sign.flattened(
         Buffer.from(`${cookie}=${value}`),
         transientHandler.keyStore,
-        { alg: 'HS256', b64: false, crit: ['b64'] }
+        { alg: 'HS256', b64: false, crit: ['b64'] },
       ).signature;
     res = { cookie: sinon.spy(), clearCookie: sinon.spy() };
   });
@@ -118,7 +118,7 @@ describe('transientHandler', function () {
   describe('getOnce()', function () {
     it('should return undefined if there are no cookies', function () {
       assert.isUndefined(
-        transientHandler.getOnce('test_key', reqWithCookies(), res)
+        transientHandler.getOnce('test_key', reqWithCookies(), res),
       );
     });
 

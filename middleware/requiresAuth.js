@@ -11,7 +11,7 @@ const defaultRequiresLogin = (req) => !req.oidc.isAuthenticated();
 async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   if (!req.oidc) {
     next(
-      new Error('req.oidc is not found, did you include the auth middleware?')
+      new Error('req.oidc is not found, did you include the auth middleware?'),
     );
     return;
   }
@@ -19,15 +19,15 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
   if (requiresLoginCheck(req)) {
     if (!res.oidc.errorOnRequiredAuth && req.accepts('html')) {
       debug(
-        'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()'
+        'authentication requirements not met with errorOnRequiredAuth() returning false, calling res.oidc.login()',
       );
       return res.oidc.login();
     }
     debug(
-      'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error'
+      'authentication requirements not met with errorOnRequiredAuth() returning true, calling next() with an Unauthorized error',
     );
     next(
-      createError.Unauthorized('Authentication is required for this route.')
+      createError.Unauthorized('Authentication is required for this route.'),
     );
     return;
   }
@@ -38,7 +38,7 @@ async function requiresLoginMiddleware(requiresLoginCheck, req, res, next) {
 }
 
 module.exports.requiresAuth = function requiresAuth(
-  requiresLoginCheck = defaultRequiresLogin
+  requiresLoginCheck = defaultRequiresLogin,
 ) {
   return requiresLoginMiddleware.bind(undefined, requiresLoginCheck);
 };
@@ -103,7 +103,7 @@ module.exports.claimIncludes = function claimIncludes(claim, ...expected) {
     } else if (!Array.isArray(actual)) {
       debug(
         'unexpected claim type. expected array or string, got %o',
-        typeof actual
+        typeof actual,
       );
       return true;
     }

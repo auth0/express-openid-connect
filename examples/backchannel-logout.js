@@ -15,7 +15,7 @@ app.use(
       store: new MemoryStore(),
     },
     backchannelLogout: true,
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -30,7 +30,7 @@ app.get('/', async (req, res) => {
 app.get(
   '/logout-token',
   requiresAuth(),
-  logoutTokenTester('backchannel-logout-client', false, true)
+  logoutTokenTester('backchannel-logout-client', false, true),
 );
 
 module.exports = app;

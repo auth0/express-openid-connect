@@ -31,7 +31,7 @@ module.exports.makeIdToken = (payload) => {
       exp: Math.round(Date.now() / 1000) + 60000,
       nonce: '__test_nonce__',
     },
-    payload
+    payload,
   );
 
   return JWT.sign(payload, key.toPEM(true), {
@@ -58,6 +58,6 @@ module.exports.makeLogoutToken = ({ payload, sid, sub, secret } = {}) => {
       algorithm: secret ? 'HS256' : 'RS256',
       header: { typ: 'logout+jwt' },
       ...payload,
-    }
+    },
   );
 };

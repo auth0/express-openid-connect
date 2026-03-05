@@ -6,7 +6,7 @@ const app = express();
 app.use(
   auth({
     idpLogout: true,
-  })
+  }),
 );
 
 app.get('/', (req, res) => {

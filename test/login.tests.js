@@ -21,7 +21,7 @@ const fetchAuthCookie = (res, txnCookieName) => {
   txnCookieName = txnCookieName || 'auth_verification';
   const cookieHeaders = res.headers['set-cookie'];
   return cookieHeaders.filter(
-    (header) => header.split('=')[0] === txnCookieName
+    (header) => header.split('=')[0] === txnCookieName,
   )[0];
 };
 
@@ -112,7 +112,7 @@ describe('auth', () => {
       auth({
         ...defaultConfig,
         transactionCookie: { name: customTxnCookieName },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -130,11 +130,11 @@ describe('auth', () => {
 
     assert.equal(
       fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
-      parsed.query.nonce
+      parsed.query.nonce,
     );
     assert.equal(
       fetchFromAuthCookie(res, 'state', customTxnCookieName),
-      parsed.query.state
+      parsed.query.state,
     );
   });
 
@@ -143,7 +143,7 @@ describe('auth', () => {
       auth({
         ...defaultConfig,
         authRequired: true,
-      })
+      }),
     );
     const res = await request.get('/session', {
       baseUrl,
@@ -158,7 +158,7 @@ describe('auth', () => {
         ...defaultConfig,
         authRequired: false,
         attemptSilentLogin: true,
-      })
+      }),
     );
     const res = await request.get('/session', {
       baseUrl,
@@ -174,7 +174,7 @@ describe('auth', () => {
         authRequired: false,
         attemptSilentLogin: true,
         transactionCookie: { name: 'CustomTxnCookie' },
-      })
+      }),
     );
     const res = await request.get('/session', {
       baseUrl,
@@ -191,7 +191,7 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'code',
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -223,7 +223,7 @@ describe('auth', () => {
           response_type: 'code',
         },
         transactionCookie: { name: customTxnCookieName },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -243,11 +243,11 @@ describe('auth', () => {
 
     assert.equal(
       fetchFromAuthCookie(res, 'nonce', customTxnCookieName),
-      parsed.query.nonce
+      parsed.query.nonce,
     );
     assert.equal(
       fetchFromAuthCookie(res, 'state', customTxnCookieName),
-      parsed.query.state
+      parsed.query.state,
     );
   });
 
@@ -258,7 +258,7 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'id_token',
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -284,7 +284,7 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'code id_token',
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -311,7 +311,7 @@ describe('auth', () => {
           login: 'custom-login',
           logout: 'custom-logout',
         },
-      })
+      }),
     );
     const res = await request.get('/custom-login', {
       baseUrl,
@@ -324,7 +324,7 @@ describe('auth', () => {
     assert.equal(parsed.pathname, '/authorize');
     assert.equal(
       parsed.query.redirect_uri,
-      'https://example.org/custom-callback'
+      'https://example.org/custom-callback',
     );
   });
 
@@ -348,7 +348,7 @@ describe('auth', () => {
         clientSecret: 'test-client-secret',
         pushedAuthorizationRequests: true,
         clientAuthMethod: 'client_secret_post',
-      })
+      }),
     );
     const res = await request.get('/login', {
       baseUrl,
@@ -442,7 +442,7 @@ describe('auth', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'response_type should be one of id_token, code id_token, code'
+      'response_type should be one of id_token, code id_token, code',
     );
   });
 
@@ -471,7 +471,7 @@ describe('auth', () => {
     assert.equal(res.statusCode, 500);
     assert.equal(
       res.body.err.message,
-      'response_type should be one of id_token, code id_token, code'
+      'response_type should be one of id_token, code id_token, code',
     );
   });
 
@@ -485,7 +485,7 @@ describe('auth', () => {
             customProp: '__test_custom_prop__',
           };
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -505,7 +505,7 @@ describe('auth', () => {
         authorizationParams: {
           response_type: 'code id_token',
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -532,7 +532,7 @@ describe('auth', () => {
             sameSite: 'Strict',
           },
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -552,7 +552,7 @@ describe('auth', () => {
           response_mode: 'query',
           response_type: 'code',
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -567,7 +567,7 @@ describe('auth', () => {
         transactionCookie: {
           sameSite: 'Strict',
         },
-      })
+      }),
     );
     const res = await request.get('/login', { baseUrl, followRedirect: false });
     assert.equal(res.statusCode, 302);
@@ -587,7 +587,7 @@ describe('auth', () => {
       auth({
         ...defaultConfig,
         issuerBaseURL: 'https://example.com',
-      })
+      }),
     );
     const res = await request.get('/login', {
       baseUrl,
@@ -598,7 +598,7 @@ describe('auth', () => {
     assert.match(
       res.body.err.message,
       /^Issuer.discover\(\) failed/,
-      'Should get error json from server error middleware'
+      'Should get error json from server error middleware',
     );
   });
 });

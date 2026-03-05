@@ -37,7 +37,7 @@ const stubEnv = (
     BASE_URL: 'http://localhost:3000',
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',
-  }
+  },
 ) =>
   sinon.stub(process, 'env').value({
     ...process.env,
@@ -69,7 +69,7 @@ const testMw = () => {
 const checkContext = async (cookies) => {
   const jar = request.jar();
   cookies.forEach(({ name, value }) =>
-    jar.setCookie(`${name}=${value}`, baseUrl)
+    jar.setCookie(`${name}=${value}`, baseUrl),
   );
   return request('/context', { jar, baseUrl });
 };
@@ -109,7 +109,7 @@ const logoutTokenTester = (clientId, sid, sub) => async (req, res) => {
       jti: crypto.randomBytes(16).toString('hex'),
       algorithm: 'RS256',
       header: { typ: 'logout+jwt' },
-    }
+    },
   );
 
   res.send(`

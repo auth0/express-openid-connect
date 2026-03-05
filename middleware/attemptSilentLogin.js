@@ -42,7 +42,9 @@ module.exports = function attemptSilentLogin() {
   return (req, res, next) => {
     if (!req.oidc) {
       next(
-        new Error('req.oidc is not found, did you include the auth middleware?')
+        new Error(
+          'req.oidc is not found, did you include the auth middleware?',
+        ),
       );
       return;
     }

@@ -40,7 +40,7 @@ const auth = function (params) {
     const path = enforceLeadingSlash(config.routes.login);
     debug('adding GET %s route', path);
     router.get(path, express.urlencoded({ extended: false }), (req, res) =>
-      res.oidc.login({ returnTo: config.baseURL })
+      res.oidc.login({ returnTo: config.baseURL }),
     );
   } else {
     debug('login handling route not applied');
@@ -62,7 +62,7 @@ const auth = function (params) {
     router.get(path, (req, res) => res.oidc.callback());
     debug('adding POST %s route', path);
     router.post(path, express.urlencoded({ extended: false }), (req, res) =>
-      res.oidc.callback()
+      res.oidc.callback(),
     );
   } else {
     debug('callback handling route not applied');
@@ -72,7 +72,7 @@ const auth = function (params) {
     const path = enforceLeadingSlash(config.routes.backchannelLogout);
     debug('adding POST %s route', path);
     router.post(path, express.urlencoded({ extended: false }), (req, res) =>
-      res.oidc.backchannelLogout()
+      res.oidc.backchannelLogout(),
     );
 
     if (config.backchannelLogout.isLoggedOut !== false) {
@@ -97,13 +97,13 @@ const auth = function (params) {
 
   if (config.authRequired) {
     debug(
-      'authentication is required for all routes this middleware is applied to'
+      'authentication is required for all routes this middleware is applied to',
     );
     router.use(requiresAuth());
   } else {
     debug(
       'authentication is not required for any of the routes this middleware is applied to ' +
-        'see and apply `requiresAuth` middlewares to your protected resources'
+        'see and apply `requiresAuth` middlewares to your protected resources',
     );
   }
   if (config.attemptSilentLogin) {

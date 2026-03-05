@@ -43,7 +43,7 @@ describe('back-channel logout', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
     const loggedInCookies = await page.cookies('http://localhost:3000');
     assert.ok(loggedInCookies.find(({ name }) => name === 'appSession'));
@@ -90,7 +90,7 @@ describe('back-channel logout', async () => {
     assert.equal(
       page.url(),
       `${baseUrl}/`,
-      'User is returned to the original page'
+      'User is returned to the original page',
     );
 
     const loggedInCookies = await page.cookies('http://localhost:3000');

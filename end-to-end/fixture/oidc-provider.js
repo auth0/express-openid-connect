@@ -65,7 +65,7 @@ const provider = new Provider(`http://localhost:${PORT}`, config);
 const { invalidate: orig } = provider.Client.Schema.prototype;
 provider.Client.Schema.prototype.invalidate = function invalidate(
   message,
-  code
+  code,
 ) {
   if (code === 'implicit-force-https' || code === 'implicit-forbid-localhost') {
     return;
