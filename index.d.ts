@@ -93,7 +93,7 @@ interface CustomTokenExchangeOptions {
    * Additional parameters forwarded to the token endpoint.
    * Parameters in the security denylist are silently stripped.
    */
-  extra?: Record<string, string>;
+  extra?: Record<string, string | number | boolean>;
 }
 
 /**

@@ -1,5 +1,3 @@
-'use strict';
-
 const assert = require('chai').assert;
 const nock = require('nock');
 const qs = require('querystring');
@@ -122,6 +120,15 @@ describe('customTokenExchange', () => {
     });
     assert.equal(capturedBody.audience, 'https://default-api.example.com');
     assert.equal(capturedBody.scope, 'openid read:data');
+  });
+
+  it('applies authorizationParams defaults for organization', async () => {
+    const { capturedBody } = await setup({
+      authConfig: {
+        authorizationParams: { organization: 'org_abc123' },
+      },
+    });
+    assert.equal(capturedBody.organization, 'org_abc123');
   });
 
   it('caller-provided options override authorizationParams defaults', async () => {
