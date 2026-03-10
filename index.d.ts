@@ -87,7 +87,7 @@ interface CustomTokenExchangeOptions {
   audience?: string;
   /** Requested scope(s). Defaults to `authorizationParams.scope`. */
   scope?: string;
-  /** Requested organization. Defaults to `authorizationParams.organization`. */
+  /** Requested organization. */
   organization?: string;
   /**
    * Additional parameters forwarded to the token endpoint.

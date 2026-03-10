@@ -122,11 +122,18 @@ describe('customTokenExchange', () => {
     assert.equal(capturedBody.scope, 'openid read:data');
   });
 
-  it('applies authorizationParams defaults for organization', async () => {
+  it('does not default organization from authorizationParams', async () => {
     const { capturedBody } = await setup({
       authConfig: {
         authorizationParams: { organization: 'org_abc123' },
       },
+    });
+    assert.isUndefined(capturedBody.organization);
+  });
+
+  it('sends organization when explicitly provided', async () => {
+    const { capturedBody } = await setup({
+      exchangeOptions: { organization: 'org_abc123' },
     });
     assert.equal(capturedBody.organization, 'org_abc123');
   });
@@ -181,6 +188,29 @@ describe('customTokenExchange', () => {
     );
     // denylisted scope from extra is stripped; config default scope is used instead
     assert.notEqual(capturedBody.scope, 'bad');
+  });
+
+  it('allows RFC 8693 optional params and IdP-specific params via extra', async () => {
+    const { capturedBody } = await setup({
+      exchangeOptions: {
+        extra: {
+          connection: 'google-oauth2',
+          requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+          actor_token: '__test_actor_token__',
+          actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+        },
+      },
+    });
+    assert.equal(capturedBody.connection, 'google-oauth2');
+    assert.equal(
+      capturedBody.requested_token_type,
+      'urn:ietf:params:oauth:token-type:jwt',
+    );
+    assert.equal(capturedBody.actor_token, '__test_actor_token__');
+    assert.equal(
+      capturedBody.actor_token_type,
+      'urn:ietf:params:oauth:token-type:access_token',
+    );
   });
 
   it('returns the TokenSet from client.grant()', async () => {
