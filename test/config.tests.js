@@ -143,6 +143,7 @@ describe('get config', () => {
         httpOnly: true,
         transient: false,
         secure: false,
+        path: '/',
       },
     });
   });
@@ -160,6 +161,7 @@ describe('get config', () => {
         httpOnly: true,
         transient: false,
         secure: true,
+        path: '/',
       },
     });
   });
@@ -203,6 +205,7 @@ describe('get config', () => {
           httpOnly: false,
           secure: true,
           sameSite: 'Strict',
+          path: '/',
         },
       },
     });
@@ -297,6 +300,55 @@ describe('get config', () => {
         name: 'CustomTxnCookie',
       },
     });
+  });
+
+  it('should auto-derive cookie path from baseURL with path', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com/app1',
+    });
+    assert.equal(config.session.cookie.path, '/app1');
+  });
+
+  it('should auto-derive cookie path from baseURL with nested path', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com/foo/bar/baz',
+    });
+    assert.equal(config.session.cookie.path, '/foo/bar/baz');
+  });
+
+  it('should auto-derive cookie path as / when baseURL has no path', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com',
+    });
+    assert.equal(config.session.cookie.path, '/');
+  });
+
+  it('should auto-derive cookie path as / when baseURL has root path', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com/',
+    });
+    assert.equal(config.session.cookie.path, '/');
+  });
+
+  it('should strip trailing slash from derived cookie path', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com/app1/',
+    });
+    assert.equal(config.session.cookie.path, '/app1');
+  });
+
+  it('should allow explicit cookie path to override auto-derived path', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com/app1',
+      session: { cookie: { path: '/custom' } },
+    });
+    assert.equal(config.session.cookie.path, '/custom');
   });
 
   it('should fail when the baseURL is http and cookie is secure', function () {

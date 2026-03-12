@@ -848,7 +848,9 @@ interface CookieConfigParams {
 
   /**
    * Path for the cookie.
-   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`
+   * Passed to the [Response cookie](https://expressjs.com/en/api.html#res.cookie) as `path`.
+   * Defaults to the pathname of {@link ConfigParams.baseURL}, which helps prevent cookie collision
+   * when multiple apps are hosted on the same domain (e.g., `example.com/app1` and `example.com/app2`).
    */
   path?: string;
 
