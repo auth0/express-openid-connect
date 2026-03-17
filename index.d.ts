@@ -87,10 +87,9 @@ interface CustomTokenExchangeOptions {
   audience?: string;
   /** Requested scope(s). Defaults to `authorizationParams.scope`. */
   scope?: string;
-  /** Requested organization. */
-  organization?: string;
   /**
-   * Additional parameters forwarded to the token endpoint.
+   * Additional parameters forwarded to the token endpoint and can be used
+   * for vendor-specific or RFC 8693 extension parameters.
    * Parameters in the security denylist are silently stripped.
    */
   extra?: Record<string, string | number | boolean>;
@@ -173,6 +172,13 @@ interface RequestContext {
    *   res.json({ access_token: tokenSet.access_token });
    * });
    * ```
+   *
+   * **Errors thrown:**
+   * - HTTP 400 — AS rejected the request; `err.error` contains the OAuth error code
+   * - HTTP 400 — `subject_token` could not be resolved (no session or no access token)
+   * - HTTP 401 — AS requires MFA step-up; `err.error === 'mfa_required'`
+   *
+   * Vendor-specific parameters must be passed via `extra`.
    */
   customTokenExchange(options?: CustomTokenExchangeOptions): Promise<TokenSet>;
 }

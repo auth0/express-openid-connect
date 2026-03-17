@@ -122,18 +122,9 @@ describe('customTokenExchange', () => {
     assert.equal(capturedBody.scope, 'openid read:data');
   });
 
-  it('does not default organization from authorizationParams', async () => {
+  it('sends organization when explicitly provided via extra', async () => {
     const { capturedBody } = await setup({
-      authConfig: {
-        authorizationParams: { organization: 'org_abc123' },
-      },
-    });
-    assert.isUndefined(capturedBody.organization);
-  });
-
-  it('sends organization when explicitly provided', async () => {
-    const { capturedBody } = await setup({
-      exchangeOptions: { organization: 'org_abc123' },
+      exchangeOptions: { extra: { organization: 'org_abc123' } },
     });
     assert.equal(capturedBody.organization, 'org_abc123');
   });
@@ -234,6 +225,35 @@ describe('customTokenExchange', () => {
     assert.equal(
       response.body.err.error_description,
       'Token exchange not allowed',
+    );
+  });
+
+  it('maps mfa_required AS error to HTTP 401', async () => {
+    const { response } = await setup({
+      mockTokenResponse: {
+        status: 400,
+        body: {
+          error: 'mfa_required',
+          error_description: 'Multifactor authentication required',
+        },
+      },
+    });
+    assert.equal(response.statusCode, 401);
+    assert.equal(response.body.err.error, 'mfa_required');
+    assert.equal(
+      response.body.err.error_description,
+      'Multifactor authentication required',
+    );
+  });
+
+  it('throws 400 when caller has no session', async () => {
+    const { response } = await setup({
+      sessionData: {},
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(
+      response.body.err.message,
+      'subject_token is required for token exchange',
     );
   });
 });
