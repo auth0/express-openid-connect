@@ -11,6 +11,7 @@
 9. [Validate Claims from an ID token before logging a user in](#9-validate-claims-from-an-id-token-before-logging-a-user-in)
 10. [Use a custom session store](#10-use-a-custom-session-store)
 11. [Back-Channel Logout](#11-back-channel-logout)
+12. [Custom Token Exchange](#12-custom-token-exchange)
 
 ## 1. Basic setup
 
@@ -56,7 +57,7 @@ const { auth, requiresAuth } = require('express-openid-connect');
 app.use(
   auth({
     authRequired: false,
-  })
+  }),
 );
 
 // Anyone can access the homepage
@@ -66,7 +67,7 @@ app.get('/', (req, res) => {
 
 // requiresAuth checks authentication.
 app.get('/admin', requiresAuth(), (req, res) =>
-  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
+  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`),
 );
 ```
 
@@ -90,7 +91,7 @@ app.use(
       // Override the default callback route to use your own callback route as shown below
       callback: false,
     },
-  })
+  }),
 );
 
 app.get('/login', (req, res) =>
@@ -99,7 +100,7 @@ app.get('/login', (req, res) =>
     authorizationParams: {
       redirect_uri: 'http://localhost:3000/callback',
     },
-  })
+  }),
 );
 
 app.get('/custom-logout', (req, res) => res.send('Bye!'));
@@ -107,13 +108,13 @@ app.get('/custom-logout', (req, res) => res.send('Bye!'));
 app.get('/callback', (req, res) =>
   res.oidc.callback({
     redirectUri: 'http://localhost:3000/callback',
-  })
+  }),
 );
 
 app.post('/callback', express.urlencoded({ extended: false }), (req, res) =>
   res.oidc.callback({
     redirectUri: 'http://localhost:3000/callback',
-  })
+  }),
 );
 
 module.exports = app;
@@ -135,7 +136,7 @@ app.use(
       audience: 'https://api.example.com/products',
       scope: 'openid profile email read:products',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -163,7 +164,7 @@ app.use(
       audience: 'https://api.example.com/products',
       scope: 'openid profile email offline_access read:products',
     },
-  })
+  }),
 );
 
 app.get('/', async (req, res) => {
@@ -212,12 +213,12 @@ const {
 app.use(
   auth({
     authRequired: false,
-  })
+  }),
 );
 
 // claimEquals checks if a claim equals the given value
 app.get('/admin', claimEquals('isAdmin', true), (req, res) =>
-  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`)
+  res.send(`Hello ${req.oidc.user.sub}, this is the admin section.`),
 );
 
 // claimIncludes checks if a claim includes all the given values
@@ -225,7 +226,7 @@ app.get(
   '/sales-managers',
   claimIncludes('roles', 'sales', 'manager'),
   (req, res) =>
-    res.send(`Hello ${req.oidc.user.sub}, this is the sales managers section.`)
+    res.send(`Hello ${req.oidc.user.sub}, this is the sales managers section.`),
 );
 
 // claimCheck takes a function that checks the claims and returns true to allow access
@@ -233,7 +234,7 @@ app.get(
   '/payroll',
   claimCheck(({ isAdmin, roles }) => isAdmin || roles.includes('payroll')),
   (req, res) =>
-    res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`)
+    res.send(`Hello ${req.oidc.user.sub}, this is the payroll section.`),
 );
 ```
 
@@ -248,7 +249,7 @@ app.use(
   auth({
     idpLogout: true,
     // auth0Logout: true // if using custom domain with Auth0
-  })
+  }),
 );
 ```
 
@@ -266,7 +267,7 @@ app.use(
       }
       return session;
     },
-  })
+  }),
 );
 ```
 
@@ -295,7 +296,7 @@ app.use(
     session: {
       store: new RedisStore({ client: redisClient }),
     },
-  })
+  }),
 );
 ```
 
@@ -321,7 +322,7 @@ app.use(
     backchannelLogout: {
       store: new RedisStore({ client: redisClient }),
     },
-  })
+  }),
 );
 ```
 
@@ -335,7 +336,7 @@ app.use(
       store: new RedisStore({ client: redisClient }),
     },
     backchannelLogout: true,
-  })
+  }),
 );
 ```
 
@@ -347,3 +348,63 @@ app.use(
 - If the user logs in again, the SDK will remove any stale `sub` entry in the Back-Channel Logout store to ensure they are not logged out immediately (this is customisable using the [onLogin](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html#onLogin) config hook)
 
 The config options are [documented here](https://auth0.github.io/express-openid-connect/interfaces/BackchannelLogoutOptions.html)
+
+## 12. Custom Token Exchange
+
+When your app logs in with one API audience but needs to call a different downstream service, `customTokenExchange()` lets you swap the session's access token for one accepted by that service. This follows the [OAuth 2.0 Token Exchange spec (RFC 8693)](https://www.rfc-editor.org/rfc/rfc8693).
+
+```js
+const { auth, requiresAuth } = require('express-openid-connect');
+const axios = require('axios');
+
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code',
+      // Token issued at login is scoped to the upstream API
+      audience: 'https://api.example.com',
+      scope: 'openid profile offline_access',
+    },
+  }),
+);
+
+app.get('/reports', requiresAuth(), async (req, res, next) => {
+  try {
+    // Exchange the session token for one accepted by the reporting service.
+    // subject_token and subject_token_type are resolved automatically.
+    const { access_token } = await req.oidc.customTokenExchange({
+      audience: 'https://reports.internal.example.com',
+      scope: 'openid read:reports',
+    });
+
+    const { data } = await axios.get(
+      'https://reports.internal.example.com/v1/summary',
+      { headers: { Authorization: `Bearer ${access_token}` } },
+    );
+
+    res.json(data);
+  } catch (err) {
+    // Authorization server rejections surface as HTTP 400 and 401
+    // with err.error and err.error_description set
+    next(err);
+  }
+});
+```
+
+`subject_token` is resolved automatically from the session's accessToken and `subject_token_type` defaults to [urn:ietf:params:oauth:token-type:access_token
+](https://datatracker.ietf.org/doc/html/rfc8693#section-3-3.2). The returned token is ephemeral — it is not stored in the session, so use it within the same request.
+
+### Vendor-specific parameters
+
+Vendor-specific parameters (e.g., Auth0 organization routing or Token Vault connection) can be passed through the `extra` option:
+
+```js
+const { downstreamToken } = await req.oidc.customTokenExchange({
+  audience: 'https://downstream-api.example.com',
+  scope: 'read:data',
+  extra: {
+    organization: 'org_abc123',
+    connection: 'google-oauth2',
+  },
+});
+```
