@@ -1325,4 +1325,38 @@ describe('callback response_mode: form_post', () => {
     });
     assert.equal(headers.foo, 'bar');
   });
+
+  it('should redirect to baseURL on stale callback when user is already authenticated (back button scenario)', async () => {
+    const jar = request.jar();
+    const authOpts = { ...defaultConfig };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    // First, establish a session by setting up an existing authenticated session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: makeIdToken(),
+        access_token: '__test_access_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) + 86400,
+      },
+    });
+
+    // Now simulate a stale callback (back button) - no auth_verification cookie, but user is authenticated
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
+        state: expectedDefaultState,
+        code: '__test_code__',
+      },
+      followRedirect: false,
+    });
+
+    // Should redirect to baseURL instead of throwing an error
+    assert.equal(response.statusCode, 302);
+    assert.equal(response.headers.location, 'http://example.org');
+  });
 });
