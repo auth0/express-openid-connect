@@ -96,6 +96,34 @@ interface CustomTokenExchangeOptions {
 }
 
 /**
+ * Represents the response from a token exchange request (RFC 8693).
+ */
+interface TokenExchangeResponse {
+  /** The exchanged access token. */
+  access_token?: string;
+  /** Usually `"Bearer"`. */
+  token_type?: string;
+  /**
+   * Absolute UNIX timestamp (seconds) at which the access token expires.
+   * Use this instead of `expires_in` when persisting or forwarding expiry.
+   */
+  expires_at?: number;
+  /** Space-separated scopes granted by the AS. */
+  scope?: string;
+  /**
+   * RFC 8693 — the type of token that was issued.
+   * Typically `"urn:ietf:params:oauth:token-type:access_token"`.
+   */
+  issued_token_type?: string;
+  /** ID token, if the AS returned one (uncommon for token exchange). */
+  id_token?: string;
+  /** Refresh token, if the AS returned one. */
+  refresh_token?: string;
+  /** Vendor-specific or extension fields returned by the authorization server. */
+  [key: string]: unknown;
+}
+
+/**
  * The request authentication context found on the Express request when
  * OpenID Connect auth middleware is added to your application.
  *
@@ -174,13 +202,15 @@ interface RequestContext {
    * ```
    *
    * **Errors thrown:**
-   * - HTTP 400 — AS rejected the request; `err.error` contains the OAuth error code
-   * - HTTP 400 — `subject_token` could not be resolved (no session or no access token)
-   * - HTTP 401 — AS requires MFA step-up; `err.error === 'mfa_required'`
+   * - HTTP 400 — AS rejected the request or `subject_token` could not be
+   * resolved (no session or no access token). `err.error` contains the OAuth error code
+   * - HTTP 401 — AS requires MFA step-up, `err.error === 'mfa_required'`
    *
    * Vendor-specific parameters must be passed via `extra`.
    */
-  customTokenExchange(options?: CustomTokenExchangeOptions): Promise<TokenSet>;
+  customTokenExchange(
+    options?: CustomTokenExchangeOptions,
+  ): Promise<TokenExchangeResponse>;
 }
 
 /**

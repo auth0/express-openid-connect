@@ -391,7 +391,7 @@ app.get('/reports', requiresAuth(), async (req, res, next) => {
 });
 ```
 
-`subject_token` is resolved automatically from the session and `subject_token_type` defaults to [urn:ietf:params:oauth:token-type:access_token
+`subject_token` is resolved automatically from the session's accessToken and `subject_token_type` defaults to [urn:ietf:params:oauth:token-type:access_token
 ](https://datatracker.ietf.org/doc/html/rfc8693#section-3-3.2). The returned token is ephemeral — it is not stored in the session, so use it within the same request.
 
 ### Vendor-specific parameters
