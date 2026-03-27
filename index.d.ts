@@ -5,7 +5,6 @@ import type { Agent as HttpsAgent } from 'https';
 import {
   AuthorizationParameters,
   IdTokenClaims,
-  TokenSet,
   UserinfoResponse,
 } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
@@ -208,9 +207,9 @@ interface RequestContext {
    *
    * Vendor-specific parameters must be passed via `extra`.
    */
-  customTokenExchange(
+  customTokenExchange?: (
     options?: CustomTokenExchangeOptions,
-  ): Promise<TokenExchangeResponse>;
+  ) => Promise<TokenExchangeResponse>;
 }
 
 /**
