@@ -154,21 +154,25 @@ describe('callback response_mode: form_post', () => {
     assert.equal(err.message, 'state missing from the response');
   });
 
-  it('should error when the state is missing', async () => {
-    const {
-      response: {
-        statusCode,
-        body: { err },
-      },
-    } = await setup({
-      cookies: {},
-      body: {
+  it('should redirect to baseURL when the state cookie is missing (stale callback)', async () => {
+    const jar = request.jar();
+    const authOpts = { ...defaultConfig };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
         state: '__test_state__',
         id_token: '__invalid_token__',
       },
+      followRedirect: false,
     });
-    assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+
+    // Should redirect to baseURL instead of throwing an error
+    assert.equal(response.statusCode, 302);
+    assert.equal(response.headers.location, 'http://example.org');
   });
 
   it("should error when state doesn't match", async () => {
@@ -274,29 +278,49 @@ describe('callback response_mode: form_post', () => {
     assert.match(err.message, /nonce mismatch/i);
   });
 
-  it('should error when legacy samesite fallback is off', async () => {
-    const {
-      response: {
-        statusCode,
-        body: { err },
+  it('should redirect to baseURL when legacy samesite fallback is off and main cookie missing', async () => {
+    const jar = request.jar();
+    const authOpts = {
+      ...defaultConfig,
+      // Do not check the fallback cookie value.
+      legacySameSiteCookie: false,
+    };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    // Only set the legacy fallback cookie (with underscore prefix), not the main cookie
+    const transient = new TransientCookieHandler(authOpts);
+    let cookieValue;
+    transient.store(
+      '_auth_verification',
+      {},
+      {
+        cookie(key, ...args) {
+          if (key === '_auth_verification') {
+            cookieValue = args[0];
+          }
+        },
       },
-    } = await setup({
-      authOpts: {
-        // Do not check the fallback cookie value.
-        legacySameSiteCookie: false,
-      },
-      cookies: {
-        ['_auth_verification']: JSON.stringify({
-          state: '__test_state__',
-        }),
-      },
-      body: {
+      { value: JSON.stringify({ state: '__test_state__' }) },
+    );
+    jar.setCookie(
+      `_auth_verification=${cookieValue}; Max-Age=3600; Path=/; HttpOnly;`,
+      baseUrl + '/callback',
+    );
+
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
         state: '__test_state__',
         id_token: '__invalid_token__',
       },
+      followRedirect: false,
     });
-    assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+
+    // Should redirect to baseURL since main cookie is missing and legacy fallback is off
+    assert.equal(response.statusCode, 302);
+    assert.equal(response.headers.location, 'http://example.org');
   });
 
   it('should include oauth error properties in error', async () => {
@@ -308,8 +332,12 @@ describe('callback response_mode: form_post', () => {
         },
       },
     } = await setup({
-      cookies: {},
+      cookies: generateCookies({
+        nonce: '__test_nonce__',
+        state: '__test_state__',
+      }),
       body: {
+        state: '__test_state__',
         error: 'foo',
         error_description: 'bar',
       },
@@ -1345,6 +1373,28 @@ describe('callback response_mode: form_post', () => {
     });
 
     // Now simulate a stale callback (back button) - no auth_verification cookie, but user is authenticated
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
+        state: expectedDefaultState,
+        code: '__test_code__',
+      },
+      followRedirect: false,
+    });
+
+    // Should redirect to baseURL instead of throwing an error
+    assert.equal(response.statusCode, 302);
+    assert.equal(response.headers.location, 'http://example.org');
+  });
+
+  it('should redirect to baseURL on stale callback when user is not authenticated (cookie lost scenario)', async () => {
+    const jar = request.jar();
+    const authOpts = { ...defaultConfig, authRequired: false };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    // Simulate a stale/replayed callback - no auth_verification cookie, user not authenticated
     const response = await request.post('/callback', {
       baseUrl,
       jar,
