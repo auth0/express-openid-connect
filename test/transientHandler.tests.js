@@ -23,7 +23,7 @@ describe('transientHandler', function () {
       const header = { alg: 'HS256', b64: false, crit: ['b64'] };
       const jws = await new FlattenedSign(payload)
         .setProtectedHeader(header)
-        .sign(transientHandler.keyStore);
+        .sign(transientHandler.currentKey);
       return jws.signature;
     };
     res = { cookie: sinon.spy(), clearCookie: sinon.spy() };
