@@ -217,7 +217,7 @@ interface RequestContext {
    * ```
    *
    */
-  fetchUserInfo(): Promise<UserinfoResponse>;
+  fetchUserInfo(): Promise<UserInfoResponse>;
 
   /**
    * Performs a token exchange (RFC 8693) using the token endpoint.
