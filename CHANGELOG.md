@@ -1,5 +1,20 @@
 # Change Log
 
+## [v2.20.1](https://github.com/auth0/express-openid-connect/tree/v2.20.1) (2026-03-27)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.0...v2.20.1)
+
+**Fixed**
+- fix: customTokenExchange should be optional on RequestContext [\#809](https://github.com/auth0/express-openid-connect/pull/809) ([cschetan77](https://github.com/cschetan77))
+
+## [v2.20.0](https://github.com/auth0/express-openid-connect/tree/v2.20.0) (2026-03-26)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.4...v2.20.0)
+
+**Added**
+- feat: Add Custom Token Exchange Support [\#790](https://github.com/auth0/express-openid-connect/pull/790) ([cschetan77](https://github.com/cschetan77))
+
+**Fixed**
+- fix: Handle missing Joi.binary() for Cloudflare Workers compatibility  [\#769](https://github.com/auth0/express-openid-connect/pull/769) ([aks96](https://github.com/aks96))
+
 ## [v2.19.4](https://github.com/auth0/express-openid-connect/tree/v2.19.4) (2026-01-09)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.19.3...v2.19.4)
 

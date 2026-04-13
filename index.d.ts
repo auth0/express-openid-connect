@@ -70,6 +70,59 @@ interface OpenidResponse extends Response {
 }
 
 /**
+ * Options for {@link RequestContext.customTokenExchange}.
+ * All fields are optional — unset fields fall back to `authorizationParams` config or
+ * RFC 8693 defaults where applicable.
+ */
+interface CustomTokenExchangeOptions {
+  /** The security token to exchange. Defaults to the current user's access token. */
+  subject_token?: string;
+  /**
+   * URI identifying the type of `subject_token`.
+   * Defaults to `urn:ietf:params:oauth:token-type:access_token`.
+   */
+  subject_token_type?: string;
+  /** Requested audience. Defaults to `authorizationParams.audience`. */
+  audience?: string;
+  /** Requested scope(s). Defaults to `authorizationParams.scope`. */
+  scope?: string;
+  /**
+   * Additional parameters forwarded to the token endpoint and can be used
+   * for vendor-specific or RFC 8693 extension parameters.
+   * Parameters in the security denylist are silently stripped.
+   */
+  extra?: Record<string, string | number | boolean>;
+}
+
+/**
+ * Represents the response from a token exchange request (RFC 8693).
+ */
+interface TokenExchangeResponse {
+  /** The exchanged access token. */
+  access_token?: string;
+  /** Usually `"Bearer"`. */
+  token_type?: string;
+  /**
+   * Absolute UNIX timestamp (seconds) at which the access token expires.
+   * Use this instead of `expires_in` when persisting or forwarding expiry.
+   */
+  expires_at?: number;
+  /** Space-separated scopes granted by the AS. */
+  scope?: string;
+  /**
+   * RFC 8693 — the type of token that was issued.
+   * Typically `"urn:ietf:params:oauth:token-type:access_token"`.
+   */
+  issued_token_type?: string;
+  /** ID token, if the AS returned one (uncommon for token exchange). */
+  id_token?: string;
+  /** Refresh token, if the AS returned one. */
+  refresh_token?: string;
+  /** Vendor-specific or extension fields returned by the authorization server. */
+  [key: string]: unknown;
+}
+
+/**
  * The request authentication context found on the Express request when
  * OpenID Connect auth middleware is added to your application.
  *
@@ -134,6 +187,29 @@ interface RequestContext {
    *
    */
   fetchUserInfo(): Promise<UserinfoResponse>;
+
+  /**
+   * Performs a token exchange (RFC 8693) using the token endpoint.
+   *
+   * ```js
+   * app.get('/api', requiresAuth(), async (req, res) => {
+   *   const tokenSet = await req.oidc.customTokenExchange({
+   *     audience: 'https://downstream-api.example.com',
+   *   });
+   *   res.json({ access_token: tokenSet.access_token });
+   * });
+   * ```
+   *
+   * **Errors thrown:**
+   * - HTTP 400 — AS rejected the request or `subject_token` could not be
+   * resolved (no session or no access token). `err.error` contains the OAuth error code
+   * - HTTP 401 — AS requires MFA step-up, `err.error === 'mfa_required'`
+   *
+   * Vendor-specific parameters must be passed via `extra`.
+   */
+  customTokenExchange?: (
+    options?: CustomTokenExchangeOptions,
+  ) => Promise<TokenExchangeResponse>;
 }
 
 /**
