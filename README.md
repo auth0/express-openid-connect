@@ -80,7 +80,7 @@ app.use(
     clientID: 'YOUR_CLIENT_ID',
     secret: 'LONG_RANDOM_STRING',
     idpLogout: true,
-  })
+  }),
 );
 ```
 
@@ -95,6 +95,40 @@ To write your own error handler, see the Express documentation on writing [Custo
 For other comprehensive examples such as route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more, see the [EXAMPLES.md](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) document.
 
 See the [examples](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) for route-specific authentication, custom application session handling, requesting and using access tokens for external APIs, and more.
+
+### Deploying Multiple Apps on the Same Domain
+
+If you host more than one application that uses this SDK under the same domain (e.g. `example.com/app1` and `example.com/app2`), each app must be given a unique session cookie name, transaction cookie name, and cookie path. Without this, the apps share the same cookie namespace and can silently overwrite each other's login state, causing intermittent `"auth_verification" cookie not found` errors.
+
+```js
+// App 1 — mounted at /app1
+app.use(
+  '/app1',
+  auth({
+    baseURL: 'https://example.com/app1',
+    session: {
+      name: 'app1Session',
+      cookie: { path: '/app1' },
+    },
+    transactionCookie: { name: 'app1_auth_verification' },
+  }),
+);
+
+// App 2 — mounted at /app2
+app.use(
+  '/app2',
+  auth({
+    baseURL: 'https://example.com/app2',
+    session: {
+      name: 'app2Session',
+      cookie: { path: '/app2' },
+    },
+    transactionCookie: { name: 'app2_auth_verification' },
+  }),
+);
+```
+
+See the [FAQ](https://github.com/auth0/express-openid-connect/blob/master/FAQ.md#im-getting-auth_verification-cookie-not-found--login-fails-intermittently-or-only-on-certain-browsers) for a full explanation of the cookie collision mechanism and other causes of the same error.
 
 ### Use of Custom Session Stores and `genid`
 
