@@ -154,21 +154,27 @@ describe('callback response_mode: form_post', () => {
     assert.equal(err.message, 'state missing from the response');
   });
 
-  it('should error when the state is missing', async () => {
-    const {
-      response: {
-        statusCode,
-        body: { err },
-      },
-    } = await setup({
-      cookies: {},
-      body: {
+  it('should error with descriptive message when the state cookie is missing and user is not authenticated', async () => {
+    const jar = request.jar();
+    const authOpts = { ...defaultConfig };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
         state: '__test_state__',
         id_token: '__invalid_token__',
       },
+      followRedirect: false,
     });
-    assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+
+    assert.equal(response.statusCode, 400);
+    assert.match(
+      response.body.err.message,
+      /"auth_verification" cookie not found/,
+    );
   });
 
   it("should error when state doesn't match", async () => {
@@ -274,7 +280,7 @@ describe('callback response_mode: form_post', () => {
     assert.match(err.message, /nonce mismatch/i);
   });
 
-  it('should error when legacy samesite fallback is off', async () => {
+  it('should error when legacy samesite fallback is off and main cookie missing', async () => {
     const {
       response: {
         statusCode,
@@ -296,7 +302,7 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(statusCode, 400);
-    assert.equal(err.message, 'checks.state argument is missing');
+    assert.match(err.message, /"auth_verification" cookie not found/);
   });
 
   it('should include oauth error properties in error', async () => {
@@ -308,8 +314,12 @@ describe('callback response_mode: form_post', () => {
         },
       },
     } = await setup({
-      cookies: {},
+      cookies: generateCookies({
+        nonce: '__test_nonce__',
+        state: '__test_state__',
+      }),
       body: {
+        state: '__test_state__',
         error: 'foo',
         error_description: 'bar',
       },
@@ -1324,5 +1334,64 @@ describe('callback response_mode: form_post', () => {
       },
     });
     assert.equal(headers.foo, 'bar');
+  });
+
+  it('should redirect to baseURL on stale callback when user is already authenticated (back button scenario)', async () => {
+    const jar = request.jar();
+    const authOpts = { ...defaultConfig };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    // First, establish a session by setting up an existing authenticated session
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: makeIdToken(),
+        access_token: '__test_access_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) + 86400,
+      },
+    });
+
+    // Now simulate a stale callback (back button) - no auth_verification cookie, but user is authenticated
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
+        state: expectedDefaultState,
+        code: '__test_code__',
+      },
+      followRedirect: false,
+    });
+
+    // Should redirect to baseURL instead of throwing an error
+    assert.equal(response.statusCode, 302);
+    assert.equal(response.headers.location, 'http://example.org');
+  });
+
+  it('should error with descriptive message on callback when user is not authenticated and cookie is missing (dropped cookie scenario)', async () => {
+    const jar = request.jar();
+    const authOpts = { ...defaultConfig, authRequired: false };
+    const router = auth(authOpts);
+    server = await createServer(router);
+
+    // Simulate a callback with no auth_verification cookie and user not authenticated
+    // (e.g., SameSite=None cookie dropped by browser, or direct navigation to /callback)
+    const response = await request.post('/callback', {
+      baseUrl,
+      jar,
+      json: {
+        state: expectedDefaultState,
+        code: '__test_code__',
+      },
+      followRedirect: false,
+    });
+
+    assert.equal(response.statusCode, 400);
+    assert.match(
+      response.body.err.message,
+      /"auth_verification" cookie not found/,
+    );
   });
 });
