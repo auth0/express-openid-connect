@@ -1,11 +1,5 @@
 # Change Log
 
-## [v2.20.2](https://github.com/auth0/express-openid-connect/tree/v2.20.2) (2026-04-16)
-[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.1...v2.20.2)
-
-**Fixed**
-- fix: handle missing transaction cookie with auth-state-aware response [\#797](https://github.com/auth0/express-openid-connect/pull/797) ([aks96](https://github.com/aks96))
-
 ## [v2.20.1](https://github.com/auth0/express-openid-connect/tree/v2.20.1) (2026-03-27)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.0...v2.20.1)
 
