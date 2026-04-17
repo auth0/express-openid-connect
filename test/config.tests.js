@@ -299,6 +299,15 @@ describe('get config', () => {
     });
   });
 
+  it('should allow setting custom cookie path to prevent collision on same domain', function () {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'https://example.com/app1',
+      session: { cookie: { path: '/app1' } },
+    });
+    assert.equal(config.session.cookie.path, '/app1');
+  });
+
   it('should fail when the baseURL is http and cookie is secure', function () {
     assert.throws(() => {
       getConfig({
