@@ -465,6 +465,29 @@ describe('appSession', () => {
     clock.restore();
   });
 
+  it('should not write session cookie when headers are already sent before res.end()', async () => {
+    /*
+     * If headers are flushed before res.end(), the session cookie cannot be written.
+     * This can happen in several scenarios, e.g.:
+     *   - res.write() is called before res.end() (streaming/chunked responses)
+     *   - res.writeHead() or res.flushHeaders() is called explicitly
+     *   - res.sendFile() / res.download() which pipe a stream and flush headers early
+     *   - a prior middleware calls res.json() / res.send() before res.end()
+     */
+    server = await createServer((req, res, next) => {
+      appSession(getConfig(defaultConfig))(req, res, () => {
+        // Modify the session so setCookie would normally write a cookie
+        Object.assign(req.appSession, { sub: '__test_sub__' });
+        // Flush headers before res.end() — simulates the above scenarios
+        res.write('chunk');
+        res.end();
+      });
+    });
+    const res = await request.get('/session', { baseUrl });
+    // Headers were already sent by res.write(), so the session cookie must not be set
+    assert.notProperty(res.headers, 'set-cookie');
+  });
+
   it('should throw for duplicate mw', async () => {
     server = await createServer((req, res, next) => {
       req.appSession = {};
