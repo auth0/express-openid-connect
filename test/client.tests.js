@@ -1,4 +1,3 @@
-const { Agent } = require('https');
 const client = require('openid-client');
 const fs = require('fs');
 const { assert, expect } = require('chai').use(require('chai-as-promised'));
@@ -317,23 +316,55 @@ describe('client initialization', function () {
     });
   });
 
-  describe.skip('client respects httpAgent configuration', function () {
-    // HTTP agent configuration is not directly supported in v6
-    // Custom agents require using undici with customFetch
-    const agent = new Agent();
-
-    // eslint-disable-next-line no-unused-vars
-    const config = getConfig({
-      secret: '__test_session_secret__',
-      clientID: '__test_client_id__',
-      clientSecret: '__test_client_secret__',
-      issuerBaseURL: 'https://op.example.com',
-      baseURL: 'https://example.org',
-      httpAgent: { https: agent },
+  describe('client respects customFetch configuration', function () {
+    it('should invoke customFetch during discovery', async function () {
+      const customFetch = sinon
+        .stub()
+        .callsFake((url, options) => fetch(url, options));
+      nock('https://custom-fetch-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://custom-fetch-test.auth0.com/',
+        });
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://custom-fetch-test.auth0.com',
+        baseURL: 'https://example.org',
+        customFetch,
+      });
+      await getClient(config);
+      expect(customFetch.called).to.be.true;
     });
 
-    it('should pass agent argument', async function () {
-      // This test is skipped as v6 doesn't support agents the same way
+    it('should inject SDK headers into customFetch calls', async function () {
+      let capturedHeaders;
+      const customFetch = sinon.stub().callsFake((url, options) => {
+        capturedHeaders = options.headers;
+        return fetch(url, options);
+      });
+      nock('https://custom-fetch-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://custom-fetch-test.auth0.com/',
+        });
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://custom-fetch-test.auth0.com',
+        baseURL: 'https://example.org',
+        customFetch,
+      });
+      await getClient(config);
+      expect(capturedHeaders.get('user-agent')).to.match(
+        /^express-openid-connect\//,
+      );
     });
   });
 

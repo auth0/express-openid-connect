@@ -12,6 +12,7 @@
 10. [Use a custom session store](#10-use-a-custom-session-store)
 11. [Back-Channel Logout](#11-back-channel-logout)
 12. [Custom Token Exchange](#12-custom-token-exchange)
+13. [Use a proxy for OIDC requests](#13-use-a-proxy-for-oidc-requests)
 
 ## 1. Basic setup
 
@@ -408,3 +409,26 @@ const { downstreamToken } = await req.oidc.customTokenExchange({
   },
 });
 ```
+
+## 13. Use a proxy for OIDC requests
+
+If you need to route all OIDC HTTP requests (discovery, token, userinfo, etc.) through a proxy, use the `customFetch` option with `undici`'s `ProxyAgent`:
+
+```js
+const express = require('express');
+const { auth } = require('express-openid-connect');
+const { ProxyAgent, fetch: undiciFetch } = require('undici');
+
+const app = express();
+
+const dispatcher = new ProxyAgent('http://proxy.example.com:8080');
+
+app.use(
+  auth({
+    customFetch: (url, options) => undiciFetch(url, { ...options, dispatcher }),
+    // ... other options
+  }),
+);
+```
+
+The SDK wraps your `customFetch` function to add required headers (User-Agent, Auth0-Client telemetry) before making requests.

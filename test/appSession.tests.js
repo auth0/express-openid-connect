@@ -474,7 +474,7 @@ describe('appSession', () => {
      *   - res.sendFile() / res.download() which pipe a stream and flush headers early
      *   - a prior middleware calls res.json() / res.send() before res.end()
      */
-    server = await createServer((req, res, next) => {
+    server = await createServer((req, res) => {
       appSession(getConfig(defaultConfig))(req, res, () => {
         // Modify the session so setCookie would normally write a cookie
         Object.assign(req.appSession, { sub: '__test_sub__' });
