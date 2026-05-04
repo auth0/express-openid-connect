@@ -224,52 +224,75 @@ describe('client initialization', function () {
   });
 
   describe('client respects httpTimeout configuration', function () {
-    const config = getConfig({
-      secret: '__test_session_secret__',
-      clientID: '__test_client_id__',
-      clientSecret: '__test_client_secret__',
-      issuerBaseURL: 'https://op.example.com',
-      baseURL: 'https://example.org',
-    });
+    // httpTimeout is wired into createCustomFetch which is passed to client.discovery(),
+    // so we test it against the discovery endpoint — that's where the timeout actually applies.
+    // Each test uses a distinct issuer to avoid discovery cache collisions.
 
-    function mockRequest(delay = 0) {
-      nock('https://op.example.com').post('/slow').delay(delay).reply(200);
-    }
+    it('should succeed when discovery responds within the default timeout', async function () {
+      nock('https://timeout-test-1.example.com')
+        .get('/.well-known/openid-configuration')
+        .delay(0)
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://timeout-test-1.example.com/',
+        });
 
-    async function invokeRequest(configuration) {
-      return await client.fetchProtectedResource(
-        configuration,
-        'token',
-        new URL('https://op.example.com/slow'),
-        'POST',
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://timeout-test-1.example.com',
+        baseURL: 'https://example.org',
+      });
+      const { configuration } = await getClient(config);
+      assert.equal(
+        configuration.clientMetadata().client_id,
+        '__test_client_id__',
       );
-    }
-
-    it('should not timeout for default', async function () {
-      mockRequest(0);
-      const { configuration } = await getClient({ ...config });
-      const response = await invokeRequest(configuration);
-      assert.equal(response.status, 200);
     });
 
-    it('should not timeout for delay < httpTimeout', async function () {
-      mockRequest(1000);
-      const { configuration } = await getClient({
-        ...config,
+    it('should succeed when discovery delay is less than httpTimeout', async function () {
+      nock('https://timeout-test-2.example.com')
+        .get('/.well-known/openid-configuration')
+        .delay(200)
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://timeout-test-2.example.com/',
+        });
+
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://timeout-test-2.example.com',
+        baseURL: 'https://example.org',
         httpTimeout: 1500,
       });
-      const response = await invokeRequest(configuration);
-      assert.equal(response.status, 200);
+      const { configuration } = await getClient(config);
+      assert.equal(
+        configuration.clientMetadata().client_id,
+        '__test_client_id__',
+      );
     });
 
-    it.skip('should timeout for delay > httpTimeout', async function () {
-      // Note: Timeout behavior is different in v6 with fetch API
-      mockRequest(1500);
-      const { configuration } = await getClient({
-        ...config,
+    it('should abort discovery when response exceeds httpTimeout', async function () {
+      nock('https://timeout-test-3.example.com')
+        .get('/.well-known/openid-configuration')
+        .delay(1500)
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://timeout-test-3.example.com/',
+        });
+
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://timeout-test-3.example.com',
+        baseURL: 'https://example.org',
         httpTimeout: 500,
       });
-      await expect(invokeRequest(configuration)).to.be.rejected;
+      await expect(getClient(config)).to.be.rejectedWith('operation timed out');
     });
   });
 
