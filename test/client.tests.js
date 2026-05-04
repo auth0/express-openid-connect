@@ -405,39 +405,76 @@ describe('client initialization', function () {
     });
   });
 
-  describe.skip('client respects clientAssertionSigningAlg configuration', function () {
-    // Note: These tests need rework for v6 since the grant flow is different
-    const config = {
+  describe('client respects clientAssertionSigningAlg configuration', function () {
+    const baseConfig = {
       secret: '__test_session_secret__',
       clientID: '__test_client_id__',
       issuerBaseURL: 'https://op.example.com',
       baseURL: 'https://example.org',
-      authorizationParams: {
-        response_type: 'code',
-      },
+      authorizationParams: { response_type: 'code' },
       clientAssertionSigningKey: fs.readFileSync(
         require('path').join(__dirname, '../examples', 'private-key.pem'),
       ),
     };
 
-    it('should set default client signing assertion alg', async function () {
-      const handler = sinon.stub().returns([200, {}]);
-      nock('https://op.example.com').post('/oauth/token').reply(handler);
-      // eslint-disable-next-line no-unused-vars
-      const { configuration } = await getClient(getConfig(config));
-      // v6 doesn't have a direct grant() method - need to use specific grant functions
-      // This test would need to be rewritten to test the actual grant flow
+    // Intercepts the token endpoint and returns a closure to retrieve
+    // the client_assertion JWT that was sent in the request body.
+    function mockTokenEndpoint() {
+      let capturedAssertion;
+      nock('https://op.example.com')
+        .post('/oauth/token')
+        .reply(200, function (uri, body) {
+          const params = new URLSearchParams(body);
+          capturedAssertion = params.get('client_assertion');
+          return { error: 'invalid_grant' };
+        });
+      return () => capturedAssertion;
+    }
+
+    function getAssertionAlg(jwt) {
+      return JSON.parse(Buffer.from(jwt.split('.')[0], 'base64url').toString())
+        .alg;
+    }
+
+    async function triggerTokenRequest(configuration) {
+      try {
+        await client.authorizationCodeGrant(
+          configuration,
+          new URL(
+            'https://op.example.com/callback?code=test_code&state=test_state',
+          ),
+          { expectedState: 'test_state', expectedNonce: 'test_nonce' },
+        );
+      } catch {
+        // token request failing is expected — we only care about what was sent
+      }
+    }
+
+    it('should use RS256 as the default signing algorithm in the client assertion', async function () {
+      const getAssertion = mockTokenEndpoint();
+      const config = getConfig({ ...baseConfig });
+      const { configuration } = await getClient(config);
+      await triggerTokenRequest(configuration);
+      assert.equal(getAssertionAlg(getAssertion()), 'RS256');
     });
 
-    it('should set custom client signing assertion alg', async function () {
-      const handler = sinon.stub().returns([200, {}]);
-      nock('https://op.example.com').post('/oauth/token').reply(handler);
-      // eslint-disable-next-line no-unused-vars
-      const { configuration } = await getClient({
-        ...getConfig(config),
+    it('should use the configured signing algorithm in the client assertion', async function () {
+      const getAssertion = mockTokenEndpoint();
+      const config = getConfig({
+        ...baseConfig,
         clientAssertionSigningAlg: 'RS384',
       });
-      // v6 doesn't have a direct grant() method - need to use specific grant functions
+      const { configuration } = await getClient(config);
+      await triggerTokenRequest(configuration);
+      assert.equal(getAssertionAlg(getAssertion()), 'RS384');
+    });
+
+    it('should fail when signing algorithm is incompatible with the key type', async function () {
+      const config = getConfig({
+        ...baseConfig,
+        clientAssertionSigningAlg: 'ES256',
+      });
+      await expect(getClient(config)).to.be.rejectedWith('Invalid key type');
     });
   });
 
