@@ -595,6 +595,7 @@ describe('get config', () => {
         response_type: 'code',
       },
       clientAssertionSigningKey: 'foo',
+      clientAssertionSigningAlg: 'RS256',
     };
     assert.equal(getConfig(config).clientAuthMethod, 'private_key_jwt');
   });

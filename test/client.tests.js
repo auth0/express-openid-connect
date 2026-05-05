@@ -473,9 +473,12 @@ describe('client initialization', function () {
       }
     }
 
-    it('should use RS256 as the default signing algorithm in the client assertion', async function () {
+    it('should use RS256 when clientAssertionSigningAlg is RS256', async function () {
       const getAssertion = mockTokenEndpoint();
-      const config = getConfig({ ...baseConfig });
+      const config = getConfig({
+        ...baseConfig,
+        clientAssertionSigningAlg: 'RS256',
+      });
       const { configuration } = await getClient(config);
       await triggerTokenRequest(configuration);
       assert.equal(getAssertionAlg(getAssertion()), 'RS256');

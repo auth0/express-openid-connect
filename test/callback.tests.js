@@ -1015,6 +1015,7 @@ describe('callback response_mode: form_post', () => {
           response_type: 'code',
         },
         clientAssertionSigningKey: privateKey,
+        clientAssertionSigningAlg: 'RS256',
       },
       cookies: generateCookies({
         state: expectedDefaultState,
