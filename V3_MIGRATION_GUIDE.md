@@ -228,6 +228,8 @@ If you have explicit TypeScript annotations importing `KeyInput` or `JSONWebKey`
 
 All configuration options work exactly as before (except `httpAgent`, which is replaced by `customFetch`).
 
+> **Note for local development:** If your `issuerBaseURL` uses `http://` (e.g. a local OIDC provider), the SDK automatically enables insecure requests for that issuer. No additional configuration is needed.
+
 ```js
 app.use(
   auth({
