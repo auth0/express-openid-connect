@@ -212,13 +212,18 @@ app.get('/stream', (req, res) => {
 
 ### `clientAssertionSigningKey` Type Changed
 
-The accepted TypeScript type for `clientAssertionSigningKey` has changed from jose v2 types to jose v6 / Web Crypto types. Runtime behavior is unchanged — all previously supported key forms (PEM string, Buffer, KeyObject, JWK) still work.
+The TypeScript type for `clientAssertionSigningKey` has been updated to reflect the jose v2 → v6 rename and the addition of Web Crypto `CryptoKey` support. Runtime behavior is unchanged — all previously supported key forms still work.
 
-| v2 type                                              | v3 type                                                                             |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `KeyInput \| KeyObject \| JSONWebKey` (from jose v2) | `KeyObject \| CryptoKey \| JWK \| string \| Uint8Array` (from jose v6 / Web Crypto) |
+| v2 type                                              | v3 type                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| `KeyInput \| KeyObject \| JSONWebKey` (from jose v2) | `KeyObject \| CryptoKey \| JWK \| string \| Buffer` (jose v6 / crypto) |
 
-If you have explicit TypeScript annotations importing `KeyInput` or `JSONWebKey` from `jose`, update them to use `JWK` and `CryptoKey` from `jose` v6, or `string` for PEM keys.
+- `KeyObject` is unchanged
+- `KeyInput` (jose v2) is replaced by the explicit `string` (PEM) and `Buffer` types it represented
+- `JSONWebKey` (jose v2) is renamed to `JWK` in jose v6
+- `CryptoKey` is new — Web Crypto key support added in v3
+
+If you have explicit TypeScript annotations importing `KeyInput` or `JSONWebKey` from `jose`, replace them with `string`/`Buffer` and `JWK` respectively.
 
 ---
 
