@@ -70,7 +70,7 @@ describe('appSession custom store', () => {
     });
 
     const [key] = getKeyStore(conf.secret);
-    signedCookieValue = signCookie('appSession', 'foo', key);
+    signedCookieValue = await signCookie('appSession', 'foo', key);
 
     server = await createServer(appSession(conf));
   };
@@ -282,7 +282,7 @@ describe('appSession custom store', () => {
     app.use(appSession(conf));
 
     const [key] = getKeyStore(conf.secret);
-    const cookieValue = signCookie('appSession', 'foo', key);
+    const cookieValue = await signCookie('appSession', 'foo', key);
 
     app.get('/', (req, res, next) => {
       res.json(req.appSession);

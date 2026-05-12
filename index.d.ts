@@ -1,15 +1,44 @@
 // Type definitions for express-openid-connect
 
-import type { Agent as HttpAgent } from 'http';
-import type { Agent as HttpsAgent } from 'https';
-import {
-  AuthorizationParameters,
-  IdTokenClaims,
-  UserinfoResponse,
-} from 'openid-client';
+import type { IDToken, UserInfoResponse } from 'openid-client';
 import { Request, Response, RequestHandler } from 'express';
-import type { JSONWebKey, KeyInput } from 'jose';
+import type { JWK, CryptoKey as JoseCryptoKey } from 'jose';
 import type { KeyObject } from 'crypto';
+
+/**
+ * Authorization parameters for OpenID Connect requests.
+ */
+interface AuthorizationParameters {
+  acr_values?: string;
+  audience?: string;
+  claims?: string | object;
+  claims_locales?: string;
+  client_id?: string;
+  code_challenge_method?: string;
+  code_challenge?: string;
+  display?: string;
+  id_token_hint?: string;
+  login_hint?: string;
+  max_age?: number;
+  nonce?: string;
+  prompt?: string;
+  redirect_uri?: string;
+  registration?: string;
+  request_uri?: string;
+  request?: string;
+  resource?: string | string[];
+  response_mode?: string;
+  response_type?: string;
+  scope?: string;
+  state?: string;
+  ui_locales?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * ID Token claims
+ */
+type IdTokenClaims = IDToken;
 
 /**
  * Session object
@@ -186,7 +215,7 @@ interface RequestContext {
    * ```
    *
    */
-  fetchUserInfo(): Promise<UserinfoResponse>;
+  fetchUserInfo(): Promise<UserInfoResponse>;
 
   /**
    * Performs a token exchange (RFC 8693) using the token endpoint.
@@ -710,7 +739,12 @@ interface ConfigParams {
    * }))
    * ```
    */
-  clientAssertionSigningKey?: KeyInput | KeyObject | JSONWebKey;
+  clientAssertionSigningKey?:
+    | KeyObject
+    | JoseCryptoKey
+    | JWK
+    | string
+    | Uint8Array;
 
   /**
    * The algorithm to sign the client assertion JWT.
@@ -726,10 +760,9 @@ interface ConfigParams {
     | 'PS384'
     | 'PS512'
     | 'ES256'
-    | 'ES256K'
     | 'ES384'
     | 'ES512'
-    | 'EdDSA';
+    | 'Ed25519';
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
@@ -747,20 +780,23 @@ interface ConfigParams {
   httpTimeout?: number;
 
   /**
-   * Specify an Agent or Agents to pass to the underlying http client https://github.com/sindresorhus/got/
+   * A custom fetch function to use for all OIDC HTTP requests (discovery, token, userinfo, etc.).
+   * The SDK wraps this function to inject required headers (User-Agent, Auth0-Client telemetry) before making requests.
    *
-   * An object representing `http`, `https` and `http2` keys for [`http.Agent`](https://nodejs.org/api/http.html#http_class_http_agent),
-   * [`https.Agent`](https://nodejs.org/api/https.html#https_class_https_agent) and [`http2wrapper.Agent`](https://github.com/szmarczak/http2-wrapper#new-http2agentoptions) instance.
+   * This is useful for configuring proxies or custom HTTP behavior.
    *
-   * See https://github.com/sindresorhus/got/blob/v11.8.6/readme.md#agent
+   * @example
+   * ```js
+   * const { ProxyAgent, fetch: undiciFetch } = require('undici');
+   * const dispatcher = new ProxyAgent('http://proxy.example.com:8080');
    *
-   * For a proxy agent see https://www.npmjs.com/package/proxy-agent
+   * app.use(auth({
+   *   customFetch: (url, options) => undiciFetch(url, { ...options, dispatcher }),
+   *   // ... other options
+   * }));
+   * ```
    */
-  httpAgent?: {
-    http?: HttpAgent | false;
-    https?: HttpsAgent | false;
-    http2?: unknown | false;
-  };
+  customFetch?: typeof fetch;
 
   /**
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.

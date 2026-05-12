@@ -4,7 +4,7 @@ module.exports = [
   {
     ...js.configs.recommended,
     languageOptions: {
-      ecmaVersion: 2019,
+      ecmaVersion: 2020,
       globals: {
         ...require('globals').node,
         ...require('globals').es6,

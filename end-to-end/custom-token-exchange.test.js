@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 const nock = require('nock');
-const { JWT } = require('jose');
+const { SignJWT, importJWK } = require('jose');
 const puppeteer = require('puppeteer');
 const provider = require('./fixture/oidc-provider');
 const { privateJWK } = require('./fixture/jwk');
@@ -67,19 +67,15 @@ describe('custom token exchange', async () => {
        * live JWKS endpoint. { allowUnmocked: true } is required so that nock still
        * passes through the provider's discovery and JWKS GET requests.
        */
-      const downstreamToken = JWT.sign(
-        {
-          aud: 'https://api.example.com/products',
-          scope: 'read:products',
-        },
-        privateJWK,
-        {
-          issuer: 'http://localhost:3001',
-          algorithm: 'RS256',
-          expiresIn: '1h',
-          header: { kid: 'key-1' },
-        },
-      );
+      const privateKey = await importJWK(privateJWK, 'RS256');
+      const downstreamToken = await new SignJWT({
+        aud: 'https://api.example.com/products',
+        scope: 'read:products',
+      })
+        .setProtectedHeader({ alg: 'RS256', kid: 'key-1' })
+        .setIssuer('http://localhost:3001')
+        .setExpirationTime('1h')
+        .sign(privateKey);
 
       nock('http://localhost:3001', { allowUnmocked: true })
         .post('/token')
