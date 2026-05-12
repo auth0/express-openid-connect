@@ -760,10 +760,9 @@ interface ConfigParams {
     | 'PS384'
     | 'PS512'
     | 'ES256'
-    | 'ES256K'
     | 'ES384'
     | 'ES512'
-    | 'EdDSA';
+    | 'Ed25519';
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
