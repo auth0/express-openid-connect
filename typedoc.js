@@ -5,6 +5,11 @@ module.exports = {
   excludePrivate: true,
   hideGenerator: true,
   readme: 'none',
+  compilerOptions: {
+    target: 'ES2015',
+    moduleResolution: 'bundler',
+    module: 'esnext',
+  },
   externalSymbolLinkMappings: {
     '@types/express': {
       'Request.originalUrl':
