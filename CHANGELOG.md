@@ -1,5 +1,11 @@
 # Change Log
 
+## [v3.0.0](https://github.com/auth0/express-openid-connect/tree/v3.0.0) (2026-05-13)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.2...v3.0.0)
+
+**⚠️ BREAKING CHANGES**
+- migration: openid-client and jose migration [\#785](https://github.com/auth0/express-openid-connect/pull/785) ([aks96](https://github.com/aks96))
+
 ## [v2.20.2](https://github.com/auth0/express-openid-connect/tree/v2.20.2) (2026-04-16)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.1...v2.20.2)
 
