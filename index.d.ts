@@ -739,12 +739,7 @@ interface ConfigParams {
    * }))
    * ```
    */
-  clientAssertionSigningKey?:
-    | KeyObject
-    | JoseCryptoKey
-    | JWK
-    | string
-    | Uint8Array;
+  clientAssertionSigningKey?: KeyObject | JoseCryptoKey | JWK | string | Buffer;
 
   /**
    * The algorithm to sign the client assertion JWT.

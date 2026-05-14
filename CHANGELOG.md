@@ -3,8 +3,24 @@
 ## [v3.0.0](https://github.com/auth0/express-openid-connect/tree/v3.0.0) (2026-05-13)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.2...v3.0.0)
 
+This release upgrades `openid-client` and `jose` to their latest major versions v6, bringing improved security, performance, and standards compliance. See the [V3 Migration Guide](./V3_MIGRATION_GUIDE.md) for full upgrade instructions. [\#785](https://github.com/auth0/express-openid-connect/pull/785) ([aks96](https://gi
+    -thub.com/aks96))
+
 **⚠️ BREAKING CHANGES**
-- migration: openid-client and jose migration [\#785](https://github.com/auth0/express-openid-connect/pull/785) ([aks96](https://github.com/aks96))
+
+- **Node.js version requirement** - v3 requires `^20.19.0 || ^22.12.0 || >= 23.0.0`. Node.js 14–19 are no longer supported.
+
+- **`httpAgent` config removed** - The `httpAgent` option is no longer supported. Affects apps using `httpAgent` for proxy configuration.
+
+- **`clientAssertionSigningAlg` now required** - The implicit `RS256` default has been removed. Affects apps using `clientAssertionSigningKey` with a PEM, `Buffer`, `KeyObject`, or a JWK without an `alg` property.
+
+- **`ES256K` and `EdDSA` removed from `clientAssertionSigningAlg`** - `openid-client` v6 no longer supports these algorithm values.
+
+- **`afterCallback` now receives the incoming user's tokens, not the previous session** - `req.oidc` inside `afterCallback` now reflects the new tokens from the current authentication. Affects apps that read `req.oidc` inside `afterCallback` to inspect the prior session.
+
+- **Session cookie silently dropped when headers are sent before `res.end()`** - v2 used `on-headers`, which hooked `res.writeHead` and could inject `Set-Cookie` regardless of how the response was written. v3 uses a `res.end` wrapper instead, so the cookie is written only at `res.end()`. Any response that flushes headers earlier — via `res.write()`, `res.flushHeaders()`, `res.writeHead()`, `res.sendFile()`, or `res.download()` — will have `res.headersSent` set to `true` by the time the cookie write runs, and the session cookie is silently dropped with no workaround. Standard OIDC flows are unaffected.
+
+- **`clientAssertionSigningKey` TypeScript type updated** - `KeyInput` and `JSONWebKey` (jose v2) are replaced by `string`/`Buffer` and `JWK` respectively. `CryptoKey` is newly supported. Runtime behavior is unchanged.
 
 ## [v2.20.2](https://github.com/auth0/express-openid-connect/tree/v2.20.2) (2026-04-16)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.1...v2.20.2)
