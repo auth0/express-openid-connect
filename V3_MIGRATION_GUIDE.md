@@ -167,22 +167,26 @@ app.use(
 
 **After (v3):**
 
-```js
-// If you need the previous user, capture it in middleware before the callback route.
-app.use((req, res, next) => {
-  res.locals.previousUser = req.oidc.user;
-  next();
-});
+If you need the previous session state, disable the built-in callback route and handle it yourself. This gives you a window after `req.oidc` is attached (the auth middleware always runs its session setup) but before the callback processing replaces the session:
 
+```js
 app.use(
   auth({
+    routes: { callback: false }, // disable the built-in /callback route
     async afterCallback(req, res, session) {
       // req.oidc.user is now the INCOMING user (new tokens)
       // use res.locals.previousUser for the prior state
+      const previousUser = res.locals.previousUser;
       return session;
     },
   }),
 );
+
+// req.oidc is available here — auth() has already run its session setup for this request
+app.get('/callback', (req, res) => {
+  res.locals.previousUser = req.oidc.user; // capture the previous session before it is replaced
+  res.oidc.callback(); // proceed with OIDC callback processing
+});
 ```
 
 The `session` argument passed to `afterCallback` is unchanged — it still contains the new tokens from the current authentication.
