@@ -9,15 +9,15 @@
 
 ## Breaking Changes Summary
 
-| Change                                                                                          | Who is affected                                                                                 | Action required                                          |
-| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [Node.js version](#nodejs-version-requirement)                                                  | Everyone                                                                                        | Upgrade Node.js                                          |
-| [`httpAgent` config](#httpagent-config)                                                         | Apps using `httpAgent` for proxies                                                              | Replace with `customFetch`                               |
-| [`clientAssertionSigningAlg` config now required](#clientassertionsigningalg-now-required)      | Apps using `clientAssertionSigningKey` with a PEM, Buffer, or KeyObject                         | Add `clientAssertionSigningAlg` explicitly               |
-| [`ES256K` / `EdDSA` removed](#es256k-and-eddsa-removed)                                         | Apps using `clientAssertionSigningAlg: 'ES256K'` or `'EdDSA'`                                   | Rename `EdDSA` to `Ed25519`, no replacement for `ES256K` |
-| [`afterCallback` behavior change](#aftercallback-behavior-change)                               | Apps reading `req.oidc` inside `afterCallback` to inspect the previous session                  | Read previous state before the callback flow starts      |
-| [Session cookie dropped on streaming responses](#session-cookie-dropped-on-streaming-responses) | Apps that call `res.write()` or `res.flushHeaders()` before `res.end()` on session-aware routes | Avoid pre-sending headers on session-aware routes        |
-| [`clientAssertionSigningKey` type](#clientassertionsigningkey-type-changed)                     | TypeScript apps with explicit type annotations on `clientAssertionSigningKey`                   | Update imported types                                    |
+| Change                                                                                                                     | Who is affected                                                                                                                 | Action required                                          |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| [Node.js version](#nodejs-version-requirement)                                                                             | Everyone                                                                                                                        | Upgrade Node.js                                          |
+| [`httpAgent` config](#httpagent-config)                                                                                    | Apps using `httpAgent` for proxies                                                                                              | Replace with `customFetch`                               |
+| [`clientAssertionSigningAlg` config now required](#clientassertionsigningalg-now-required)                                 | Apps using `clientAssertionSigningKey` with a PEM, Buffer, or KeyObject                                                         | Add `clientAssertionSigningAlg` explicitly               |
+| [`ES256K` / `EdDSA` removed](#es256k-and-eddsa-removed)                                                                    | Apps using `clientAssertionSigningAlg: 'ES256K'` or `'EdDSA'`                                                                   | Rename `EdDSA` to `Ed25519`, no replacement for `ES256K` |
+| [`afterCallback` behavior change](#aftercallback-behavior-change)                                                          | Apps reading `req.oidc` inside `afterCallback` to inspect the previous session                                                  | Read previous state before the callback flow starts      |
+| [Session cookie dropped when headers sent before `res.end()`](#session-cookie-dropped-when-headers-are-sent-before-resend) | Apps that flush headers before `res.end()` (e.g. `res.write()`, `res.flushHeaders()`, `res.sendFile()`) on session-aware routes | Avoid flushing headers early on session-aware routes     |
+| [`clientAssertionSigningKey` type](#clientassertionsigningkey-type-changed)                                                | TypeScript apps with explicit type annotations on `clientAssertionSigningKey`                                                   | Update imported types                                    |
 
 ---
 
@@ -167,46 +167,62 @@ app.use(
 
 **After (v3):**
 
-```js
-// If you need the previous user, capture it in middleware before the callback route.
-app.use((req, res, next) => {
-  res.locals.previousUser = req.oidc.user;
-  next();
-});
+If you need the previous session state, disable the built-in callback route and handle it yourself. This gives you a window after `req.oidc` is attached (the auth middleware always runs its session setup) but before the callback processing replaces the session:
 
+```js
 app.use(
   auth({
+    routes: { callback: false }, // disable the built-in /callback route
     async afterCallback(req, res, session) {
       // req.oidc.user is now the INCOMING user (new tokens)
       // use res.locals.previousUser for the prior state
+      const previousUser = res.locals.previousUser;
       return session;
     },
   }),
 );
+
+// req.oidc is available here — auth() has already run its session setup for this request
+app.get('/callback', (req, res) => {
+  res.locals.previousUser = req.oidc.user; // capture the previous session before it is replaced
+  res.oidc.callback(); // proceed with OIDC callback processing
+});
 ```
 
 The `session` argument passed to `afterCallback` is unchanged — it still contains the new tokens from the current authentication.
 
 ---
 
-### Session Cookie Dropped on Streaming Responses
+### Session Cookie Dropped When Headers Are Sent Before `res.end()`
 
-v2 used `on-headers`, which hooks into `res.writeHead` and injects the `Set-Cookie` header right before headers are flushed — regardless of how the response is written. v3 uses a `res.end` wrapper instead. If `res.write()`, `res.flushHeaders()`, or `res.writeHead()` is called before `res.end()`, headers are already sent by the time the cookie write runs and the session cookie is **silently dropped**.
+v2 used `on-headers`, which hooked into `res.writeHead` and injected the `Set-Cookie` header right before headers were flushed, regardless of how the response was written. v3 uses a `res.end` wrapper instead, so the session cookie is written only at `res.end()`. If headers are flushed earlier, `res.headersSent` is already `true` by the time the cookie write runs and the session cookie is **silently dropped** — there is no workaround within the same response.
 
 Standard OIDC flows (login, callback, logout) are not affected — they use `res.redirect()` and `res.send()`, which flush headers only at `res.end()`.
 
-**Affected pattern:**
+**Affected patterns:**
+
+Any response that sends headers before `res.end()`:
 
 ```js
+// res.write() — flushes headers on the first call
 app.get('/stream', (req, res) => {
-  res.setHeader('Content-Type', 'text/plain');
   res.write('first chunk'); // headers sent here — session cookie will be dropped
-  req.session.visited = true;
   res.end('done');
+});
+
+// res.flushHeaders() — explicitly flushes headers early
+app.get('/sse', (req, res) => {
+  res.flushHeaders(); // headers sent here — session cookie will be dropped
+  res.end();
+});
+
+// res.sendFile() / res.download() — pipe a stream and flush headers early
+app.get('/file', (req, res) => {
+  res.sendFile('/path/to/file'); // headers sent here — session cookie will be dropped
 });
 ```
 
-**Migration:** for session-aware routes that stream a response, complete any session mutations before calling `res.write()` or `res.flushHeaders()`.
+**Migration:** avoid these patterns on routes that need to set or update a session cookie. Since there is no way to inject `Set-Cookie` after headers are already sent, routes that flush headers early are fundamentally incompatible with session cookie writes in v3.
 
 ---
 
