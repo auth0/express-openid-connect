@@ -56,7 +56,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
 
       - uses: actions/cache/restore@v5
         with:
@@ -79,7 +78,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
       - uses: actions/cache/restore@v5
         with:
@@ -100,7 +98,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
       - uses: actions/cache/restore@v5
         with:
@@ -110,7 +107,7 @@ jobs:
       - name: Install dependencies if cache missed
         run: |
           if [ ! -d "node_modules" ]; then
-            npm ci
+            npm install
           fi
 
       - run: npm run test:end-to-end
@@ -127,7 +124,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
 
       - uses: actions/cache/restore@v5
         with:
