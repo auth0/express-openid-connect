@@ -74,8 +74,8 @@ const checkContext = async (cookies) => {
   return request('/context', { jar, baseUrl });
 };
 
-// networkidle2 waits for OIDC redirect chains to settle, avoids the double-navigation race of Promise.all([goto, waitForNavigation])
-const goto = async (url, page) => page.goto(url, { waitUntil: 'networkidle2' });
+const goto = async (url, page) =>
+  Promise.all([page.goto(url), page.waitForNavigation()]);
 
 const login = async (username, password, page) => {
   await page.type('[name=login]', username);
