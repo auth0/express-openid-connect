@@ -52,7 +52,7 @@
     "lodash": "^4.17.21",
     "memorystore": "^1.6.7",
     "mocha": "^10.8.2",
-    "nock": "14.0.10",
+    "nock": "14.0.15",
     "nyc": "^15.1.0",
     "oidc-provider": "^6.31.1",
     "prettier": "^3.6.2",
