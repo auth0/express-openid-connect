@@ -36,9 +36,16 @@ interface AuthorizationParameters {
 }
 
 /**
- * ID Token claims
+ * ID Token claims, extended with the IPSIE SL1 session_expiry claim.
  */
-type IdTokenClaims = IDToken;
+type IdTokenClaims = IDToken & {
+  /**
+   * Unix timestamp (seconds since epoch) indicating the hard ceiling on the RP
+   * session lifetime, as asserted by the upstream enterprise IdP.
+   * Present only when the connection has `id_token_session_expiry_supported: true`.
+   */
+  session_expiry?: number;
+};
 
 /**
  * Session object
@@ -52,6 +59,13 @@ interface Session {
   refresh_token: string;
   token_type: string;
   expires_at: string;
+  /**
+   * Unix timestamp (seconds) of the IdP-asserted session ceiling from the
+   * IPSIE SL1 `session_expiry` claim. Present only when the upstream connection
+   * has `id_token_session_expiry_supported: true`. The SDK enforces this as a
+   * hard expiry on every session read and before any token refresh.
+   */
+  sessionExpiresAt?: number;
   [key: string]: any;
 }
 
@@ -1163,3 +1177,34 @@ export function claimCheck(
  * ```
  */
 export function attemptSilentLogin(): RequestHandler;
+
+/**
+ * Error thrown by `accessToken.refresh()` when the IdP-asserted session ceiling
+ * (`session_expiry` claim) has passed. Catch this in API routes to redirect the
+ * user to re-authenticate, rather than receiving a confusing `invalid_grant` from
+ * the token endpoint.
+ *
+ * ```js
+ * const { SessionExpiredError } = require('express-openid-connect');
+ *
+ * app.get('/api/data', async (req, res, next) => {
+ *   try {
+ *     if (req.oidc.accessToken.isExpired()) {
+ *       await req.oidc.accessToken.refresh();
+ *     }
+ *   } catch (err) {
+ *     if (err instanceof SessionExpiredError) {
+ *       return res.oidc.login();
+ *     }
+ *     return next(err);
+ *   }
+ * });
+ * ```
+ */
+export class SessionExpiredError extends Error {
+  readonly name: 'SessionExpiredError';
+  readonly code: 'ERR_SESSION_EXPIRED';
+  readonly status: 401;
+  readonly statusCode: 401;
+  constructor(message?: string);
+}
