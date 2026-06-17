@@ -609,4 +609,89 @@ describe('appSession', () => {
     assert.isEmpty(res.body);
     clock.restore();
   });
+
+  describe('session_expiry (IPSIE)', () => {
+    it('should expire the session when sessionExpiresAt ceiling is reached', async () => {
+      const clock = sinon.useFakeTimers({ toFake: ['Date'] });
+      server = await createServer(appSession(getConfig(defaultConfig)));
+
+      // Login with a sessionExpiresAt 2 hours from now
+      const jar = request.jar();
+      const sessionExpiresAt = Math.floor(Date.now() / 1000) + 2 * 60 * 60;
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: { sub: '__test_sub__', sessionExpiresAt },
+      });
+
+      // Before ceiling: session is valid
+      let res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.isNotEmpty(res.body);
+
+      // Tick past the ceiling
+      clock.tick(3 * HR_MS);
+      res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.isEmpty(res.body);
+
+      clock.restore();
+    });
+
+    it('should not expire the session when ceiling is in the future', async () => {
+      server = await createServer(appSession(getConfig(defaultConfig)));
+      const jar = request.jar();
+      const sessionExpiresAt = Math.floor(Date.now() / 1000) + 8 * 60 * 60;
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: { sub: '__test_sub__', sessionExpiresAt },
+      });
+
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.isNotEmpty(res.body);
+      assert.equal(res.body.sessionExpiresAt, sessionExpiresAt);
+    });
+
+    it('should not affect sessions without sessionExpiresAt (non-breaking)', async () => {
+      const clock = sinon.useFakeTimers({ toFake: ['Date'] });
+      server = await createServer(appSession(getConfig(defaultConfig)));
+      const jar = await login({ sub: '__test_sub__' });
+
+      // Advance well within rolling duration — no sessionExpiresAt, should still be valid
+      clock.tick(23 * HR_MS);
+      const res = await request.get('/session', { baseUrl, jar, json: true });
+      assert.isNotEmpty(res.body);
+
+      clock.restore();
+    });
+
+    it('should cap the cookie maxAge at sessionExpiresAt when it is sooner than absoluteDuration', async () => {
+      server = await createServer(
+        appSession(
+          getConfig({
+            ...defaultConfig,
+            session: {
+              rolling: false,
+              absoluteDuration: 7 * 24 * 60 * 60, // 7 days
+            },
+          }),
+        ),
+      );
+
+      const jar = request.jar();
+      const sessionExpiresAt = Math.floor(Date.now() / 1000) + 2 * 60 * 60; // 2 hours
+      await request.post('/session', {
+        baseUrl,
+        jar,
+        json: { sub: '__test_sub__', sessionExpiresAt },
+      });
+
+      await request.get('/session', { baseUrl, jar, json: true });
+      const [cookie] = jar.getCookies(baseUrl);
+      const expDate = new Date(cookie.expires);
+      const maxAgeSeconds = Math.floor((expDate - Date.now()) / 1000);
+
+      // Cookie should expire within ~2 hours, not 7 days
+      assert.isBelow(maxAgeSeconds, 3 * 60 * 60);
+    });
+  });
 });
