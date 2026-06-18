@@ -22,7 +22,7 @@ const enforceLeadingSlash = (path) => {
  */
 const auth = function (params) {
   const config = getConfig(params);
-  debug('configuration object processed, resulting configuration: %O', config);
+  debug('configuration object processed, resulting configuration: %O', {...config, clientSecret: "REDACTED", secret: "REDACTED"});
   const router = new express.Router();
   const transient = new TransientCookieHandler(config);
 
