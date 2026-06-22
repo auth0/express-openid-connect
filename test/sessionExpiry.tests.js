@@ -38,6 +38,10 @@ describe('extractSessionExpiry', () => {
   it('returns undefined for NaN (fail-open)', () => {
     assert.isUndefined(extractSessionExpiry({ session_expiry: NaN }));
   });
+
+  it('returns undefined for a millisecond-magnitude value (fail-open)', () => {
+    assert.isUndefined(extractSessionExpiry({ session_expiry: 1748566800000 }));
+  });
 });
 
 describe('isSessionExpiryReached', () => {
