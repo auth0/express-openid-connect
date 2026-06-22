@@ -1630,6 +1630,83 @@ describe('callback response_mode: form_post', () => {
       sinon.assert.notCalled(refreshSpy);
     });
 
+    it('should clear the session when the ceiling is reached on a subsequent request', async () => {
+      const clock = sinon.useFakeTimers({ toFake: ['Date'] });
+      try {
+        const { jar } = await setupWithSessionExpiry(2 * hrSecs);
+
+        // Advance clock past the ceiling (plus leeway)
+        clock.tick((2 * hrSecs + 31) * 1000);
+
+        const session = await request
+          .get('/session', { baseUrl, jar, json: true })
+          .then((r) => r.body);
+
+        assert.isEmpty(session);
+      } finally {
+        clock.restore();
+      }
+    });
+
+    it('should reject login when session_expiry is within the leeway window and allow it when outside', async () => {
+      const iat = Math.floor(Date.now() / 1000);
+
+      // 15s out — within 30s leeway → lockout fires
+      const expiredToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: iat + 15,
+      });
+      const {
+        response: { statusCode: status15 },
+      } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            scope: 'openid profile email offline_access',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: expiredToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+      assert.equal(status15, 400);
+      server.close();
+
+      // 31s out — outside 30s leeway → login succeeds
+      const validToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: iat + 31,
+      });
+      const { currentSession } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            scope: 'openid profile email offline_access',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+      assert.isNumber(currentSession.sessionExpiresAt);
+    });
+
     it('should preserve sessionExpiresAt in the session after a successful refresh', async () => {
       const { jar, currentSession } = await setupWithSessionExpiry(4 * hrSecs);
       const storedCeiling = currentSession.sessionExpiresAt;
