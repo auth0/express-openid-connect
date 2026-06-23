@@ -440,13 +440,13 @@ When an upstream IdP supports the IPSIE SL1 spec, it can include a `session_expi
 
 ### What the SDK does automatically
 
-No configuration or code change is required. When the claim is present, the SDK:
+No configuration or code change is required. When the claim is present, the SDK handles everything automatically:
 
-- persists it on the session as `sessionExpiresAt` (Unix seconds);
-- rejects login with HTTP 400 if the ceiling is already in the past at callback time, preventing a born-dead session from ever being persisted;
-- treats the session as expired once `sessionExpiresAt` is reached (with a 30-second leeway for clock skew) on every request;
-- throws `SessionExpiredError` on `accessToken.refresh()` rather than calling the token endpoint; and
-- caps the session cookie lifetime at the ceiling as a defense-in-depth backstop.
+- Persists the ceiling as `sessionExpiresAt` (Unix seconds) on the session.
+- Rejects login with HTTP 400 if the ceiling is already in the past at callback time, so a born-dead session is never persisted.
+- Treats the session as expired once `sessionExpiresAt` is reached on every request, with a 30-second leeway for clock skew.
+- Throws `SessionExpiredError` on `accessToken.refresh()` instead of making a token endpoint call that would fail anyway.
+- Caps the session cookie lifetime at the ceiling as a defense-in-depth backstop.
 
 This is layered **on top of** your existing idle and absolute session timeouts — the session ends at whichever limit is reached first.
 
