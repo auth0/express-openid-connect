@@ -115,6 +115,19 @@ interface OpenidResponse extends Response {
 }
 
 /**
+ * The `act` (actor) claim from an RFC 8693 delegation token exchange.
+ * Present on {@link TokenExchangeResponse} when `actor_token` was provided and
+ * the authorization server included the claim in the returned token.
+ *
+ * @see {@link https://www.rfc-editor.org/rfc/rfc8693#section-4.1 RFC 8693 §4.1}
+ */
+interface ActClaim {
+  /** Subject identifier of the acting party. */
+  sub: string;
+  [key: string]: unknown;
+}
+
+/**
  * Options for {@link RequestContext.customTokenExchange}.
  * All fields are optional — unset fields fall back to `authorizationParams` config or
  * RFC 8693 defaults where applicable.
@@ -127,16 +140,37 @@ interface CustomTokenExchangeOptions {
    * Defaults to `urn:ietf:params:oauth:token-type:access_token`.
    */
   subject_token_type?: string;
+  /**
+   * The actor token for delegation / impersonation exchanges (RFC 8693).
+   * When provided, `actor_token_type` is required.
+   * The resulting token will carry an `act` claim identifying the acting party.
+   */
+  actor_token?: string;
+  /**
+   * URI identifying the type of `actor_token` (RFC 8693).
+   * Required when `actor_token` is provided.
+   */
+  actor_token_type?: string;
+  /**
+   * URI specifying the type of token the caller wants the AS to issue (RFC 8693).
+   * e.g. `urn:ietf:params:oauth:token-type:jwt`
+   */
+  requested_token_type?: string;
+  /**
+   * Auth0 organization ID or name to use for the exchange.
+   * When provided, the issued token will be scoped to that organization.
+   */
+  organization?: string;
   /** Requested audience. Defaults to `authorizationParams.audience`. */
   audience?: string;
   /** Requested scope(s). Defaults to `authorizationParams.scope`. */
   scope?: string;
   /**
-   * Additional parameters forwarded to the token endpoint and can be used
-   * for vendor-specific or RFC 8693 extension parameters.
-   * Parameters in the security denylist are silently stripped.
+   * Additional parameters forwarded to the token endpoint.
+   * Useful for vendor-specific or RFC 8693 extension parameters.
+   * Parameters in the denylist are silently stripped.
    */
-  extra?: Record<string, string | number | boolean>;
+  extra?: Record<string, string | string[] | number | boolean>;
 }
 
 /**
@@ -163,6 +197,12 @@ interface TokenExchangeResponse {
   id_token?: string;
   /** Refresh token, if the AS returned one. */
   refresh_token?: string;
+  /**
+   * Actor claim from an RFC 8693 delegation exchange.
+   * Populated when `actor_token` was provided and the AS included the claim
+   * in the returned id_token or JWT access_token.
+   */
+  act?: ActClaim;
   /** Vendor-specific or extension fields returned by the authorization server. */
   [key: string]: unknown;
 }
