@@ -13,6 +13,7 @@
 11. [Back-Channel Logout](#11-back-channel-logout)
 12. [Custom Token Exchange](#12-custom-token-exchange)
 13. [Use a proxy for OIDC requests](#13-use-a-proxy-for-oidc-requests)
+14. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#14-session-expiry-from-upstream-idp-ipsie-session_expiry)
 
 ## 1. Basic setup
 
@@ -432,3 +433,63 @@ app.use(
 ```
 
 The SDK wraps your `customFetch` function to add required headers (User-Agent, Auth0-Client telemetry) before making requests.
+
+## 14. Session expiry from upstream IdP (IPSIE `session_expiry`)
+
+When an upstream IdP supports the IPSIE SL1 spec, it can include a `session_expiry` claim in the ID token — an absolute Unix timestamp (seconds) marking the latest moment the IdP considers the session valid. Auth0, for example, emits this claim on enterprise connections configured with `id_token_session_expiry_supported: true`.
+
+### What the SDK does automatically
+
+No configuration or code change is required. When the claim is present, the SDK:
+
+- persists it on the session as `sessionExpiresAt` (Unix seconds);
+- rejects login with HTTP 400 if the ceiling is already in the past at callback time, preventing a born-dead session from ever being persisted;
+- treats the session as expired once `sessionExpiresAt` is reached (with a 30-second leeway for clock skew) on every request;
+- throws `SessionExpiredError` on `accessToken.refresh()` rather than calling the token endpoint; and
+- caps the session cookie lifetime at the ceiling as a defense-in-depth backstop.
+
+This is layered **on top of** your existing idle and absolute session timeouts — the session ends at whichever limit is reached first.
+
+### Behavior on expiry
+
+- **Session reads:** `req.appSession` is cleared and `req.oidc.isAuthenticated()` returns `false`. Your existing redirect-to-login path runs unchanged.
+- **Token refresh:** `req.oidc.accessToken.refresh()` throws `SessionExpiredError` (`error.code === 'ERR_SESSION_EXPIRED'`, `error.status === 401`). Catch it to redirect the user to log in again.
+
+```js
+const { SessionExpiredError } = require('express-openid-connect');
+
+app.get('/resource', async (req, res, next) => {
+  try {
+    let { token_type, access_token, isExpired, refresh } = req.oidc.accessToken;
+    if (isExpired()) {
+      ({ access_token } = await refresh());
+    }
+    // use access_token
+  } catch (err) {
+    if (err instanceof SessionExpiredError) {
+      return res.redirect('/');
+    }
+    next(err);
+  }
+});
+```
+
+### Reading the value (optional)
+
+To show a "your session ends soon" prompt, read `sessionExpiresAt` off the session:
+
+```js
+app.get('/status', (req, res) => {
+  const { sessionExpiresAt } = req.appSession || {};
+  if (sessionExpiresAt) {
+    const remainingSeconds = sessionExpiresAt - Math.floor(Date.now() / 1000);
+    res.json({ remainingSeconds });
+  } else {
+    res.json({});
+  }
+});
+```
+
+### Upgrading existing apps
+
+Once your IdP starts emitting `session_expiry`, `req.appSession` can be `null` for a previously logged-in user once the ceiling is reached. If your code assumed the session always exists after login, add a null check. Sessions created before the upgrade (or through connections without the claim) have no `sessionExpiresAt` and behave exactly as before.

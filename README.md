@@ -13,6 +13,7 @@
 
 - [Quickstart](https://auth0.com/docs/quickstart/webapp/express) - our guide for quickly adding Auth0 to your Express app.
 - [Sample](https://github.com/auth0-samples/auth0-express-webapp-sample/tree/master/01-Login) - an Express app integrated with Auth0.
+- [Examples](https://github.com/auth0/express-openid-connect/blob/master/EXAMPLES.md) - code examples for common use cases.
 - [FAQs](https://github.com/auth0/express-openid-connect/blob/master/FAQ.md) - Frequently asked questions about express-openid-connect.
 - [Docs Site](https://auth0.com/docs) - explore our docs site and learn more about Auth0.
 
