@@ -504,6 +504,111 @@ describe('client initialization', function () {
     });
   });
 
+  describe('client supports federated identity client_assertion', function () {
+    const baseConfig = {
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://op.example.com',
+      baseURL: 'https://example.org',
+      authorizationParams: { response_type: 'code' },
+    };
+
+    // Intercepts the token endpoint and returns a closure to retrieve the
+    // client_assertion params that were sent in the request body.
+    function mockTokenEndpoint() {
+      let captured = {};
+      nock('https://op.example.com')
+        .post('/oauth/token')
+        .reply(200, function (uri, body) {
+          const params = new URLSearchParams(body);
+          captured = {
+            client_id: params.get('client_id'),
+            client_assertion_type: params.get('client_assertion_type'),
+            client_assertion: params.get('client_assertion'),
+          };
+          return { error: 'invalid_grant' };
+        });
+      return () => captured;
+    }
+
+    async function triggerTokenRequest(configuration) {
+      try {
+        await client.authorizationCodeGrant(
+          configuration,
+          new URL(
+            'https://op.example.com/callback?code=test_code&state=test_state',
+          ),
+          { expectedState: 'test_state', expectedNonce: 'test_nonce' },
+        );
+      } catch {
+        // token request failing is expected — we only care about what was sent
+      }
+    }
+
+    it('should default clientAuthMethod to client_assertion when clientAssertion is set', function () {
+      const config = getConfig({
+        ...baseConfig,
+        clientAssertion: async () => '__federated_token__',
+      });
+      assert.equal(config.clientAuthMethod, 'client_assertion');
+    });
+
+    it('should send the federated token as the client_assertion', async function () {
+      const getCaptured = mockTokenEndpoint();
+      const clientAssertion = sinon.stub().resolves('__federated_token__');
+      const config = getConfig({
+        ...baseConfig,
+        clientAuthMethod: 'client_assertion',
+        clientAssertion,
+      });
+      const { configuration } = await getClient(config);
+      await triggerTokenRequest(configuration);
+
+      sinon.assert.called(clientAssertion);
+      const captured = getCaptured();
+      assert.equal(captured.client_id, '__test_client_id__');
+      assert.equal(
+        captured.client_assertion_type,
+        'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+      );
+      assert.equal(captured.client_assertion, '__federated_token__');
+    });
+
+    it('should invoke the clientAssertion callback on each token request for fresh tokens', async function () {
+      const tokens = ['__token_1__', '__token_2__'];
+      const clientAssertion = sinon
+        .stub()
+        .callsFake(async () => tokens.shift());
+      const config = getConfig({
+        ...baseConfig,
+        clientAuthMethod: 'client_assertion',
+        clientAssertion,
+      });
+      const { configuration } = await getClient(config);
+
+      let first = mockTokenEndpoint();
+      await triggerTokenRequest(configuration);
+      assert.equal(first().client_assertion, '__token_1__');
+
+      let second = mockTokenEndpoint();
+      await triggerTokenRequest(configuration);
+      assert.equal(second().client_assertion, '__token_2__');
+    });
+
+    it('should reject when the clientAssertion callback does not resolve to a string', async function () {
+      const getCaptured = mockTokenEndpoint();
+      const config = getConfig({
+        ...baseConfig,
+        clientAuthMethod: 'client_assertion',
+        clientAssertion: async () => undefined,
+      });
+      const { configuration } = await getClient(config);
+      await triggerTokenRequest(configuration);
+      // nothing valid should have been sent
+      assert.isUndefined(getCaptured().client_assertion);
+    });
+  });
+
   describe('client cache has max age', function () {
     let config;
     const mins = 60 * 1000;
