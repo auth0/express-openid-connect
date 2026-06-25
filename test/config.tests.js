@@ -600,6 +600,32 @@ describe('get config', () => {
     assert.equal(getConfig(config).clientAuthMethod, 'private_key_jwt');
   });
 
+  it('should require "clientAssertion" when clientAuthMethod is "client_assertion"', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAuthMethod: 'client_assertion',
+    };
+    assert.throws(
+      () => getConfig(config),
+      TypeError,
+      '"clientAssertion" is required for a "clientAuthMethod" of "client_assertion"',
+    );
+  });
+
+  it('should default to "client_assertion" when "clientAssertion" is present', () => {
+    const config = {
+      ...defaultConfig,
+      authorizationParams: {
+        response_type: 'code',
+      },
+      clientAssertion: async () => '__token__',
+    };
+    assert.equal(getConfig(config).clientAuthMethod, 'client_assertion');
+  });
+
   it('should not allow "none" for idTokenSigningAlg', () => {
     let config = (idTokenSigningAlg) =>
       getConfig({

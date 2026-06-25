@@ -695,9 +695,33 @@ interface ConfigParams {
   transactionCookie?: Pick<CookieConfigParams, 'sameSite'> & { name?: string };
 
   /**
-   * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
+   * String value for the client's authentication method. Default is `none` when using response_type='id_token', `client_assertion` when using a `clientAssertion`, `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
+   *
+   * Supported values: `client_secret_basic`, `client_secret_post`, `client_secret_jwt`, `private_key_jwt`, `client_assertion`, `none`.
    */
   clientAuthMethod?: string;
+
+  /**
+   * Authenticate to the token endpoint with a federated identity credential.
+   *
+   * Used with `clientAuthMethod: 'client_assertion'`. Instead of signing the
+   * client assertion locally with a private key (`private_key_jwt`), the
+   * assertion JWT is issued by a trusted external identity provider (e.g. AWS
+   * STS/IAM, GitHub Actions OIDC) and returned by this callback. It is invoked
+   * on every token endpoint request so short-lived federated tokens stay fresh.
+   *
+   * ```js
+   * app.use(auth({
+   *   ...
+   *   clientAuthMethod: 'client_assertion',
+   *   clientAssertion: async () => {
+   *     // obtain a federated token from your cloud provider, e.g. AWS STS
+   *     return getWebIdentityToken();
+   *   },
+   * }))
+   * ```
+   */
+  clientAssertion?: () => string | Promise<string>;
 
   /**
    * Private key for use with 'private_key_jwt' clients.
