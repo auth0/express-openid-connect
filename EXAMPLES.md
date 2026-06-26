@@ -436,7 +436,13 @@ The SDK wraps your `customFetch` function to add required headers (User-Agent, A
 
 ## 14. Session expiry from upstream IdP (IPSIE `session_expiry`)
 
-When an upstream IdP supports the IPSIE SL1 spec, it can include a `session_expiry` claim in the ID token — an absolute Unix timestamp (seconds) marking the latest moment the IdP considers the session valid. Auth0, for example, emits this claim on enterprise connections configured with `id_token_session_expiry_supported: true`.
+When an upstream IdP supports the IPSIE SL1 spec, it can include a `session_expiry` claim in the ID token — an absolute Unix timestamp (seconds) marking the latest moment the IdP considers the session valid.
+
+### Emitting the claim
+
+How the claim is included in the ID token depends on your authorization server. For example on Auth0, it is emitted on `okta` and `oidc` enterprise connections configured with `id_token_session_expiry_supported: true`, computing it as the earliest of the tenant's absolute session lifetime, the upstream IdP's own session expiry, and any value set via `api.session.setExpiresAt` in a Post-Login Action. For the canonical Action setup, see the [Auth0 documentation](#) _(link to be added once the session_expiry Action guide is published)_.
+
+> **Warning:** `session_expiry` must be a Unix timestamp in **seconds**. The SDK rejects implausibly large values (anything at or above `10,000,000,000`, ≈ year 2286) as malformed and treats them as "no ceiling", so a milliseconds value will silently disable enforcement rather than expiring the session ~55,000 years from now. Any other malformed value — non-integer, float, zero, or negative — also fails open. If your authorization server computes this value from a millisecond timestamp, ensure it divides by 1000 before including it in the ID token. For example, in an Auth0 Post-Login Action, make sure to convert the timestamp to seconds before setting the claim.
 
 ### What the SDK does automatically
 
