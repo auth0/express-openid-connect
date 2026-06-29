@@ -688,10 +688,10 @@ describe('appSession', () => {
       await request.get('/session', { baseUrl, jar, json: true });
       const [cookie] = jar.getCookies(baseUrl);
       const expDate = new Date(cookie.expires);
-      const maxAgeSeconds = Math.floor((expDate - Date.now()) / 1000);
+      const expSeconds = Math.floor(expDate.getTime() / 1000);
 
-      // Cookie should expire within ~2 hours, not 7 days
-      assert.isBelow(maxAgeSeconds, 3 * 60 * 60);
+      // Cookie should expire at sessionExpiresAt (2 hours), not at absoluteDuration (7 days)
+      assert.approximately(expSeconds, sessionExpiresAt, 5);
     });
   });
 });

@@ -41,8 +41,9 @@ interface AuthorizationParameters {
 type IdTokenClaims = IDToken & {
   /**
    * Unix timestamp (seconds since epoch) indicating the hard ceiling on the RP
-   * session lifetime, as asserted by the upstream enterprise IdP.
-   * Present only when the connection has `id_token_session_expiry_supported: true`.
+   * session lifetime, as asserted by the upstream IdP via the IPSIE SL1 protocol.
+   * Present when the IdP signals support for session expiry enforcement
+   * (e.g. Auth0 enterprise connections with `id_token_session_expiry_supported: true`).
    */
   session_expiry?: number;
 };
@@ -61,8 +62,9 @@ interface Session {
   expires_at: string;
   /**
    * Unix timestamp (seconds) of the IdP-asserted session ceiling from the
-   * IPSIE SL1 `session_expiry` claim. Present only when the upstream connection
-   * has `id_token_session_expiry_supported: true`. The SDK enforces this as a
+   * IPSIE SL1 `session_expiry` claim. Present when the upstream IdP signals
+   * support for session expiry enforcement (e.g. Auth0 enterprise connections
+   * with `id_token_session_expiry_supported: true`). The SDK enforces this as a
    * hard expiry on every session read and before any token refresh.
    */
   sessionExpiresAt?: number;

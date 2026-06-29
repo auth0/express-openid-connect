@@ -3,6 +3,7 @@ const {
   SESSION_EXPIRY_LEEWAY,
   extractSessionExpiry,
   isSessionExpiryReached,
+  isSessionExpiryInPast,
 } = require('../lib/utils/sessionExpiry');
 
 describe('extractSessionExpiry', () => {
@@ -75,5 +76,47 @@ describe('isSessionExpiryReached', () => {
     assert.isFalse(
       isSessionExpiryReached(now + SESSION_EXPIRY_LEEWAY + 1, now),
     );
+  });
+});
+
+describe('isSessionExpiryInPast', () => {
+  it('returns false when sessionExpiresAt is undefined (no ceiling)', () => {
+    assert.isFalse(isSessionExpiryInPast(undefined, 1000000));
+  });
+
+  it('returns false when ceiling is well in the future relative to iat', () => {
+    const iat = 1000000;
+    assert.isFalse(isSessionExpiryInPast(iat + 3600, iat));
+  });
+
+  it('returns true when ceiling is in the past relative to iat', () => {
+    const iat = 1000000;
+    assert.isTrue(isSessionExpiryInPast(iat - 1, iat));
+  });
+
+  it('returns true when ceiling is within the leeway window relative to iat', () => {
+    const iat = 1000000;
+    assert.isTrue(isSessionExpiryInPast(iat + 15, iat));
+  });
+
+  it('returns true exactly at the leeway boundary relative to iat (inclusive)', () => {
+    const iat = 1000000;
+    assert.isTrue(isSessionExpiryInPast(iat + SESSION_EXPIRY_LEEWAY, iat));
+  });
+
+  it('returns false just outside the leeway boundary relative to iat', () => {
+    const iat = 1000000;
+    assert.isFalse(isSessionExpiryInPast(iat + SESSION_EXPIRY_LEEWAY + 1, iat));
+  });
+
+  it('falls back to epoch() when issuedAt is absent', () => {
+    // ceiling well in the future → false regardless of fallback
+    assert.isFalse(isSessionExpiryInPast(Math.floor(Date.now() / 1000) + 3600));
+  });
+
+  it('falls back to epoch() when issuedAt is a millisecond-magnitude value', () => {
+    const iat = Date.now(); // milliseconds — implausible
+    const ceiling = Math.floor(Date.now() / 1000) + 3600;
+    assert.isFalse(isSessionExpiryInPast(ceiling, iat));
   });
 });

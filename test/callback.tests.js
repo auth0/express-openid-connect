@@ -1649,10 +1649,14 @@ describe('callback response_mode: form_post', () => {
     });
 
     it('should reject login when session_expiry is within the leeway window and allow it when outside', async () => {
+      // Use an explicit iat so session_expiry offsets are relative to the same reference
+      // value used by isSessionExpiryInPast. Without this, makeIdToken's Math.round vs
+      // Math.floor can differ by 1, making the leeway boundary check flaky.
       const iat = Math.floor(Date.now() / 1000);
 
       // 15s out — within 30s leeway → lockout fires
       const expiredToken = makeIdToken({
+        iat,
         c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
         session_expiry: iat + 15,
       });
@@ -1680,10 +1684,11 @@ describe('callback response_mode: form_post', () => {
       assert.equal(status15, 400);
       server.close();
 
-      // 31s out — outside 30s leeway → login succeeds
+      // 1 hour out — well outside leeway → login succeeds and sessionExpiresAt is persisted
       const validToken = makeIdToken({
+        iat,
         c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
-        session_expiry: iat + 31,
+        session_expiry: iat + 3600,
       });
       const { currentSession } = await setup({
         authOpts: {
