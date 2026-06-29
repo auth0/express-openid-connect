@@ -258,11 +258,15 @@ app.use(
 
 The `afterCallback` hook can be used to do validation checks on claims after the ID token has been received in the callback phase.
 
+> ⚠️ **v3 behavior change** — In v3, `req.oidc` inside `afterCallback` reflects the **incoming** user's new tokens, not the previous session. If you need the prior session state, capture it before the callback flow starts. See the [V3 Migration Guide](./V3_MIGRATION_GUIDE.md#aftercallback-behavior-change) for details.
+
 ```js
+const { decodeJwt } = require('jose'); // jose v6 named export
+
 app.use(
   auth({
     afterCallback: (req, res, session) => {
-      const claims = jose.JWT.decode(session.id_token); // using jose library to decode JWT
+      const claims = decodeJwt(session.id_token);
       if (claims.org_id !== 'Required Organization') {
         throw new Error('User is not a part of the Required Organization');
       }
