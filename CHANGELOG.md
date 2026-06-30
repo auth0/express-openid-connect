@@ -1,5 +1,11 @@
 # Change Log
 
+## [v3.1.0](https://github.com/auth0/express-openid-connect/tree/v3.1.0) (2026-06-30)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.0.0...v3.1.0)
+
+**Added**
+- feat: Respect IdP provided session expiry and cap the SDK session  [\#828](https://github.com/auth0/express-openid-connect/pull/828) ([cschetan77](https://github.com/cschetan77))
+
 ## [v3.0.0](https://github.com/auth0/express-openid-connect/tree/v3.0.0) (2026-05-13)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.2...v3.0.0)
 
