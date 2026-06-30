@@ -1,5 +1,20 @@
 # Change Log
 
+## [v3.1.0](https://github.com/auth0/express-openid-connect/tree/v3.1.0) (2026-06-30)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.0.0...v3.1.0)
+
+**Added**
+- feat: IPSIE SL1 session expiry enforcement [\#828](https://github.com/auth0/express-openid-connect/pull/828) ([cschetan77](https://github.com/cschetan77))
+
+  When an upstream enterprise IdP (e.g. Okta via an Auth0 OIDC connection) emits a `session_expiry` claim in the ID token, the SDK now enforces it as a hard ceiling on the local session lifetime:
+
+  - **At login** — the ceiling is extracted and persisted as `session.sessionExpiresAt`. A born-expired token (ceiling already in the past at issuance) is rejected with HTTP 400.
+  - **On every request** — the session is cleared if `sessionExpiresAt` has been reached (with a 30s leeway for clock skew), triggering re-authentication via the normal `auth` middleware flow.
+  - **On token refresh** — `accessToken.refresh()` throws the new `SessionExpiredError` (401, `ERR_SESSION_EXPIRED`) before calling the token endpoint, rather than surfacing a confusing `invalid_grant`.
+  - **Cookie `maxAge`** — capped at `sessionExpiresAt` so the browser cookie never outlives the IdP session.
+
+  The change is **non-breaking** — all enforcement is gated on the claim being present. Connections without `session_expiry` in the ID token are completely unaffected.
+
 ## [v3.0.0](https://github.com/auth0/express-openid-connect/tree/v3.0.0) (2026-05-13)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v2.20.2...v3.0.0)
 
