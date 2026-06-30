@@ -1440,4 +1440,308 @@ describe('callback response_mode: form_post', () => {
       /"auth_verification" cookie not found/,
     );
   });
+
+  describe('session_expiry (IPSIE)', () => {
+    const hrSecs = 60 * 60;
+
+    const setupWithSessionExpiry = async (sessionExpiryOffset) => {
+      const iat = Math.floor(Date.now() / 1000);
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        ...(sessionExpiryOffset !== undefined && {
+          session_expiry: iat + sessionExpiryOffset,
+        }),
+      });
+
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          scope: 'openid profile email offline_access',
+        },
+      };
+      const router = auth(authOpts);
+      router.get('/refresh', async (req, res, next) => {
+        try {
+          const accessToken = await req.oidc.accessToken.refresh();
+          res.json({ accessToken, session: req.oidc.user });
+        } catch (err) {
+          next(err);
+        }
+      });
+
+      const { jar, currentSession } = await setup({
+        router,
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      return { jar, currentSession, router };
+    };
+
+    it('should persist sessionExpiresAt in the session when session_expiry claim is present', async () => {
+      const { currentSession } = await setupWithSessionExpiry(4 * hrSecs);
+      assert.isNumber(currentSession.sessionExpiresAt);
+      assert.approximately(
+        currentSession.sessionExpiresAt,
+        Math.floor(Date.now() / 1000) + 4 * hrSecs,
+        5,
+      );
+    });
+
+    it('should not set sessionExpiresAt when session_expiry claim is absent (non-breaking)', async () => {
+      const { currentSession } = await setupWithSessionExpiry(undefined);
+      assert.isUndefined(currentSession.sessionExpiresAt);
+    });
+
+    it('should reject login with 400 when session_expiry is already in the past', async () => {
+      const iat = Math.floor(Date.now() / 1000);
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: iat - 60, // already expired
+      });
+
+      const {
+        response: { statusCode, body },
+      } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            scope: 'openid profile email offline_access',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      assert.equal(statusCode, 400);
+      assert.match(body.err.message, /session_expiry claim is in the past/i);
+    });
+
+    it('should ignore invalid session_expiry shapes and not set sessionExpiresAt (fail-open)', async () => {
+      const iat = Math.floor(Date.now() / 1000);
+      // String value — should be ignored
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: String(iat + 3600),
+      });
+
+      const { currentSession } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            scope: 'openid profile email offline_access',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      assert.isUndefined(currentSession.sessionExpiresAt);
+    });
+
+    it('should throw SessionExpiredError on refresh when sessionExpiresAt ceiling is reached', async () => {
+      const idToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: Math.floor(Date.now() / 1000) + 2 * hrSecs,
+      });
+
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        authorizationParams: {
+          response_type: 'code id_token',
+          scope: 'openid profile email offline_access',
+        },
+      };
+      const router = auth(authOpts);
+
+      // This route bypasses appSession expiry check by directly manipulating the
+      // session ceiling to simulate it having passed, then calling refresh().
+      router.get('/refresh-expired', async (req, res, next) => {
+        try {
+          // Backdoor: set sessionExpiresAt to the past on the live session object
+          req.appSession.sessionExpiresAt = Math.floor(Date.now() / 1000) - 60;
+          await req.oidc.accessToken.refresh();
+          res.json({ ok: true });
+        } catch (err) {
+          next(err);
+        }
+      });
+
+      const { jar } = await setup({
+        router,
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      const refreshSpy = sinon.spy();
+      const {
+        interceptors: [interceptor],
+      } = nock('https://op.example.com', { allowUnmocked: true })
+        .post('/oauth/token')
+        .reply(200, refreshSpy);
+
+      const res = await request.get('/refresh-expired', {
+        baseUrl,
+        jar,
+        json: true,
+      });
+      nock.removeInterceptor(interceptor);
+
+      assert.equal(res.statusCode, 401);
+      assert.match(
+        res.body.err.message,
+        /upstream IdP session|session.*expired/i,
+      );
+      sinon.assert.notCalled(refreshSpy);
+    });
+
+    it('should clear the session when the ceiling is reached on a subsequent request', async () => {
+      const clock = sinon.useFakeTimers({ toFake: ['Date'] });
+      try {
+        const { jar } = await setupWithSessionExpiry(2 * hrSecs);
+
+        // Advance clock past the ceiling (plus leeway)
+        clock.tick((2 * hrSecs + 31) * 1000);
+
+        const session = await request
+          .get('/session', { baseUrl, jar, json: true })
+          .then((r) => r.body);
+
+        assert.isEmpty(session);
+      } finally {
+        clock.restore();
+      }
+    });
+
+    it('should reject login when session_expiry is within the leeway window and allow it when outside', async () => {
+      // Use an explicit iat so session_expiry offsets are relative to the same reference
+      // value used by isSessionExpiryInPast. Without this, makeIdToken's Math.round vs
+      // Math.floor can differ by 1, making the leeway boundary check flaky.
+      const iat = Math.floor(Date.now() / 1000);
+
+      // 15s out — within 30s leeway → lockout fires
+      const expiredToken = makeIdToken({
+        iat,
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: iat + 15,
+      });
+      const {
+        response: { statusCode: status15 },
+      } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            scope: 'openid profile email offline_access',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: expiredToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+      assert.equal(status15, 400);
+      server.close();
+
+      // 1 hour out — well outside leeway → login succeeds and sessionExpiresAt is persisted
+      const validToken = makeIdToken({
+        iat,
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+        session_expiry: iat + 3600,
+      });
+      const { currentSession } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: {
+            response_type: 'code id_token',
+            scope: 'openid profile email offline_access',
+          },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+      assert.isNumber(currentSession.sessionExpiresAt);
+    });
+
+    it('should preserve sessionExpiresAt in the session after a successful refresh', async () => {
+      const { jar, currentSession } = await setupWithSessionExpiry(4 * hrSecs);
+      const storedCeiling = currentSession.sessionExpiresAt;
+      assert.isNumber(storedCeiling);
+
+      const reply = sinon.spy(() => ({
+        access_token: '__new_access_token__',
+        refresh_token: '__new_refresh_token__',
+        token_type: 'Bearer',
+        expires_in: 86400,
+      }));
+      const {
+        interceptors: [interceptor],
+      } = nock('https://op.example.com', { allowUnmocked: true })
+        .post('/oauth/token')
+        .reply(200, reply);
+
+      await request.get('/refresh', { baseUrl, jar, json: true });
+      nock.removeInterceptor(interceptor);
+
+      const updatedSession = await request
+        .get('/session', { baseUrl, jar, json: true })
+        .then((r) => r.body);
+
+      sinon.assert.calledOnce(reply);
+      assert.equal(
+        updatedSession.sessionExpiresAt,
+        storedCeiling,
+        'sessionExpiresAt must be preserved across refreshes',
+      );
+    });
+  });
 });

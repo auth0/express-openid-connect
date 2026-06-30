@@ -101,6 +101,18 @@ Setting both `session.cookie.path` and `transactionCookie.name` is recommended. 
 
 ---
 
+## A previously authenticated user is being redirected to login unexpectedly
+
+If a user who was logged in suddenly gets redirected to the login page with no visible error, and `req.appSession` is `null` on a route they previously accessed fine, the session may have been cleared because the upstream IdP's `session_expiry` ceiling was reached.
+
+When an upstream IdP includes a `session_expiry` claim in the ID token (IPSIE SL1), the SDK enforces it as a hard ceiling on the local session lifetime. Once the ceiling is reached, the session is cleared on the next request and the user is treated as unauthenticated — exactly like an idle or absolute timeout expiry.
+
+To confirm this is the cause, check whether `req.appSession.sessionExpiresAt` was set after login. If it was, compare it against the current time.
+
+See [Session expiry from upstream IdP](./EXAMPLES.md#14-session-expiry-from-upstream-idp-ipsie-session_expiry) in EXAMPLES.md for full details.
+
+---
+
 ## Login calls are failing with 'RequestError: The "listener" argument must be of type function. Received an instance of Object'
 
 This module depends indirectly on a newer version of the `agent-base` module. If an unrelated module depends on a version of the `agent-base` older than 5.0, that older dependency is monkeypatching the global `http.request` object, causing this module to fail. You can check if you have this problem by running this check:
