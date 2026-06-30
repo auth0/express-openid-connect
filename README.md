@@ -25,6 +25,8 @@ This library supports the following tooling versions:
 
 - Node.js `^20.19.0 || ^22.12.0 || >= 23.0.0`
 
+> ⚠️ **Upgrading from v2?** The `httpAgent` config option was removed in v3. To route OIDC requests through a proxy, use the `customFetch` option with `undici`'s `ProxyAgent` instead — see [Example #13](./EXAMPLES.md#13-use-a-proxy-for-oidc-requests). For all breaking changes see the [V3 Migration Guide](./V3_MIGRATION_GUIDE.md).
+
 ## Install
 
 Using [npm](https://npmjs.org) in your project directory, run the following command:
