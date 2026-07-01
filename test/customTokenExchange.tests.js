@@ -109,6 +109,36 @@ describe('customTokenExchange', () => {
     );
   });
 
+  it('throws 400 when subject_token has leading or trailing whitespace', async () => {
+    const { response } = await setup({
+      exchangeOptions: { subject_token: '  token_with_spaces  ' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(
+      response.body.err.message,
+      'subject_token must not include leading or trailing whitespace',
+    );
+  });
+
+  it("throws 400 when subject_token includes a 'Bearer ' prefix", async () => {
+    const { response } = await setup({
+      exchangeOptions: { subject_token: 'Bearer __test_token__' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(
+      response.body.err.message,
+      "subject_token must not include the 'Bearer ' prefix",
+    );
+  });
+
+  it('throws 400 when organization is blank', async () => {
+    const { response } = await setup({
+      exchangeOptions: { organization: '   ' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.body.err.message, 'organization must not be blank');
+  });
+
   it('applies authorizationParams defaults for audience and scope', async () => {
     const { capturedBody } = await setup({
       authConfig: {
@@ -122,9 +152,9 @@ describe('customTokenExchange', () => {
     assert.equal(capturedBody.scope, 'openid read:data');
   });
 
-  it('sends organization when explicitly provided via extra', async () => {
+  it('sends organization when provided as first-class option', async () => {
     const { capturedBody } = await setup({
-      exchangeOptions: { extra: { organization: 'org_abc123' } },
+      exchangeOptions: { organization: 'org_abc123' },
     });
     assert.equal(capturedBody.organization, 'org_abc123');
   });
@@ -181,27 +211,86 @@ describe('customTokenExchange', () => {
     assert.notEqual(capturedBody.scope, 'bad');
   });
 
-  it('allows RFC 8693 optional params and IdP-specific params via extra', async () => {
+  it('allows IdP-specific params (e.g. connection) via extra', async () => {
     const { capturedBody } = await setup({
       exchangeOptions: {
-        extra: {
-          connection: 'google-oauth2',
-          requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-          actor_token: '__test_actor_token__',
-          actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
-        },
+        extra: { connection: 'google-oauth2' },
       },
     });
     assert.equal(capturedBody.connection, 'google-oauth2');
-    assert.equal(
-      capturedBody.requested_token_type,
-      'urn:ietf:params:oauth:token-type:jwt',
-    );
+  });
+
+  it('sends actor_token and actor_token_type as first-class options', async () => {
+    const { capturedBody } = await setup({
+      exchangeOptions: {
+        actor_token: '__test_actor_token__',
+        actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+      },
+    });
     assert.equal(capturedBody.actor_token, '__test_actor_token__');
     assert.equal(
       capturedBody.actor_token_type,
       'urn:ietf:params:oauth:token-type:access_token',
     );
+  });
+
+  it('sends requested_token_type as first-class option', async () => {
+    const { capturedBody } = await setup({
+      exchangeOptions: {
+        requested_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+      },
+    });
+    assert.equal(
+      capturedBody.requested_token_type,
+      'urn:ietf:params:oauth:token-type:jwt',
+    );
+  });
+
+  it('throws 400 when actor_token is provided without actor_token_type', async () => {
+    const { response } = await setup({
+      exchangeOptions: { actor_token: '__test_actor_token__' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(
+      response.body.err.message,
+      'actor_token_type is required when actor_token is provided',
+    );
+  });
+
+  it('extracts act claim from JWT access_token when actor_token is provided', async () => {
+    const actClaim = { sub: '__test_actor_sub__' };
+    const accessTokenWithAct = makeIdToken({ act: actClaim });
+    const { response } = await setup({
+      exchangeOptions: {
+        actor_token: '__test_actor_token__',
+        actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+      },
+      mockTokenResponse: {
+        status: 200,
+        body: {
+          access_token: accessTokenWithAct,
+          token_type: 'Bearer',
+        },
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.body.act, actClaim);
+  });
+
+  it('does not extract act claim when actor_token is not provided', async () => {
+    const actClaim = { sub: '__test_actor_sub__' };
+    const accessTokenWithAct = makeIdToken({ act: actClaim });
+    const { response } = await setup({
+      mockTokenResponse: {
+        status: 200,
+        body: {
+          access_token: accessTokenWithAct,
+          token_type: 'Bearer',
+        },
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    assert.isUndefined(response.body.act);
   });
 
   it('returns the TokenSet from client.grant()', async () => {
