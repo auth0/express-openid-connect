@@ -109,6 +109,36 @@ describe('customTokenExchange', () => {
     );
   });
 
+  it('throws 400 when subject_token has leading or trailing whitespace', async () => {
+    const { response } = await setup({
+      exchangeOptions: { subject_token: '  token_with_spaces  ' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(
+      response.body.err.message,
+      'subject_token must not include leading or trailing whitespace',
+    );
+  });
+
+  it("throws 400 when subject_token includes a 'Bearer ' prefix", async () => {
+    const { response } = await setup({
+      exchangeOptions: { subject_token: 'Bearer __test_token__' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(
+      response.body.err.message,
+      "subject_token must not include the 'Bearer ' prefix",
+    );
+  });
+
+  it('throws 400 when organization is blank', async () => {
+    const { response } = await setup({
+      exchangeOptions: { organization: '   ' },
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.body.err.message, 'organization must not be blank');
+  });
+
   it('applies authorizationParams defaults for audience and scope', async () => {
     const { capturedBody } = await setup({
       authConfig: {

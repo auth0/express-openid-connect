@@ -157,8 +157,8 @@ interface CustomTokenExchangeOptions {
    */
   requested_token_type?: string;
   /**
-   * Auth0 organization ID or name to use for the exchange.
-   * When provided, the issued token will be scoped to that organization.
+   * Organization ID or name to scope the exchange to.
+   * When provided, the issued token will be bound to that organization.
    */
   organization?: string;
   /** Requested audience. Defaults to `authorizationParams.audience`. */
