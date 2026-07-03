@@ -1,5 +1,11 @@
 # Change Log
 
+## [v3.2.0](https://github.com/auth0/express-openid-connect/tree/v3.2.0) (2026-07-03)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.1.0...v3.2.0)
+
+**Added**
+- feat(customTokenExchange): promote actor_token, organization, requested_token_type to first-class options [\#834](https://github.com/auth0/express-openid-connect/pull/834) ([cschetan77](https://github.com/cschetan77))
+
 ## [v3.1.0](https://github.com/auth0/express-openid-connect/tree/v3.1.0) (2026-06-30)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.0.0...v3.1.0)
 
