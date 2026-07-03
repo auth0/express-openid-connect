@@ -395,19 +395,56 @@ app.get('/reports', requiresAuth(), async (req, res, next) => {
 });
 ```
 
-`subject_token` is resolved automatically from the session's accessToken and `subject_token_type` defaults to [urn:ietf:params:oauth:token-type:access_token
-](https://datatracker.ietf.org/doc/html/rfc8693#section-3-3.2). The returned token is ephemeral — it is not stored in the session, so use it within the same request.
+`subject_token` is resolved automatically from the session's accessToken and `subject_token_type` defaults to [urn:ietf:params:oauth:token-type:access_token](https://datatracker.ietf.org/doc/html/rfc8693#section-3-3.2). The returned token is ephemeral — it is not stored in the session, so use it within the same request.
+
+### Delegation / impersonation
+
+Use `actor_token` and `actor_token_type` to perform a delegation exchange (RFC 8693). The response includes an `act` claim identifying the acting party.
+
+```js
+app.post('/impersonate', requiresAuth(), async (req, res, next) => {
+  try {
+    const { customerSubjectToken, customerSubjectTokenType } = req.body;
+
+    const tokenSet = await req.oidc.customTokenExchange({
+      subject_token: customerSubjectToken,
+      subject_token_type: customerSubjectTokenType,
+      actor_token: req.oidc.accessToken.access_token,
+      actor_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+      audience: 'https://api.example.com/support',
+    });
+
+    // tokenSet.act identifies the acting party: { sub: '<agent-sub>' }
+    res.json({ access_token: tokenSet.access_token, act: tokenSet.act });
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
+`actor_token_type` is required when `actor_token` is provided.
+
+### Organization-scoped exchange
+
+Use `organization` to issue a token bound to a specific organization:
+
+```js
+const tokenSet = await req.oidc.customTokenExchange({
+  audience: 'https://api.example.com/products',
+  scope: 'read:products',
+  organization: 'org_abc123',
+});
+```
 
 ### Vendor-specific parameters
 
-Vendor-specific parameters (e.g., Auth0 organization routing or Token Vault connection) can be passed through the `extra` option:
+Parameters not covered by the named options (e.g., Token Vault connection) can be passed through the `extra` option:
 
 ```js
-const { downstreamToken } = await req.oidc.customTokenExchange({
+const tokenSet = await req.oidc.customTokenExchange({
   audience: 'https://downstream-api.example.com',
   scope: 'read:data',
   extra: {
-    organization: 'org_abc123',
     connection: 'google-oauth2',
   },
 });
