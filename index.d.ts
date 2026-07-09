@@ -127,6 +127,10 @@ interface ActClaim {
   [key: string]: unknown;
 }
 
+/** @internal Token-type URI constants for use with STT and CTE methods. */
+export const SESSION_TRANSFER_TOKEN_IDENTIFIER: 'urn:auth0:params:oauth:token-type:session_transfer_token';
+export const ID_TOKEN_IDENTIFIER: 'urn:ietf:params:oauth:token-type:id_token';
+
 /**
  * Options for {@link RequestContext.customTokenExchange}.
  * All fields are optional — unset fields fall back to `authorizationParams` config or
@@ -205,6 +209,70 @@ interface TokenExchangeResponse {
   act?: ActClaim;
   /** Vendor-specific or extension fields returned by the authorization server. */
   [key: string]: unknown;
+}
+
+/**
+ * Result of a successful {@link RequestContext.requestSessionTransferToken} call.
+ * The STT is opaque, single-use, and expires in ~60 seconds.
+ * Pass it directly to {@link RequestContext.buildSessionTransferRedirect} — never decode or store it.
+ */
+interface SessionTransferTokenResult {
+  /** The opaque session transfer token. Hand to `buildSessionTransferRedirect`. */
+  session_transfer_token: string;
+  /**
+   * The issued token type URN. Always `"urn:auth0:params:oauth:token-type:session_transfer_token"`.
+   * Branch on this field, not `token_type`.
+   */
+  issued_token_type: string;
+  /** Token lifetime in seconds (~60). */
+  expires_in: number;
+  /** Informational only — typically `"N_A"`. Never branch on this. */
+  token_type?: string;
+  /** Granted scopes, if returned by the authorization server. */
+  scope?: string;
+}
+
+/**
+ * Options for {@link RequestContext.requestSessionTransferToken}.
+ */
+interface SessionTransferTokenOptions {
+  /**
+   * Your proof of which customer to impersonate. Validated by your CTE Action.
+   * The SDK never produces this — you supply it.
+   */
+  subject_token: string;
+  /**
+   * URI identifying the type of `subject_token` (routes to your CTE Action).
+   */
+  subject_token_type: string;
+  /**
+   * Override the acting party's token. Omit to use the agent session's id_token (default).
+   * When provided, `actor_token_type` is required.
+   * Actor resolution order: explicit `actor_token` → session id_token (refreshed if expired) → `ACTOR_UNAVAILABLE`.
+   */
+  actor_token?: string;
+  /**
+   * URI identifying the type of `actor_token`.
+   * Defaults to `urn:ietf:params:oauth:token-type:id_token` when `actor_token` is provided.
+   */
+  actor_token_type?: string;
+  /** Organization ID or name; forwarded to `/authorize` by `buildSessionTransferRedirect`. */
+  organization?: string;
+  /** Scopes for the target session's tokens. */
+  scope?: string;
+  /**
+   * Audit reason forwarded to your CTE Action as `event.request.body.reason`.
+   * Your Action must include it in `setActor(...)` for it to appear as `act.reason`.
+   */
+  reason?: string;
+}
+
+/**
+ * Options for {@link RequestContext.buildSessionTransferRedirect}.
+ */
+interface SessionTransferRedirectOptions {
+  /** Organization to append to the redirect URL (when the STT is org-scoped). */
+  organization?: string;
 }
 
 /**
@@ -295,6 +363,59 @@ interface RequestContext {
   customTokenExchange?: (
     options?: CustomTokenExchangeOptions,
   ) => Promise<TokenExchangeResponse>;
+
+  /**
+   * Requests a Session Transfer Token (STT) for impersonation via session transfer.
+   *
+   * Performs a CTE call against the `urn:{domain}:session_transfer` audience.
+   * The agent's session id_token is used as the actor automatically (refreshed if expired);
+   * pass `actor_token` to override.
+   *
+   * The returned STT is opaque and single-use (~60s). Pass it to
+   * `buildSessionTransferRedirect` — never decode or store it.
+   *
+   * ```js
+   * app.post('/impersonate', requiresAuth(), async (req, res) => {
+   *   const result = await req.oidc.requestSessionTransferToken({
+   *     subject_token: req.body.customerToken,
+   *     subject_token_type: 'urn:mycompany:customer-subject',
+   *     reason: 'Investigating ticket TCK-1234',
+   *   });
+   *   res.redirect(req.oidc.buildSessionTransferRedirect('https://app.example.com/login', result));
+   * });
+   * ```
+   *
+   * **Errors thrown (HTTP 400):**
+   * - `error: 'actor_unavailable'` — no actor resolved (agent not authenticated or session expired with no refresh token)
+   * - `error: 'setactor_required'` — CTE Action did not call `setActor`
+   * - `error: 'session_transfer_disabled'` — tenant feature flag is off
+   */
+  requestSessionTransferToken?: (
+    options: SessionTransferTokenOptions,
+  ) => Promise<SessionTransferTokenResult>;
+
+  /**
+   * Builds the redirect URL that hands the STT to the target app's login endpoint.
+   *
+   * Returns `targetLoginUrl?session_transfer_token=<encoded>[&organization=…]`.
+   * The developer passes the returned URL to `res.redirect()`.
+   *
+   * ```js
+   * const url = req.oidc.buildSessionTransferRedirect('https://app.example.com/login', result, {
+   *   organization: 'org_globex',
+   * });
+   * res.redirect(url);
+   * ```
+   *
+   * The `targetLoginUrl` must be a trusted, app-controlled value — never derive it
+   * from untrusted input such as a query parameter, as the STT would be forwarded to
+   * an attacker-controlled host.
+   */
+  buildSessionTransferRedirect?: (
+    targetLoginUrl: string,
+    result: SessionTransferTokenResult,
+    opts?: SessionTransferRedirectOptions,
+  ) => string;
 }
 
 /**
