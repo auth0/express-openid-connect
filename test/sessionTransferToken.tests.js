@@ -176,6 +176,84 @@ describe('requestSessionTransferToken', () => {
     assert.equal(response.body.err.error, 'actor_unavailable');
   });
 
+  it('throws 400 with actor_unavailable when id_token is expired and no refresh_token', async () => {
+    const expiredIdToken = makeIdToken({
+      exp: Math.floor(Date.now() / 1000) - 3600,
+    });
+    const { response } = await setup({
+      sttOptions: {
+        subject_token: '__test_subject__',
+        subject_token_type: 'urn:mycompany:test-token',
+      },
+      sessionData: {
+        id_token: expiredIdToken,
+        access_token: '__test_access_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) - 3600,
+      },
+      mockTokenResponse: false,
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.body.err.error, 'actor_unavailable');
+  });
+
+  it('refreshes expired id_token and uses the fresh one as actor when refresh_token is available', async () => {
+    const expiredIdToken = makeIdToken({
+      exp: Math.floor(Date.now() / 1000) - 3600,
+    });
+    const freshIdToken = makeIdToken();
+
+    const router = express.Router();
+    router.use(auth({ ...defaultConfig }));
+    router.get('/stt', async (req, res, next) => {
+      try {
+        const result = await req.oidc.requestSessionTransferToken({
+          subject_token: '__test_subject__',
+          subject_token_type: 'urn:mycompany:test-token',
+        });
+        res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    server = await createServer(router);
+    const jar = request.jar();
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: expiredIdToken,
+        access_token: '__test_access_token__',
+        refresh_token: '__test_refresh_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) - 3600,
+      },
+    });
+
+    let capturedSttBody;
+    // First call: refresh grant; second call: STT exchange
+    nock('https://op.example.com')
+      .post('/oauth/token')
+      .reply(200, {
+        access_token: '__new_access_token__',
+        id_token: freshIdToken,
+        refresh_token: '__new_refresh_token__',
+        token_type: 'Bearer',
+        expires_in: 86400,
+      })
+      .post('/oauth/token')
+      .reply(200, function (uri, body) {
+        capturedSttBody = qs.parse(body);
+        return defaultSTTResponse();
+      });
+
+    const response = await request.get('/stt', { baseUrl, jar, json: true });
+    assert.equal(response.statusCode, 200);
+    assert.equal(capturedSttBody.actor_token, freshIdToken);
+    assert.equal(capturedSttBody.actor_token_type, ID_TOKEN_IDENTIFIER);
+  });
+
   // -------------------------------------------------------------------------
   // subject_token validation (reuses validateSubjectToken)
   // -------------------------------------------------------------------------
@@ -268,18 +346,18 @@ describe('requestSessionTransferToken', () => {
     assert.equal(capturedBody.organization, 'org_abc123');
   });
 
-  it('sends reason when provided', async () => {
+  it('forwards extra params to the token endpoint', async () => {
     const { capturedBody } = await setup({
       sttOptions: {
         subject_token: '__test_subject__',
         subject_token_type: 'urn:mycompany:test-token',
-        reason: 'Investigating TCK-4821',
+        extra: { reason: 'Investigating TCK-4821' },
       },
     });
     assert.equal(capturedBody.reason, 'Investigating TCK-4821');
   });
 
-  it('omits scope, organization, and reason when not provided', async () => {
+  it('omits scope, organization, and extra when not provided', async () => {
     const { capturedBody } = await setup({
       sttOptions: {
         subject_token: '__test_subject__',
@@ -288,7 +366,6 @@ describe('requestSessionTransferToken', () => {
     });
     assert.isUndefined(capturedBody.scope);
     assert.isUndefined(capturedBody.organization);
-    assert.isUndefined(capturedBody.reason);
   });
 
   // -------------------------------------------------------------------------
@@ -319,7 +396,7 @@ describe('requestSessionTransferToken', () => {
     );
   });
 
-  it('falls back to SESSION_TRANSFER_TOKEN_IDENTIFIER when issued_token_type is absent', async () => {
+  it('returns empty string for issued_token_type when absent in AS response', async () => {
     const { response } = await setup({
       sttOptions: {
         subject_token: '__test_subject__',
@@ -336,10 +413,7 @@ describe('requestSessionTransferToken', () => {
       },
     });
     assert.equal(response.statusCode, 200);
-    assert.equal(
-      response.body.issued_token_type,
-      SESSION_TRANSFER_TOKEN_IDENTIFIER,
-    );
+    assert.equal(response.body.issued_token_type, '');
   });
 
   it('result has no access_token field — STT is in session_transfer_token', async () => {

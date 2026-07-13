@@ -258,10 +258,11 @@ interface SessionTransferTokenOptions {
   /** Scopes for the established session's tokens. */
   scope?: string;
   /**
-   * Optional reason for the exchange. Included in the `act` claim when your CTE Action
-   * passes it to `setActor(...)`.
+   * Additional parameters forwarded to the token endpoint and available in your CTE Action
+   * via `event.request.body` (e.g. `{ reason: 'Investigating TCK-1234' }`).
+   * Cannot override reserved OAuth parameters.
    */
-  reason?: string;
+  extra?: Record<string, string | string[] | number | boolean>;
 }
 
 /**
@@ -376,7 +377,7 @@ interface RequestContext {
    *   const result = await req.oidc.requestSessionTransferToken({
    *     subject_token: req.body.customerToken,
    *     subject_token_type: 'urn:mycompany:customer-subject',
-   *     reason: 'Investigating ticket TCK-1234',
+   *     extra: { reason: 'Investigating ticket TCK-1234' },
    *   });
    *   res.redirect(req.oidc.buildSessionTransferRedirect('https://app.example.com/login', result));
    * });
