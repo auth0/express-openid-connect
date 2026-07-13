@@ -521,6 +521,7 @@ describe('buildSessionTransferRedirect', () => {
   it('appends session_transfer_token as a query param', async () => {
     const response = await setupRedirect('https://app.example.com/login', {
       session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
     });
     assert.equal(response.statusCode, 200);
     const redirectUrl = new URL(response.body.url);
@@ -534,6 +535,7 @@ describe('buildSessionTransferRedirect', () => {
     const sttWithSpecialChars = 'abc+def/ghi=';
     const response = await setupRedirect('https://app.example.com/login', {
       session_transfer_token: sttWithSpecialChars,
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
     });
     assert.equal(response.statusCode, 200);
     const redirectUrl = new URL(response.body.url);
@@ -546,7 +548,10 @@ describe('buildSessionTransferRedirect', () => {
   it('appends organization when provided in opts', async () => {
     const response = await setupRedirect(
       'https://app.example.com/login',
-      { session_transfer_token: '__test_stt__' },
+      {
+        session_transfer_token: '__test_stt__',
+        issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+      },
       { organization: 'org_globex' },
     );
     assert.equal(response.statusCode, 200);
@@ -561,6 +566,7 @@ describe('buildSessionTransferRedirect', () => {
   it('does not append organization when not provided', async () => {
     const response = await setupRedirect('https://app.example.com/login', {
       session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
     });
     assert.equal(response.statusCode, 200);
     const redirectUrl = new URL(response.body.url);
@@ -570,7 +576,10 @@ describe('buildSessionTransferRedirect', () => {
   it('preserves existing query params on targetLoginUrl', async () => {
     const response = await setupRedirect(
       'https://app.example.com/login?foo=bar',
-      { session_transfer_token: '__test_stt__' },
+      {
+        session_transfer_token: '__test_stt__',
+        issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+      },
     );
     assert.equal(response.statusCode, 200);
     const redirectUrl = new URL(response.body.url);
@@ -581,15 +590,99 @@ describe('buildSessionTransferRedirect', () => {
     );
   });
 
-  it('throws 400 when targetLoginUrl is missing', async () => {
+  it('throws TypeError when targetLoginUrl is null', async () => {
     const response = await setupRedirect(null, {
       session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
     });
-    assert.equal(response.statusCode, 400);
+    assert.equal(response.statusCode, 500);
+    assert.match(
+      response.body.err.message,
+      /targetLoginUrl must be a valid URL/,
+    );
   });
 
-  it('throws 400 when result has no session_transfer_token', async () => {
-    const response = await setupRedirect('https://app.example.com/login', {});
-    assert.equal(response.statusCode, 400);
+  it('throws TypeError when targetLoginUrl is whitespace only', async () => {
+    const response = await setupRedirect('   ', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(
+      response.body.err.message,
+      /targetLoginUrl must be a valid URL/,
+    );
+  });
+
+  it('throws TypeError when targetLoginUrl is not a valid URL', async () => {
+    const response = await setupRedirect('not-a-valid-url', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(
+      response.body.err.message,
+      /targetLoginUrl must be a valid URL/,
+    );
+  });
+
+  it('throws TypeError when organization is not a string', async () => {
+    const response = await setupRedirect(
+      'https://app.example.com/login',
+      {
+        session_transfer_token: '__test_stt__',
+        issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+      },
+      { organization: 123 },
+    );
+    assert.equal(response.statusCode, 500);
+    assert.match(
+      response.body.err.message,
+      /organization must be a non-empty string/,
+    );
+  });
+
+  it('throws TypeError when organization is a blank string', async () => {
+    const response = await setupRedirect(
+      'https://app.example.com/login',
+      {
+        session_transfer_token: '__test_stt__',
+        issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+      },
+      { organization: '   ' },
+    );
+    assert.equal(response.statusCode, 500);
+    assert.match(
+      response.body.err.message,
+      /organization must be a non-empty string/,
+    );
+  });
+
+  it('throws TypeError when result has wrong issued_token_type', async () => {
+    const response = await setupRedirect('https://app.example.com/login', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.err.message, /issued_token_type/);
+  });
+
+  it('throws TypeError when result has no issued_token_type', async () => {
+    const response = await setupRedirect('https://app.example.com/login', {
+      session_transfer_token: '__test_stt__',
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.err.message, /issued_token_type/);
+  });
+
+  it('throws TypeError when result has no session_transfer_token', async () => {
+    const response = await setupRedirect('https://app.example.com/login', {
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(
+      response.body.err.message,
+      /result must be a SessionTransferTokenResult with a session_transfer_token/,
+    );
   });
 });

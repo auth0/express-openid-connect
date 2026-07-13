@@ -221,12 +221,11 @@ interface SessionTransferTokenResult {
   session_transfer_token: string;
   /**
    * The issued token type URN. Always `"urn:auth0:params:oauth:token-type:session_transfer_token"`.
-   * Branch on this field, not `token_type`.
    */
   issued_token_type: string;
   /** Token lifetime in seconds (~60). */
   expires_in: number;
-  /** Informational only — typically `"N_A"`. Never branch on this. */
+  /** Informational only — typically `"N_A"`. */
   token_type?: string;
   /** Granted scopes, if returned by the authorization server. */
   scope?: string;
@@ -237,18 +236,16 @@ interface SessionTransferTokenResult {
  */
 interface SessionTransferTokenOptions {
   /**
-   * Your proof of which customer to impersonate. Validated by your CTE Action.
-   * The SDK never produces this — you supply it.
+   * The token identifying the subject of the exchange. Validated by your CTE Action.
    */
   subject_token: string;
   /**
-   * URI identifying the type of `subject_token` (routes to your CTE Action).
+   * URI identifying the type of `subject_token`.
    */
   subject_token_type: string;
   /**
-   * Override the acting party's token. Omit to use the agent session's id_token (default).
-   * When provided, `actor_token_type` is required.
-   * Actor resolution order: explicit `actor_token` → session id_token (refreshed if expired) → `ACTOR_UNAVAILABLE`.
+   * The acting party's token. Omit to use the current session's id_token (default).
+   * When provided, `actor_token_type` defaults to `urn:ietf:params:oauth:token-type:id_token`.
    */
   actor_token?: string;
   /**
@@ -258,11 +255,11 @@ interface SessionTransferTokenOptions {
   actor_token_type?: string;
   /** Organization ID or name; forwarded to `/authorize` by `buildSessionTransferRedirect`. */
   organization?: string;
-  /** Scopes for the target session's tokens. */
+  /** Scopes for the established session's tokens. */
   scope?: string;
   /**
-   * Audit reason forwarded to your CTE Action as `event.request.body.reason`.
-   * Your Action must include it in `setActor(...)` for it to appear as `act.reason`.
+   * Optional reason for the exchange. Included in the `act` claim when your CTE Action
+   * passes it to `setActor(...)`.
    */
   reason?: string;
 }
@@ -409,7 +406,8 @@ interface RequestContext {
    *
    * The `targetLoginUrl` must be a trusted, app-controlled value — never derive it
    * from untrusted input such as a query parameter, as the STT would be forwarded to
-   * an attacker-controlled host.
+   * an attacker-controlled host. Use an `https:` URL in production to prevent the
+   * token from being exposed over plaintext.
    */
   buildSessionTransferRedirect?: (
     targetLoginUrl: string,
