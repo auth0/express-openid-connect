@@ -602,4 +602,130 @@ describe('auth', () => {
       'Should get error json from server error middleware',
     );
   });
+
+  describe('JAR (JWT-Secured Authorization Requests)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const key = fs.readFileSync(
+      path.join(__dirname, '../examples', 'private-key.pem'),
+    );
+
+    it('should include request param when requestObjectSigningKey is set', async () => {
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+      assert.property(parsed.query, 'request');
+      assert.isNotEmpty(parsed.query.request);
+    });
+
+    it('should return a valid JWT in request param', async () => {
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const parsed = url.parse(res.headers.location, true);
+      const requestJwt = parsed.query.request;
+
+      const parts = requestJwt.split('.');
+      assert.equal(parts.length, 3, 'request param should be a JWT');
+
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64url').toString(),
+      );
+      assert.isObject(payload);
+    });
+
+    it('should include standard claims in request JWT payload', async () => {
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          authorizationParams: {
+            response_type: 'code',
+            scope: 'openid profile email',
+          },
+        }),
+      );
+      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const parsed = url.parse(res.headers.location, true);
+      const requestJwt = parsed.query.request;
+
+      const payload = JSON.parse(
+        Buffer.from(requestJwt.split('.')[1], 'base64url').toString(),
+      );
+
+      assert.equal(payload.iss, '__test_client_id__');
+      assert.equal(payload.aud, 'https://op.example.com');
+      assert.equal(payload.client_id, '__test_client_id__');
+      assert.equal(payload.response_type, 'code');
+      assert.equal(payload.scope, 'openid profile email');
+      assert.isNumber(payload.exp);
+      assert.isString(payload.jti);
+    });
+
+    it('should use PAR endpoint when pushedAuthorizationRequests is enabled', async () => {
+      nock('https://op.example.com')
+        .post('/oauth/par')
+        .reply(201, { request_uri: 'urn:ietf:params:oauth:request-uri:test', expires_in: 60 });
+
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          pushedAuthorizationRequests: true,
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+      // When using PAR, the request param is replaced with request_uri
+      assert.property(parsed.query, 'request_uri');
+      assert.isUndefined(parsed.query.request);
+    });
+
+    it('should not include request param in final URL when PAR is used', async () => {
+      nock('https://op.example.com')
+        .post('/oauth/par')
+        .reply(201, { request_uri: 'urn:ietf:params:oauth:request-uri:test', expires_in: 60 });
+
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          pushedAuthorizationRequests: true,
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const parsed = url.parse(res.headers.location, true);
+
+      // The request object is consumed by PAR, so it should not appear in the final redirect
+      assert.isUndefined(parsed.query.request);
+      assert.equal(parsed.query.request_uri, 'urn:ietf:params:oauth:request-uri:test');
+    });
+  });
 });

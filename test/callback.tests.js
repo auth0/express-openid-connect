@@ -1744,4 +1744,56 @@ describe('callback response_mode: form_post', () => {
       );
     });
   });
+
+  describe('JWE access token decryption', () => {
+    it('should pass through a plain access token when no decryption key is configured', async () => {
+      const validToken = makeIdToken({
+        c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
+      });
+
+      const { jar, tokens } = await setup({
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: { response_type: 'code id_token' },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      // Plain token should pass through unchanged
+      assert.equal(tokens.accessToken.access_token, '__test_access_token__');
+    });
+
+    it('should accept accessTokenDecryptionKey configuration without throwing errors', async () => {
+      const fs = require('fs');
+      const path = require('path');
+      const privateKeyPem = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+
+      // This test verifies the config is accepted without throwing
+      // The actual JWE decryption is tested in client.tests.js
+      assert.doesNotThrow(() => {
+        const { get: getConfig } = require('../lib/config');
+        getConfig({
+          secret: '__test_session_secret__',
+          clientID: '__test_client_id__',
+          baseURL: 'https://example.org',
+          issuerBaseURL: 'https://op.example.com',
+          clientSecret: '__test_client_secret__',
+          accessTokenDecryptionKey: privateKeyPem,
+          accessTokenDecryptionAlg: 'RSA-OAEP-256',
+          authorizationParams: { response_type: 'code' },
+        });
+      });
+    });
+  });
 });

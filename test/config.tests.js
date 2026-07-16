@@ -906,4 +906,243 @@ describe('get config', () => {
       }),
     );
   });
+
+  describe('mTLS clientAuthMethod', () => {
+    it('should accept tls_client_auth without clientSecret', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        clientAuthMethod: 'tls_client_auth',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
+
+    it('should accept self_signed_tls_client_auth without clientSecret', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        clientAuthMethod: 'self_signed_tls_client_auth',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.clientAuthMethod, 'self_signed_tls_client_auth');
+    });
+
+    it('should emit console.warn for tls_client_auth with *.auth0.com issuer', () => {
+      getConfig({
+        ...defaultConfig,
+        issuerBaseURL: 'https://tenant.auth0.com',
+        clientAuthMethod: 'tls_client_auth',
+        authorizationParams: { response_type: 'code' },
+      });
+      // Check if warn was called with custom domain message
+      const warnCalls = console.warn.getCalls();
+      const customDomainWarn = warnCalls.some((call) =>
+        call.args[0] && /custom domain|canonical.*\.auth0\.com/i.test(call.args[0]),
+      );
+      assert.ok(customDomainWarn, 'Should warn about custom domain requirement');
+    });
+
+    it('should emit console.warn for self_signed_tls_client_auth with *.auth0.com issuer', () => {
+      getConfig({
+        ...defaultConfig,
+        issuerBaseURL: 'https://tenant.auth0.com',
+        clientAuthMethod: 'self_signed_tls_client_auth',
+        authorizationParams: { response_type: 'code' },
+      });
+      // Check if warn was called with custom domain message
+      const warnCalls = console.warn.getCalls();
+      const customDomainWarn = warnCalls.some((call) =>
+        call.args[0] && /custom domain|canonical.*\.auth0\.com/i.test(call.args[0]),
+      );
+      assert.ok(customDomainWarn, 'Should warn about custom domain requirement');
+    });
+
+    it('should NOT emit console.warn for tls_client_auth with non-auth0 issuer', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        issuerBaseURL: 'https://example.com',
+        clientAuthMethod: 'tls_client_auth',
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCallsAfter = console.warn.callCount;
+      // Check if any of the new calls were about custom domain
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const customDomainWarned = warnCalls.some((call) =>
+        /custom domain/i.test(call.args[0]),
+      );
+      assert.notOk(customDomainWarned);
+    });
+  });
+
+  describe('JAR config validation', () => {
+    it('should throw when requestObjectSigningKey is set without requestObjectSigningAlg', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            clientSecret: '__test_client_secret__',
+            requestObjectSigningKey: 'some-key',
+            authorizationParams: { response_type: 'code' },
+          }),
+        TypeError,
+        '"requestObjectSigningAlg" is required when "requestObjectSigningKey" is set',
+      );
+    });
+
+    it('should accept requestObjectSigningKey with requestObjectSigningAlg', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.ok(config.requestObjectSigningKey);
+      assert.equal(config.requestObjectSigningAlg, 'RS256');
+    });
+
+    it('should accept requestObjectSigningKeyId as optional', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        requestObjectSigningKeyId: 'key-1',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.requestObjectSigningKeyId, 'key-1');
+    });
+
+    it('should accept requestObjectSigningKey without requestObjectSigningKeyId', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.isUndefined(config.requestObjectSigningKeyId);
+    });
+
+    it('should emit console.warn when JAR is set without PAR', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        pushedAuthorizationRequests: false,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const parWarn = warnCalls.some((call) => /PAR/i.test(call.args[0]));
+      assert.ok(parWarn);
+    });
+
+    it('should NOT emit console.warn when JAR is set WITH PAR', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        pushedAuthorizationRequests: true,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const parWarn = warnCalls.some((call) => /PAR/i.test(call.args[0]));
+      assert.notOk(parWarn);
+    });
+  });
+
+  describe('JWE config validation', () => {
+    it('should accept accessTokenDecryptionKey when response_type is code', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: key,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.ok(config.accessTokenDecryptionKey);
+    });
+
+    it('should throw when accessTokenDecryptionKey is set with response_type id_token', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            accessTokenDecryptionKey: key,
+            authorizationParams: { response_type: 'id_token' },
+          }),
+        TypeError,
+        '"accessTokenDecryptionKey" requires a code flow',
+      );
+    });
+
+    it('should default accessTokenDecryptionAlg to RSA-OAEP-256', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: key,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.accessTokenDecryptionAlg, 'RSA-OAEP-256');
+    });
+
+    it('should accept custom accessTokenDecryptionAlg', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: key,
+        accessTokenDecryptionAlg: 'RSA-OAEP-512',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.accessTokenDecryptionAlg, 'RSA-OAEP-512');
+    });
+  });
 });

@@ -753,7 +753,14 @@ interface ConfigParams {
   /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
    */
-  clientAuthMethod?: string;
+  clientAuthMethod?:
+    | 'client_secret_basic'
+    | 'client_secret_post'
+    | 'client_secret_jwt'
+    | 'private_key_jwt'
+    | 'tls_client_auth'
+    | 'self_signed_tls_client_auth'
+    | 'none';
 
   /**
    * Private key for use with 'private_key_jwt' clients.
@@ -814,6 +821,46 @@ interface ConfigParams {
     | 'ES384'
     | 'ES512'
     | 'Ed25519';
+
+  /**
+   * Private key used to sign JWT-Secured Authorization Requests (JAR).
+   * When set, all authorization parameters are signed as a `request` JWT before being sent to the authorization endpoint.
+   * Accepts the same formats as `clientAssertionSigningKey`: PEM string, Buffer, KeyObject, JWK, or CryptoKey.
+   */
+  requestObjectSigningKey?: KeyObject | JoseCryptoKey | JWK | string | Buffer;
+
+  /**
+   * Algorithm used to sign the JAR request object JWT. Always required when `requestObjectSigningKey` is set.
+   * Web Crypto algorithm names (e.g. `RSASSA-PKCS1-v1_5`) are not valid here — use JWA names (e.g. `RS256`).
+   */
+  requestObjectSigningAlg?:
+    | 'RS256'
+    | 'RS384'
+    | 'RS512'
+    | 'PS256'
+    | 'PS384'
+    | 'PS512'
+    | 'ES256'
+    | 'ES384'
+    | 'ES512'
+    | 'Ed25519';
+
+  /**
+   * Optional key ID to include as the `kid` header in the JAR request object JWT.
+   */
+  requestObjectSigningKeyId?: string;
+
+  /**
+   * Private key used to decrypt JWE-encrypted access tokens.
+   * When set, the SDK decrypts the access token at the callback before writing it to the session.
+   * Requires a code flow (`response_type: 'code'` or `'code id_token'`).
+   */
+  accessTokenDecryptionKey?: KeyObject | JoseCryptoKey | JWK | string | Buffer;
+
+  /**
+   * Key-wrapping algorithm for JWE access token decryption. Defaults to `RSA-OAEP-256`.
+   */
+  accessTokenDecryptionAlg?: string;
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
