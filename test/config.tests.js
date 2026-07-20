@@ -1,6 +1,7 @@
-const { assert } = require('chai');
+const { assert, expect } = require('chai');
 const sinon = require('sinon');
 const { get: getConfig } = require('../lib/config');
+const { MtlsError, MtlsErrorCode } = require('../lib/errors');
 
 const defaultConfig = {
   secret: '__test_session_secret__',
@@ -905,5 +906,81 @@ describe('get config', () => {
         },
       }),
     );
+  });
+
+  describe('mTLS configuration', () => {
+    const mtlsFetch = () => Promise.resolve(new Response());
+
+    it('should default useMtls to false', () => {
+      const config = getConfig({ ...defaultConfig, clientSecret: 'secret' });
+      assert.equal(config.useMtls, false);
+    });
+
+    it('should accept useMtls=true with customFetch and no clientSecret', () => {
+      assert.doesNotThrow(() =>
+        getConfig({ ...defaultConfig, useMtls: true, customFetch: mtlsFetch }),
+      );
+    });
+
+    it('should throw MtlsError when useMtls=true and customFetch is missing', () => {
+      let caught;
+      try {
+        getConfig({ ...defaultConfig, useMtls: true });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
+    });
+
+    it('should set clientAuthMethod to tls_client_auth when useMtls=true', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+      });
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
+
+    it('should accept an explicit clientAuthMethod=tls_client_auth', () => {
+      assert.doesNotThrow(() =>
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch: mtlsFetch,
+          clientAuthMethod: 'tls_client_auth',
+        }),
+      );
+    });
+
+    it('should read useMtls from AUTH0_MTLS env var', () => {
+      sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
+      let caught;
+      try {
+        getConfig({ ...defaultConfig });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
+    });
+
+    it('should not throw when AUTH0_MTLS=true and customFetch is provided', () => {
+      sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
+      assert.doesNotThrow(() =>
+        getConfig({ ...defaultConfig, customFetch: mtlsFetch }),
+      );
+    });
+
+    it('should not require clientSecret when useMtls=true', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.useMtls, true);
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
   });
 });

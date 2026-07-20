@@ -834,7 +834,8 @@ interface ConfigParams {
    * A custom fetch function to use for all OIDC HTTP requests (discovery, token, userinfo, etc.).
    * The SDK wraps this function to inject required headers (User-Agent, Auth0-Client telemetry) before making requests.
    *
-   * This is useful for configuring proxies or custom HTTP behavior.
+   * Required when `useMtls` is `true` — provide a TLS-aware implementation that attaches your
+   * client certificate to every outbound request (e.g. `undici` with `connect: { key, cert }`).
    *
    * @example
    * ```js
@@ -853,6 +854,47 @@ interface ConfigParams {
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
+
+  /**
+   * Enable mTLS (Mutual TLS, RFC 8705) client authentication.
+   *
+   * When `true`, the SDK authenticates with Auth0 using a TLS client certificate instead of a
+   * `clientSecret` or `clientAssertionSigningKey`. Access tokens will carry a `cnf.x5t#S256`
+   * claim binding them to the certificate fingerprint (certificate-bound tokens).
+   *
+   * Requires:
+   * 1. A TLS-aware `customFetch` implementation that attaches your client certificate
+   *    (e.g. Node.js `undici` configured with `connect: { key, cert }`).
+   * 2. The mTLS feature to be enabled on your Auth0 tenant.
+   *
+   * You do **not** need to provide `clientSecret` when `useMtls` is `true`.
+   *
+   * Can also be enabled by setting the `AUTH0_MTLS=true` environment variable.
+   *
+   * @default false
+   *
+   * @example
+   * ```js
+   * const { Agent, fetch: undiciFetch } = require('undici');
+   * const { readFileSync } = require('fs');
+   *
+   * const tlsAgent = new Agent({
+   *   connect: {
+   *     key: readFileSync('client.key'),
+   *     cert: readFileSync('client.crt'),
+   *   },
+   * });
+   *
+   * app.use(auth({
+   *   useMtls: true,
+   *   customFetch: (url, options) =>
+   *     undiciFetch(url, { ...options, dispatcher: tlsAgent }),
+   * }));
+   * ```
+   *
+   * @see {@link https://datatracker.ietf.org/doc/html/rfc8705 | RFC 8705: OAuth 2.0 Mutual-TLS Client Authentication}
+   */
+  useMtls?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
@@ -1249,4 +1291,35 @@ export class SessionExpiredError extends Error {
   readonly status: 401;
   readonly statusCode: 401;
   constructor(message?: string);
+}
+
+/**
+ * Error codes for mTLS (Mutual TLS, RFC 8705) configuration failures.
+ */
+export const MtlsErrorCode: {
+  readonly MTLS_REQUIRES_CUSTOM_FETCH: 'mtls_requires_custom_fetch';
+};
+
+/**
+ * Thrown during `auth()` initialization when the mTLS configuration is invalid.
+ *
+ * Currently thrown when `useMtls: true` is set without a `customFetch` implementation.
+ * Catch by `error.code` string rather than `instanceof` to be bundler-safe.
+ *
+ * ```js
+ * const { MtlsError, MtlsErrorCode } = require('express-openid-connect');
+ *
+ * try {
+ *   app.use(auth({ useMtls: true })); // missing customFetch — throws
+ * } catch (err) {
+ *   if (err.code === MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH) {
+ *     console.error('Provide a TLS-aware customFetch when useMtls is true.');
+ *   }
+ * }
+ * ```
+ */
+export class MtlsError extends Error {
+  readonly name: 'MtlsError';
+  readonly code: string;
+  constructor(code: string, message: string);
 }

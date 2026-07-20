@@ -8,6 +8,15 @@ const nock = require('nock');
 const pkg = require('../package.json');
 const sinon = require('sinon');
 
+const MTLS_WELL_KNOWN = {
+  ...wellKnown,
+  mtls_endpoint_aliases: {
+    token_endpoint: 'https://mtls.op.example.com/oauth/token',
+    userinfo_endpoint: 'https://mtls.op.example.com/userinfo',
+    revocation_endpoint: 'https://mtls.op.example.com/oauth/revoke',
+  },
+};
+
 describe('client initialization', function () {
   beforeEach(async function () {
     nock('https://op.example.com')
@@ -682,6 +691,101 @@ describe('client initialization', function () {
         '__test_cache_max_age_client_id__',
       );
       expect(spy.callCount).to.eq(1);
+    });
+  });
+
+  describe('mTLS client configuration', function () {
+    const mtlsFetch = sinon
+      .stub()
+      .callsFake((url, options) => fetch(url, options));
+
+    const baseConfig = {
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      issuerBaseURL: 'https://mtls-test.auth0.com',
+      baseURL: 'https://example.org',
+      authorizationParams: { response_type: 'code' },
+    };
+
+    beforeEach(() => {
+      mtlsFetch.resetHistory();
+      nock('https://mtls-test.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...MTLS_WELL_KNOWN,
+          issuer: 'https://mtls-test.auth0.com/',
+        });
+    });
+
+    afterEach(() => nock.cleanAll());
+
+    it('should set use_mtls_endpoint_aliases=true on clientMetadata when useMtls=true', async function () {
+      const config = getConfig({
+        ...baseConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+      });
+      const { configuration } = await getClient(config);
+      const metadata = configuration.clientMetadata();
+      assert.equal(metadata.use_mtls_endpoint_aliases, true);
+    });
+
+    it('should NOT set use_mtls_endpoint_aliases when useMtls=false', async function () {
+      const config = getConfig({
+        ...baseConfig,
+        clientSecret: '__test_client_secret__',
+      });
+      const { configuration } = await getClient(config);
+      const metadata = configuration.clientMetadata();
+      assert.notEqual(metadata.use_mtls_endpoint_aliases, true);
+    });
+
+    it('should resolve clientAuthMethod to tls_client_auth when useMtls=true', function () {
+      const config = getConfig({
+        ...baseConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+      });
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
+
+    it('should invoke customFetch during discovery when useMtls=true', async function () {
+      const config = getConfig({
+        ...baseConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+      });
+      await getClient(config);
+      assert.isTrue(mtlsFetch.called);
+    });
+
+    it('should expose mtls_endpoint_aliases in server metadata when present', async function () {
+      const config = getConfig({
+        ...baseConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+      });
+      const { serverMetadata } = await getClient(config);
+      assert.deepEqual(serverMetadata.mtls_endpoint_aliases, {
+        token_endpoint: 'https://mtls.op.example.com/oauth/token',
+        userinfo_endpoint: 'https://mtls.op.example.com/userinfo',
+        revocation_endpoint: 'https://mtls.op.example.com/oauth/revoke',
+      });
+    });
+
+    it('should work without mtls_endpoint_aliases in discovery (graceful fallback)', async function () {
+      nock.cleanAll();
+      nock('https://mtls-test.auth0.com')
+        .get('/.well-known/openid-configuration')
+        .reply(200, { ...wellKnown, issuer: 'https://mtls-test.auth0.com/' });
+
+      const config = getConfig({
+        ...baseConfig,
+        useMtls: true,
+        customFetch: mtlsFetch,
+      });
+      await assert.isFulfilled(getClient(config));
     });
   });
 });
