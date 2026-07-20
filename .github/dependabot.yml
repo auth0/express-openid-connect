@@ -4,10 +4,17 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
+    groups:
+      codeql:
+        patterns:
+          - 'github/codeql-action*'
+      actions-cache:
+        patterns:
+          - 'actions/cache*'
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'daily'
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
