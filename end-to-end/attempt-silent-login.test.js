@@ -34,8 +34,8 @@ describe('attempt silent login', async () => {
     const page = await browser.newPage();
     const context = page.browserContext();
 
-    await page.goto(baseUrl);
-    await page.waitForURL(`${baseUrl}/`, { timeout: 10000 });
+    await goto(baseUrl, page);
+    await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
     const cookies = await context.cookies('http://localhost:3000');
     assert.ok(
@@ -91,8 +91,8 @@ describe('attempt silent login', async () => {
     const loggedOutCookies = await context.cookies(baseUrl);
     assert.isNotOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
 
-    await page.goto(baseUrl);
-    await page.waitForURL(`${baseUrl}/`, { timeout: 10000 });
+    await goto(baseUrl, page);
+    await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
     const cookies = await context.cookies('http://localhost:3000');
     assert.ok(cookies.find(({ name }) => name === 'appSession'));
