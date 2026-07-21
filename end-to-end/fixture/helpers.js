@@ -94,7 +94,10 @@ const login = async (username, password, page) => {
 };
 
 const logout = async (page) => {
-  await goto(`${baseUrl}/logout`, page);
+  // page.goto already follows the 302 to the IDP session-end page, so no
+  // extra waitForNavigation is needed here — goto() would consume the nav
+  // triggered by the logout button click.
+  await page.goto(`${baseUrl}/logout`);
   await Promise.all([page.click('[name=logout]'), page.waitForNavigation()]);
 };
 
