@@ -92,7 +92,6 @@ describe('attempt silent login', async () => {
     assert.isNotOk(loggedOutCookies.find(({ name }) => name === 'appSession'));
 
     await goto(baseUrl, page);
-    await page.waitForNavigation();
     assert.equal(page.url(), `${baseUrl}/`);
     const cookies = await context.cookies('http://localhost:3000');
     assert.ok(cookies.find(({ name }) => name === 'appSession'));

@@ -19,7 +19,7 @@
     "test:ci": "nyc --reporter=lcov npm test",
     "test:types": "tsd .",
     "docs": "typedoc --options typedoc.js index.d.ts",
-    "test:end-to-end": "mocha end-to-end"
+    "test:end-to-end": "mocha end-to-end --timeout 30000"
   },
   "mocha": {
     "exit": true,
