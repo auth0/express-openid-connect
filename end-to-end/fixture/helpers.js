@@ -81,14 +81,23 @@ const login = async (username, password, page) => {
   await page.type('[name=login]', username);
   await page.type('[name=password]', password);
   await Promise.all([page.click('.login-submit'), page.waitForNavigation()]);
-  await Promise.all([page.click('.login-submit'), page.waitForNavigation()]); // consent
-  if (!page.url().startsWith('http://localhost:3000')) {
-    await page.waitForNavigation();
-  }
+  await page.click('.login-submit'); // consent
+  // After consent the IDP form-posts to /callback which redirects to the app
+  // root. waitForFunction polls the browser URL on each tick and survives any
+  // number of intermediate navigations, avoiding race conditions that arise
+  // from counting waitForNavigation() calls.
+  await page.waitForFunction(
+    (url) => window.location.href === url,
+    { polling: 100 },
+    `${baseUrl}/`,
+  );
 };
 
 const logout = async (page) => {
-  await goto(`${baseUrl}/logout`, page);
+  // page.goto already follows the 302 to the IDP session-end page, so no
+  // extra waitForNavigation is needed here — goto() would consume the nav
+  // triggered by the logout button click.
+  await page.goto(`${baseUrl}/logout`);
   await Promise.all([page.click('[name=logout]'), page.waitForNavigation()]);
 };
 
