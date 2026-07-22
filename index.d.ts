@@ -127,10 +127,6 @@ interface ActClaim {
   [key: string]: unknown;
 }
 
-/** @internal Token-type URI constants for use with STT and CTE methods. */
-export const SESSION_TRANSFER_TOKEN_IDENTIFIER: 'urn:auth0:params:oauth:token-type:session_transfer_token';
-export const ID_TOKEN_IDENTIFIER: 'urn:ietf:params:oauth:token-type:id_token';
-
 /**
  * Options for {@link RequestContext.customTokenExchange}.
  * All fields are optional — unset fields fall back to `authorizationParams` config or
