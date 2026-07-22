@@ -293,7 +293,6 @@ describe('client initialization', function () {
         httpTimeout: 500,
       });
       await expect(getClient(config)).to.be.rejectedWith('operation timed out');
-      nock.cleanAll();
     });
   });
 
