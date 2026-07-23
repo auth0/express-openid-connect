@@ -504,6 +504,8 @@ app.post('/impersonate', requiresAuth(), async (req, res, next) => {
 
 The STT is opaque, single-use, and lives ~60 seconds. The SDK never stores it — hand it straight to `buildSessionTransferRedirect` and discard it.
 
+> **Branch on `result.issued_token_type`**, not `result.token_type`. The `token_type` field is `"N_A"` for an STT response — it is informational only. `issued_token_type` is always `"urn:auth0:params:oauth:token-type:session_transfer_token"` for a successful STT exchange, and `buildSessionTransferRedirect` requires exactly that value.
+
 If the customer belongs to an organization, forward it on the redirect:
 
 ```js
@@ -524,6 +526,8 @@ const result = await req.oidc.requestSessionTransferToken({
   actor_token_type: 'urn:ietf:params:oauth:token-type:id_token',
 });
 ```
+
+> **Explicit `actor_token` requirements:** Auth0 validates the actor token server-side before running the exchange. It must be unexpired and signed with an asymmetric algorithm (RS256 or PS256) — an HS256 token or an expired token will be rejected. An Auth0 session ID token already satisfies both requirements; if you source `actor_token` from elsewhere, ensure it meets them.
 
 ### Target: redeeming the STT
 
