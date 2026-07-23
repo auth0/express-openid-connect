@@ -828,4 +828,49 @@ describe('buildSessionTransferRedirect', () => {
       /result must be a SessionTransferTokenResult with a session_transfer_token/,
     );
   });
+
+  it('throws TypeError when targetLoginUrl uses http with a non-loopback host', async () => {
+    const response = await setupRedirect('http://app.example.com/login', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.err.message, /must use https/);
+  });
+
+  it('throws TypeError when targetLoginUrl uses a non-http/https scheme', async () => {
+    const response = await setupRedirect('ftp://app.example.com/login', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.err.message, /must use https/);
+  });
+
+  it('allows http for localhost', async () => {
+    const response = await setupRedirect('http://localhost:3001/login', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 200);
+    assert.include(response.body.url, 'session_transfer_token=__test_stt__');
+  });
+
+  it('allows http for 127.0.0.1', async () => {
+    const response = await setupRedirect('http://127.0.0.1:3001/login', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 200);
+    assert.include(response.body.url, 'session_transfer_token=__test_stt__');
+  });
+
+  it('allows http for [::1]', async () => {
+    const response = await setupRedirect('http://[::1]:3001/login', {
+      session_transfer_token: '__test_stt__',
+      issued_token_type: SESSION_TRANSFER_TOKEN_IDENTIFIER,
+    });
+    assert.equal(response.statusCode, 200);
+    assert.include(response.body.url, 'session_transfer_token=__test_stt__');
+  });
 });
