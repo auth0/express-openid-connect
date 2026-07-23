@@ -197,6 +197,25 @@ describe('requestSessionTransferToken', () => {
     assert.equal(response.body.err.error, 'actor_unavailable');
   });
 
+  it('treats id_token with non-numeric exp as expired and fails actor_unavailable when no refresh_token', async () => {
+    const tokenWithBadExp = makeIdToken({ exp: 'not-a-number' });
+    const { response } = await setup({
+      sttOptions: {
+        subject_token: '__test_subject__',
+        subject_token_type: 'urn:mycompany:test-token',
+      },
+      sessionData: {
+        id_token: tokenWithBadExp,
+        access_token: '__test_access_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) + 86400,
+      },
+      mockTokenResponse: false,
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.body.err.error, 'actor_unavailable');
+  });
+
   it('refreshes expired id_token and uses the fresh one as actor when refresh_token is available', async () => {
     const expiredIdToken = makeIdToken({
       exp: Math.floor(Date.now() / 1000) - 3600,
