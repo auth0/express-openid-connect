@@ -379,10 +379,11 @@ interface RequestContext {
    * });
    * ```
    *
-   * **Errors thrown (HTTP 400):**
-   * - `error: 'actor_unavailable'` — no actor resolved (agent not authenticated or session expired with no refresh token)
-   * - `error: 'setactor_required'` — CTE Action did not call `setActor`
-   * - `error: 'session_transfer_disabled'` — tenant feature flag is off
+   * **Errors thrown:**
+   * - `error: 'actor_unavailable'` (HTTP 400) — no actor resolved (agent not authenticated or session expired with no refresh token)
+   * - `error: 'setactor_required'` (HTTP 400) — CTE Action did not call `setActor`
+   * - `error: 'session_transfer_disabled'` (HTTP 400) — tenant feature flag is off
+   * - `error: 'invalid_token_response'` (HTTP 500) — AS returned an unexpected `issued_token_type` (not the STT URN)
    */
   requestSessionTransferToken?: (
     options: SessionTransferTokenOptions,
@@ -403,8 +404,9 @@ interface RequestContext {
    *
    * The `targetLoginUrl` must be a trusted, app-controlled value — never derive it
    * from untrusted input such as a query parameter, as the STT would be forwarded to
-   * an attacker-controlled host. Use an `https:` URL in production to prevent the
-   * token from being exposed over plaintext.
+   * an attacker-controlled host. The URL must use `https:` (`http:` is accepted only
+   * for `localhost`, `127.0.0.1`, and `[::1]` to support local development); any other
+   * scheme or non-loopback `http:` host throws a `TypeError`.
    */
   buildSessionTransferRedirect?: (
     targetLoginUrl: string,

@@ -176,6 +176,25 @@ describe('requestSessionTransferToken', () => {
     assert.equal(response.body.err.error, 'actor_unavailable');
   });
 
+  it('throws 400 with actor_unavailable when session has no id_token', async () => {
+    const { response } = await setup({
+      sttOptions: {
+        subject_token: '__test_subject__',
+        subject_token_type: 'urn:mycompany:test-token',
+      },
+      sessionData: {
+        id_token: null,
+        access_token: '__test_access_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) + 86400,
+      },
+      mockTokenResponse: false,
+    });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.body.err.error, 'actor_unavailable');
+    assert.match(response.body.err.message, /no id_token/);
+  });
+
   it('throws 400 with actor_unavailable when id_token is expired and no refresh_token', async () => {
     const expiredIdToken = makeIdToken({
       exp: Math.floor(Date.now() / 1000) - 3600,
@@ -372,19 +391,6 @@ describe('requestSessionTransferToken', () => {
         subject_token_type: 'urn:mycompany:test-token',
       },
     });
-    assert.equal(capturedBody.audience, 'urn:op.example.com:session_transfer');
-  });
-
-  it('strips protocol from issuerBaseURL when building audience', async () => {
-    // The audience must be urn:{hostname}:session_transfer — not including https://
-    const { capturedBody } = await setup({
-      sttOptions: {
-        subject_token: '__test_subject__',
-        subject_token_type: 'urn:mycompany:test-token',
-      },
-    });
-    // issuerBaseURL is 'https://op.example.com' → audience must be urn:op.example.com:session_transfer
-    assert.notMatch(capturedBody.audience, /https?:\/\//);
     assert.equal(capturedBody.audience, 'urn:op.example.com:session_transfer');
   });
 
