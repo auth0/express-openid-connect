@@ -445,7 +445,27 @@ describe('requestSessionTransferToken', () => {
     );
   });
 
-  it('returns empty string for issued_token_type when absent in AS response', async () => {
+  it('throws 500 when AS response has unexpected issued_token_type', async () => {
+    const { response } = await setup({
+      sttOptions: {
+        subject_token: '__test_subject__',
+        subject_token_type: 'urn:mycompany:test-token',
+      },
+      mockTokenResponse: {
+        status: 200,
+        body: {
+          access_token: '__test_stt__',
+          token_type: 'Bearer',
+          expires_in: 60,
+          issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+        },
+      },
+    });
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.err.message, /Unexpected issued_token_type/);
+  });
+
+  it('throws 500 when AS response omits issued_token_type', async () => {
     const { response } = await setup({
       sttOptions: {
         subject_token: '__test_subject__',
@@ -461,8 +481,8 @@ describe('requestSessionTransferToken', () => {
         },
       },
     });
-    assert.equal(response.statusCode, 200);
-    assert.equal(response.body.issued_token_type, '');
+    assert.equal(response.statusCode, 500);
+    assert.match(response.body.err.message, /Unexpected issued_token_type/);
   });
 
   it('result has no access_token field — STT is in session_transfer_token', async () => {
