@@ -254,6 +254,55 @@ describe('requestSessionTransferToken', () => {
     assert.equal(capturedSttBody.actor_token_type, ID_TOKEN_IDENTIFIER);
   });
 
+  it('throws 400 with actor_unavailable when refresh succeeds but returns no new id_token', async () => {
+    const expiredIdToken = makeIdToken({
+      exp: Math.floor(Date.now() / 1000) - 3600,
+    });
+
+    const router = express.Router();
+    router.use(auth({ ...defaultConfig }));
+    router.get('/stt', async (req, res, next) => {
+      try {
+        const result = await req.oidc.requestSessionTransferToken({
+          subject_token: '__test_subject__',
+          subject_token_type: 'urn:mycompany:test-token',
+        });
+        res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    server = await createServer(router);
+    const jar = request.jar();
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: expiredIdToken,
+        access_token: '__test_access_token__',
+        refresh_token: '__test_refresh_token__',
+        token_type: 'Bearer',
+        expires_at: Math.floor(Date.now() / 1000) - 3600,
+      },
+    });
+
+    // Refresh grant succeeds but returns no new id_token — old expired one is kept
+    nock('https://op.example.com').post('/oauth/token').reply(200, {
+      access_token: '__new_access_token__',
+      token_type: 'Bearer',
+      expires_in: 86400,
+    });
+
+    const response = await request.get('/stt', { baseUrl, jar, json: true });
+    assert.equal(response.statusCode, 400);
+    assert.equal(response.body.err.error, 'actor_unavailable');
+    assert.match(
+      response.body.err.message,
+      /refresh did not return a new id_token/,
+    );
+  });
+
   // -------------------------------------------------------------------------
   // subject_token validation (reuses validateSubjectToken)
   // -------------------------------------------------------------------------
