@@ -14,6 +14,9 @@
 12. [Custom Token Exchange](#12-custom-token-exchange)
 13. [Use a proxy for OIDC requests](#13-use-a-proxy-for-oidc-requests)
 14. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#14-session-expiry-from-upstream-idp-ipsie-session_expiry)
+15. [JWT-Secured Authorization Requests (JAR)](#15-jwt-secured-authorization-requests-jar)
+16. [Decrypt JWE-encrypted access tokens](#16-decrypt-jwe-encrypted-access-tokens)
+17. [mTLS client authentication](#17-mtls-client-authentication)
 
 ## 1. Basic setup
 
@@ -539,3 +542,109 @@ app.get('/status', (req, res) => {
 ### Upgrading existing apps
 
 Once your IdP starts emitting `session_expiry`, `req.appSession` can be `null` for a previously logged-in user once the ceiling is reached. If your code assumed the session always exists after login, add a null check. Sessions created before the upgrade (or through connections without the claim) have no `sessionExpiresAt` and behave exactly as before.
+
+## 15. JWT-Secured Authorization Requests (JAR)
+
+[JAR](https://www.rfc-editor.org/rfc/rfc9101.html) (part of Auth0's Highly Regulated Identity feature set) signs all authorization parameters into a JWT and sends them as the `request` parameter, so the `/authorize` redirect carries only `client_id` and `request`. Set `requestObjectSigningKey` to enable it. `requestObjectSigningAlg` is always required, since Web Crypto algorithm names are not valid JWA `alg` values.
+
+```js
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code',
+    },
+    // Sign the authorization request object.
+    requestObjectSigningKey: fs.readFileSync('./request-object-key.pem'),
+    requestObjectSigningAlg: 'RS256',
+    // Optional: set a `kid` in the request object's JWT header.
+    // requestObjectSigningKeyId: 'my-key-id',
+
+    // Recommended for FAPI: combine with PAR so the signed request object is
+    // POSTed to /oauth/par and only an opaque request_uri is exposed in the URL.
+    pushedAuthorizationRequests: true,
+  }),
+);
+```
+
+The request object's `aud` is set to the issuer identifier advertised in the discovery document (which may differ from `issuerBaseURL`, e.g. a trailing slash), as JAR requires. `requestObjectSigningKey` accepts the same key formats as `clientAssertionSigningKey` (PEM string, Buffer, KeyObject, JWK, CryptoKey).
+
+Full example at [jar.js](./examples/jar.js), to run it: `npm run start:example -- jar`
+
+## 16. Decrypt JWE-encrypted access tokens
+
+When an Auth0 API is configured with [Token Encryption](https://auth0.com/docs/secure/tokens/access-tokens/json-web-encryption), the access token returned at the callback is a JWE. Set `accessTokenDecryptionKey` and the SDK decrypts it before writing it to the session, at both the callback and on token refresh, so `req.oidc.accessToken` and `afterCallback` always receive a plaintext JWT. No change is needed in consuming code.
+
+```js
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code', // requires a client secret; JWE requires a code flow
+      audience: 'https://your-api/',
+      scope: 'openid profile email offline_access',
+    },
+    // Private key matching the public key uploaded to the API's Token Encryption
+    // settings. Accepts PEM string, Buffer, KeyObject, JWK, or CryptoKey.
+    accessTokenDecryptionKey: fs.readFileSync('./api-decryption-key.pem'),
+    // Optional pin. Omit to auto-detect the algorithm from the JWE header.
+    // accessTokenDecryptionAlg: 'RSA-OAEP-512',
+  }),
+);
+```
+
+The key-management algorithm is read from the JWE protected header (validated against a strong-algorithm allowlist), so decryption works whether the tenant uses `RSA-OAEP-256`, `RSA-OAEP-512`, and so on. Set `accessTokenDecryptionAlg` only if you want to pin one. Decryption requires a code flow, since implicit flow does not return access tokens from the token endpoint.
+
+Full example at [jwe.js](./examples/jwe.js).
+
+## 17. mTLS client authentication
+
+[mTLS](https://www.rfc-editor.org/rfc/rfc8705) (RFC 8705, part of Highly Regulated Identity) authenticates your application to the token endpoint with a TLS client certificate instead of a client secret. Enable it with `useMtls: true` (or the `AUTH0_MTLS=true` environment variable). Issued access tokens carry a `cnf.x5t#S256` claim binding them to the certificate.
+
+The certificate is presented at the TLS layer by your `customFetch`, never by the SDK. Node's global `fetch` ignores the `agent` option, so the certificate must be attached via an [undici](https://github.com/nodejs/undici) `Agent` on the request `dispatcher`.
+
+```js
+const { Agent, fetch: undiciFetch } = require('undici');
+
+const tlsAgent = new Agent({
+  connect: {
+    cert: fs.readFileSync('./client.crt'),
+    key: fs.readFileSync('./client.key'),
+  },
+});
+
+app.use(
+  auth({
+    // Point issuerBaseURL at your custom domain, not the *.auth0.com host.
+    issuerBaseURL: 'https://auth.your-domain.com',
+    authorizationParams: {
+      response_type: 'code',
+      audience: 'https://your-api/',
+      scope: 'openid profile email offline_access',
+    },
+    useMtls: true,
+    customFetch: (url, options) =>
+      undiciFetch(url, { ...options, dispatcher: tlsAgent }),
+  }),
+);
+```
+
+When `useMtls` is set, the SDK routes token, refresh, revocation, userinfo, and PAR requests to the server's `mtls_endpoint_aliases`. mTLS requires:
+
+- A custom domain with self-managed certificates. It does not work on canonical `*.auth0.com` domains (the SDK logs a warning if you try).
+- mTLS endpoint aliases enabled on the tenant. If the discovery document does not advertise them, the SDK throws an `MtlsError` with code `mtls_endpoint_aliases_missing`.
+- No `clientSecret` or `clientAssertionSigningKey`. Combining either with `useMtls` throws an `MtlsError` (`mtls_incompatible_client_auth`), and a missing `customFetch` throws `mtls_requires_custom_fetch`.
+
+`MtlsError` and `MtlsErrorCode` are exported for structured handling:
+
+```js
+const { auth, MtlsError, MtlsErrorCode } = require('express-openid-connect');
+
+try {
+  app.use(auth({ useMtls: true /* customFetch missing */ }));
+} catch (err) {
+  if (err.code === MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH) {
+    // provide a TLS-aware customFetch
+  }
+}
+```
+
+Full example at [mtls.js](./examples/mtls.js).

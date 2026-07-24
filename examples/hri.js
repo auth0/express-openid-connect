@@ -38,27 +38,34 @@ app.use(
     requestObjectSigningAlg: 'RS256',
 
     // Feature 2: mTLS client authentication
-    // Certificate presentation is the caller's responsibility via customFetch.
-    // tls_client_auth expects a CA-signed cert; self_signed_tls_client_auth expects a self-signed cert.
-    // Requires an Auth0 custom domain - does not work with *.auth0.com.
+    // Enable with `useMtls: true` (or the AUTH0_MTLS=true env var). The certificate
+    // is presented at the TLS layer by your customFetch, never by the SDK directly.
+    // Node's global fetch ignores the `agent` option, so the cert must ride on an
+    // undici Dispatcher. Requires an Auth0 custom domain with self-managed certs -
+    // it does not work with *.auth0.com. When enabled, `clientSecret` and
+    // `clientAssertionSigningKey` must not be set.
     //
-    // const undici = require('undici');
+    // const { Agent, fetch: undiciFetch } = require('undici');
     // const fs = require('fs');
-    // const cert = fs.readFileSync('./client.crt');
-    // const key  = fs.readFileSync('./client.key');
+    // const tlsAgent = new Agent({
+    //   connect: {
+    //     cert: fs.readFileSync('./client.crt'),
+    //     key: fs.readFileSync('./client.key'),
+    //   },
+    // });
     //
-    // clientAuthMethod: 'tls_client_auth',
-    // customFetch: (url, opts) =>
-    //   fetch(url, { ...opts, dispatcher: new undici.Agent({ connect: { cert, key } }) }),
+    // useMtls: true,
+    // customFetch: (url, opts) => undiciFetch(url, { ...opts, dispatcher: tlsAgent }),
 
     // Feature 3: JWE access token decryption
-    // The SDK decrypts the token before writing it to the session, so afterCallback and
-    // req.oidc.accessToken always see a plain JWT - no changes needed in application code.
-    // Use a separate RSA key pair (use:'enc') for decryption in production.
-    // accessTokenDecryptionAlg defaults to 'RSA-OAEP-256'.
+    // The SDK decrypts the token before writing it to the session (at the callback
+    // and on refresh), so afterCallback and req.oidc.accessToken always see a plain
+    // JWT - no changes needed in application code. Use a separate RSA key pair
+    // (use:'enc') for decryption in production. The key-management alg is read from
+    // the JWE header (RSA-OAEP-256, RSA-OAEP-512, ...); set accessTokenDecryptionAlg
+    // only if you want to pin it.
     //
     // accessTokenDecryptionKey: require('fs').readFileSync('./api-decryption-key.pem'),
-    // accessTokenDecryptionAlg: 'RSA-OAEP-256',
   }),
 );
 
