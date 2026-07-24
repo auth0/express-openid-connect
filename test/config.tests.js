@@ -906,4 +906,110 @@ describe('get config', () => {
       }),
     );
   });
+
+  describe('JAR config validation', () => {
+    it('should throw when requestObjectSigningKey is set without requestObjectSigningAlg', () => {
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            clientSecret: '__test_client_secret__',
+            requestObjectSigningKey: 'some-key',
+            authorizationParams: { response_type: 'code' },
+          }),
+        TypeError,
+        '"requestObjectSigningAlg" is required when "requestObjectSigningKey" is set',
+      );
+    });
+
+    it('should accept requestObjectSigningKey with requestObjectSigningAlg', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.ok(config.requestObjectSigningKey);
+      assert.equal(config.requestObjectSigningAlg, 'RS256');
+    });
+
+    it('should accept requestObjectSigningKeyId as optional', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        requestObjectSigningKeyId: 'key-1',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.requestObjectSigningKeyId, 'key-1');
+    });
+
+    it('should accept requestObjectSigningKey without requestObjectSigningKeyId', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.isUndefined(config.requestObjectSigningKeyId);
+    });
+
+    it('should emit console.warn when JAR is set without PAR', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        pushedAuthorizationRequests: false,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const parWarn = warnCalls.some((call) => /PAR/i.test(call.args[0]));
+      assert.ok(parWarn);
+    });
+
+    it('should NOT emit console.warn when JAR is set WITH PAR', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        requestObjectSigningKey: key,
+        requestObjectSigningAlg: 'RS256',
+        pushedAuthorizationRequests: true,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const parWarn = warnCalls.some((call) => /PAR/i.test(call.args[0]));
+      assert.notOk(parWarn);
+    });
+  });
 });
