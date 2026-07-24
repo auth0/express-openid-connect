@@ -15,3 +15,11 @@ expectType<RequestHandler>(
     requestObjectSigningKeyId: 'kid-1',
   }),
 );
+
+// JWE access token decryption
+expectType<RequestHandler>(
+  auth({
+    accessTokenDecryptionKey: '-----BEGIN PRIVATE KEY-----',
+    accessTokenDecryptionAlg: 'RSA-OAEP-512',
+  }),
+);

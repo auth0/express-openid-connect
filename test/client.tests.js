@@ -876,4 +876,98 @@ describe('client initialization', function () {
       }
     });
   });
+
+  describe('decryptAccessToken', function () {
+    const { decryptAccessToken } = require('../lib/client');
+    const { CompactEncrypt, importJWK, exportSPKI } = require('jose');
+    const fs = require('fs');
+    const path = require('path');
+    const { privateJWK, publicJWK } = require('../end-to-end/fixture/jwk');
+
+    it('should decrypt a JWE-encrypted access token', async function () {
+      const privateKeyPem = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+
+      // Use the test fixture JWK keys which are explicitly created for testing
+      const publicKey = await importJWK(publicJWK, 'RSA-OAEP-256');
+      const plaintext = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
+
+      const jwe = await new CompactEncrypt(new TextEncoder().encode(plaintext))
+        .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A128CBC-HS256' })
+        .encrypt(publicKey);
+
+      // Decrypt using the private key PEM
+      const decrypted = await decryptAccessToken(
+        jwe,
+        require('../end-to-end/fixture/jwk').privatePEM,
+        'RSA-OAEP-256',
+      );
+
+      assert.equal(decrypted, plaintext);
+    });
+
+    it('should throw when given a non-JWE string', async function () {
+      const plainJwt = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
+
+      await assert.isRejected(
+        decryptAccessToken(
+          plainJwt,
+          require('../end-to-end/fixture/jwk').privatePEM,
+          'RSA-OAEP-256',
+        ),
+      );
+    });
+
+    it('should throw when decryption fails with invalid JWE', async function () {
+      const plainJwt = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9';
+
+      // Try to decrypt something that's not a valid JWE
+      await assert.isRejected(
+        decryptAccessToken(
+          plainJwt,
+          require('../end-to-end/fixture/jwk').privatePEM,
+          'RSA-OAEP-256',
+        ),
+      );
+    });
+
+    // The alg is read from the JWE header (within a strong-alg allowlist) when no
+    // explicit accessTokenDecryptionAlg is pinned, so decryption works regardless
+    // of whether the tenant uses RSA-OAEP-256 or RSA-OAEP-512.
+    const { privatePEM } = require('../end-to-end/fixture/jwk');
+    const plaintext = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
+
+    const encryptWith = async (alg) => {
+      const publicKey = await importJWK(publicJWK, alg);
+      return new CompactEncrypt(new TextEncoder().encode(plaintext))
+        .setProtectedHeader({ alg, enc: 'A128CBC-HS256' })
+        .encrypt(publicKey);
+    };
+
+    ['RSA-OAEP-256', 'RSA-OAEP-512'].forEach((alg) => {
+      it(`should auto-detect ${alg} from the JWE header when no alg is pinned`, async function () {
+        const jwe = await encryptWith(alg);
+        const decrypted = await decryptAccessToken(jwe, privatePEM, undefined);
+        assert.equal(decrypted, plaintext);
+      });
+    });
+
+    it('should decrypt when the pinned alg matches the token', async function () {
+      const jwe = await encryptWith('RSA-OAEP-512');
+      const decrypted = await decryptAccessToken(
+        jwe,
+        privatePEM,
+        'RSA-OAEP-512',
+      );
+      assert.equal(decrypted, plaintext);
+    });
+
+    it('should reject when the pinned alg does not match the token', async function () {
+      const jwe = await encryptWith('RSA-OAEP-512');
+      await assert.isRejected(
+        decryptAccessToken(jwe, privatePEM, 'RSA-OAEP-256'),
+      );
+    });
+  });
 });

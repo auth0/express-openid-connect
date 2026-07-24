@@ -1012,4 +1012,70 @@ describe('get config', () => {
       assert.notOk(parWarn);
     });
   });
+
+  describe('JWE config validation', () => {
+    it('should accept accessTokenDecryptionKey when response_type is code', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: key,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.ok(config.accessTokenDecryptionKey);
+    });
+
+    it('should throw when accessTokenDecryptionKey is set with response_type id_token', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            accessTokenDecryptionKey: key,
+            authorizationParams: { response_type: 'id_token' },
+          }),
+        TypeError,
+        '"accessTokenDecryptionKey" requires a code flow',
+      );
+    });
+
+    it('should leave accessTokenDecryptionAlg undefined by default (alg is read from the JWE header)', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: key,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.isUndefined(config.accessTokenDecryptionAlg);
+    });
+
+    it('should accept custom accessTokenDecryptionAlg', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const key = fs.readFileSync(
+        path.join(__dirname, '../examples', 'private-key.pem'),
+      );
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: key,
+        accessTokenDecryptionAlg: 'RSA-OAEP-512',
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.accessTokenDecryptionAlg, 'RSA-OAEP-512');
+    });
+  });
 });

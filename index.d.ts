@@ -848,6 +848,22 @@ interface ConfigParams {
   requestObjectSigningKeyId?: string;
 
   /**
+   * Private key used to decrypt JWE-encrypted access tokens.
+   * When set, the SDK decrypts the access token at the callback and on refresh
+   * before writing it to the session, so `req.oidc.accessToken` and `afterCallback`
+   * always receive a plaintext JWT. Requires a code flow (`response_type: 'code'`
+   * or `'code id_token'`). Accepts PEM string, Buffer, KeyObject, JWK, or CryptoKey.
+   */
+  accessTokenDecryptionKey?: KeyObject | JoseCryptoKey | JWK | string | Buffer;
+
+  /**
+   * Optional pin for the JWE key-management algorithm. When omitted, the algorithm
+   * is read from the JWE protected header (validated against a strong-algorithm
+   * allowlist), so decryption works with whatever alg the tenant uses.
+   */
+  accessTokenDecryptionAlg?: string;
+
+  /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.
    */
   tokenEndpointParams?: TokenParameters;

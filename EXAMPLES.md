@@ -15,6 +15,7 @@
 13. [Use a proxy for OIDC requests](#13-use-a-proxy-for-oidc-requests)
 14. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#14-session-expiry-from-upstream-idp-ipsie-session_expiry)
 15. [JWT-Secured Authorization Requests (JAR)](#15-jwt-secured-authorization-requests-jar)
+16. [Decrypt JWE-encrypted access tokens](#16-decrypt-jwe-encrypted-access-tokens)
 
 ## 1. Basic setup
 
@@ -567,3 +568,28 @@ app.use(
 The request object's `aud` is set to the issuer identifier advertised in the discovery document (which may differ from `issuerBaseURL`, e.g. a trailing slash), as JAR requires. `requestObjectSigningKey` accepts the same key formats as `clientAssertionSigningKey` (PEM string, Buffer, KeyObject, JWK, CryptoKey).
 
 Full example at [jar.js](./examples/jar.js), to run it: `npm run start:example -- jar`
+
+## 16. Decrypt JWE-encrypted access tokens
+
+When an Auth0 API is configured with [Token Encryption](https://auth0.com/docs/secure/tokens/access-tokens/json-web-encryption), the access token returned at the callback is a JWE. Set `accessTokenDecryptionKey` and the SDK decrypts it before writing it to the session, at both the callback and on token refresh, so `req.oidc.accessToken` and `afterCallback` always receive a plaintext JWT. No change is needed in consuming code.
+
+```js
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code', // requires a client secret; JWE requires a code flow
+      audience: 'https://your-api/',
+      scope: 'openid profile email offline_access',
+    },
+    // Private key matching the public key uploaded to the API's Token Encryption
+    // settings. Accepts PEM string, Buffer, KeyObject, JWK, or CryptoKey.
+    accessTokenDecryptionKey: fs.readFileSync('./api-decryption-key.pem'),
+    // Optional pin. Omit to auto-detect the algorithm from the JWE header.
+    // accessTokenDecryptionAlg: 'RSA-OAEP-512',
+  }),
+);
+```
+
+The key-management algorithm is read from the JWE protected header (validated against a strong-algorithm allowlist), so decryption works whether the tenant uses `RSA-OAEP-256`, `RSA-OAEP-512`, and so on. Set `accessTokenDecryptionAlg` only if you want to pin one. Decryption requires a code flow, since implicit flow does not return access tokens from the token endpoint.
+
+Full example at [jwe.js](./examples/jwe.js).
