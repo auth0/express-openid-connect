@@ -9,15 +9,14 @@
 
 ## Breaking Changes Summary
 
-| Change                                                                                                                     | Who is affected                                                                                                                 | Action required                                          |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| [Node.js version](#nodejs-version-requirement)                                                                             | Everyone                                                                                                                        | Upgrade Node.js                                          |
-| [`httpAgent` config](#httpagent-config)                                                                                    | Apps using `httpAgent` for proxies                                                                                              | Replace with `customFetch`                               |
-| [`clientAssertionSigningAlg` config now required](#clientassertionsigningalg-now-required)                                 | Apps using `clientAssertionSigningKey` with a PEM, Buffer, or KeyObject                                                         | Add `clientAssertionSigningAlg` explicitly               |
-| [`ES256K` / `EdDSA` removed](#es256k-and-eddsa-removed)                                                                    | Apps using `clientAssertionSigningAlg: 'ES256K'` or `'EdDSA'`                                                                   | Rename `EdDSA` to `Ed25519`, no replacement for `ES256K` |
-| [`afterCallback` behavior change](#aftercallback-behavior-change)                                                          | Apps reading `req.oidc` inside `afterCallback` to inspect the previous session                                                  | Read previous state before the callback flow starts      |
-| [Session cookie dropped when headers sent before `res.end()`](#session-cookie-dropped-when-headers-are-sent-before-resend) | Apps that flush headers before `res.end()` (e.g. `res.write()`, `res.flushHeaders()`, `res.sendFile()`) on session-aware routes | Avoid flushing headers early on session-aware routes     |
-| [`clientAssertionSigningKey` type](#clientassertionsigningkey-type-changed)                                                | TypeScript apps with explicit type annotations on `clientAssertionSigningKey`                                                   | Update imported types                                    |
+| Change                                                                                     | Who is affected                                                                | Action required                                          |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| [Node.js version](#nodejs-version-requirement)                                             | Everyone                                                                       | Upgrade Node.js                                          |
+| [`httpAgent` config](#httpagent-config)                                                    | Apps using `httpAgent` for proxies                                             | Replace with `customFetch`                               |
+| [`clientAssertionSigningAlg` config now required](#clientassertionsigningalg-now-required) | Apps using `clientAssertionSigningKey` with a PEM, Buffer, or KeyObject        | Add `clientAssertionSigningAlg` explicitly               |
+| [`ES256K` / `EdDSA` removed](#es256k-and-eddsa-removed)                                    | Apps using `clientAssertionSigningAlg: 'ES256K'` or `'EdDSA'`                  | Rename `EdDSA` to `Ed25519`, no replacement for `ES256K` |
+| [`afterCallback` behavior change](#aftercallback-behavior-change)                          | Apps reading `req.oidc` inside `afterCallback` to inspect the previous session | Read previous state before the callback flow starts      |
+| [`clientAssertionSigningKey` type](#clientassertionsigningkey-type-changed)                | TypeScript apps with explicit type annotations on `clientAssertionSigningKey`  | Update imported types                                    |
 
 ---
 
@@ -195,34 +194,11 @@ The `session` argument passed to `afterCallback` is unchanged — it still conta
 
 ### Session Cookie Dropped When Headers Are Sent Before `res.end()`
 
-v2 used `on-headers`, which hooked into `res.writeHead` and injected the `Set-Cookie` header right before headers were flushed, regardless of how the response was written. v3 uses a `res.end` wrapper instead, so the session cookie is written only at `res.end()`. If headers are flushed earlier, `res.headersSent` is already `true` by the time the cookie write runs and the session cookie is **silently dropped** — there is no workaround within the same response.
+> **Fixed in v3.2.1** — this was a regression introduced in v3.0.0 and is no longer an issue. No migration needed.
 
-Standard OIDC flows (login, callback, logout) are not affected — they use `res.redirect()` and `res.send()`, which flush headers only at `res.end()`.
+v3.0.0 switched from `on-headers` to a `res.end` wrapper for writing the session cookie, which caused the cookie to be silently dropped on any response that flushed headers before `res.end()` — including `res.write()`, `res.flushHeaders()`, `res.sendFile()`, and `stream.pipe(res)`. This affected streaming SSR and similar patterns.
 
-**Affected patterns:**
-
-Any response that sends headers before `res.end()`:
-
-```js
-// res.write() — flushes headers on the first call
-app.get('/stream', (req, res) => {
-  res.write('first chunk'); // headers sent here — session cookie will be dropped
-  res.end('done');
-});
-
-// res.flushHeaders() — explicitly flushes headers early
-app.get('/sse', (req, res) => {
-  res.flushHeaders(); // headers sent here — session cookie will be dropped
-  res.end();
-});
-
-// res.sendFile() / res.download() — pipe a stream and flush headers early
-app.get('/file', (req, res) => {
-  res.sendFile('/path/to/file'); // headers sent here — session cookie will be dropped
-});
-```
-
-**Migration:** avoid these patterns on routes that need to set or update a session cookie. Since there is no way to inject `Set-Cookie` after headers are already sent, routes that flush headers early are fundamentally incompatible with session cookie writes in v3.
+As of v3.2.1, `on-headers` has been restored. The session cookie is written at `writeHead` time, matching v2 behaviour exactly. All streaming response patterns work correctly again.
 
 ---
 
