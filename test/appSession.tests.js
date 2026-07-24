@@ -291,6 +291,7 @@ describe('appSession', () => {
     jar.setCookie('appSession.1=bar', baseUrl);
     const res = await request.get('/session', { baseUrl, json: true, jar });
     assert.equal(res.statusCode, 200);
+    assert.isEmpty(res.body);
   });
 
   it('should set the default cookie options over http', async () => {
@@ -465,27 +466,28 @@ describe('appSession', () => {
     clock.restore();
   });
 
-  it('should not write session cookie when headers are already sent before res.end()', async () => {
+  it('should write session cookie even when headers are flushed before res.end()', async () => {
     /*
-     * If headers are flushed before res.end(), the session cookie cannot be written.
-     * This can happen in several scenarios, e.g.:
-     *   - res.write() is called before res.end() (streaming/chunked responses)
-     *   - res.writeHead() or res.flushHeaders() is called explicitly
-     *   - res.sendFile() / res.download() which pipe a stream and flush headers early
-     *   - a prior middleware calls res.json() / res.send() before res.end()
+     * Session cookie is now written via on-headers (fires at writeHead time), so it is
+     * set correctly regardless of whether the response is buffered or streamed.
+     * Scenarios covered: res.write(), res.flushHeaders(), res.writeHead(), res.sendFile(),
+     * res.download(), or stream.pipe(res).
      */
     server = await createServer((req, res) => {
       appSession(getConfig(defaultConfig))(req, res, () => {
         // Modify the session so setCookie would normally write a cookie
         Object.assign(req.appSession, { sub: '__test_sub__' });
-        // Flush headers before res.end() — simulates the above scenarios
+        // Flush headers before res.end() — simulates streaming SSR and similar patterns
         res.write('chunk');
         res.end();
       });
     });
     const res = await request.get('/session', { baseUrl });
-    // Headers were already sent by res.write(), so the session cookie must not be set
-    assert.notProperty(res.headers, 'set-cookie');
+    // on-headers fires at writeHead time, so the session cookie must be set
+    assert.property(res.headers, 'set-cookie');
+    assert.isTrue(
+      res.headers['set-cookie'].some((c) => c.startsWith('appSession=')),
+    );
   });
 
   it('should throw for duplicate mw', async () => {

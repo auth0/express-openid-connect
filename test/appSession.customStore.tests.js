@@ -235,6 +235,76 @@ describe('appSession custom store', () => {
     assert.equal(await redisClient.asyncDbsize(), 1);
   });
 
+  it('should write session cookie even when headers are flushed before res.end() (streaming)', async () => {
+    const { client, store } = getRedisStore();
+    redisClient = client;
+
+    const conf = getConfig({
+      ...defaultConfig,
+      session: { ...defaultConfig.session, store },
+    });
+
+    const app = express();
+    app.use(appSession(conf));
+    app.get('/stream', (req, res) => {
+      Object.assign(req.appSession, { sub: '__stream_user__' });
+      res.write('chunk');
+      res.end();
+    });
+
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
+      res.status(err.status || 500).json({ err: { message: err.message } });
+    });
+
+    server = await new Promise((resolve) => {
+      const s = app.listen(3000, () => resolve(s));
+    });
+
+    const jar = request.jar();
+    const res = await request.get('/stream', { baseUrl, jar });
+    // on-headers fires at writeHead time, so cookie must be set even for streaming responses
+    assert.property(res.headers, 'set-cookie');
+    assert.isTrue(
+      res.headers['set-cookie'].some((c) => c.startsWith('appSession=')),
+    );
+    // store.set() runs async in res.end, verify session was persisted to the store
+    assert.equal(await redisClient.asyncDbsize(), 1);
+  });
+
+  it('should send Set-Cookie even when store.set() fails (cookie written before persist at writeHead time)', async () => {
+    const store = {
+      get(id, cb) {
+        process.nextTick(() => cb(null, null));
+      },
+      async set() {
+        throw new Error('storage error');
+      },
+      async destroy(id, cb) {
+        process.nextTick(() => cb());
+      },
+    };
+
+    const conf = getConfig({
+      ...defaultConfig,
+      session: { store },
+    });
+
+    server = await createServer(appSession(conf));
+
+    const jar = request.jar();
+    // Post a session to trigger a write
+    const res = await request.post('/session', {
+      baseUrl,
+      jar,
+      json: { sub: '__foo_user__' },
+    });
+    // store.set() throws → 500, but Set-Cookie was already written at writeHead time
+    // This is consistent with v2 behaviour — cookie is written before persistence
+    assert.equal(res.statusCode, 500);
+    assert.property(res.headers, 'set-cookie');
+  });
+
   it('should handle storage errors', async () => {
     const store = {
       get(id, cb) {
