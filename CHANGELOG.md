@@ -1,5 +1,13 @@
 # Change Log
 
+## [v3.2.1](https://github.com/auth0/express-openid-connect/tree/v3.2.1) (2026-07-24)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.2.0...v3.2.1)
+
+**Fixed**
+- fix: restore `on-headers` for session cookie to support streaming responses [\#838](https://github.com/auth0/express-openid-connect/pull/838) ([cschetan77](https://github.com/cschetan77))
+
+  Fixes a regression introduced in v3.0.0 where the session cookie was silently dropped for any response that flushed headers before `res.end()` — including `res.write()`, `res.flushHeaders()`, `res.sendFile()`, and `stream.pipe(res)`. Restores `on-headers` as the cookie write mechanism (matching v2 behaviour) using two new synchronous crypto primitives built on Node's native `crypto` module, fully compatible with the existing jose v6 decrypt/verify paths. No migration needed — the fix is transparent to existing sessions.
+
 ## [v3.2.0](https://github.com/auth0/express-openid-connect/tree/v3.2.0) (2026-07-03)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.1.0...v3.2.0)
 
