@@ -76,7 +76,8 @@ const setup = async (params) => {
       tokenReqBodyJson = qs.parse(requestBody);
       require('querystring').parse(requestBody);
       return {
-        access_token: '__test_access_token__',
+        // Allow tests to inject a specific access token (e.g. a JWE) via params.
+        access_token: params.accessToken || '__test_access_token__',
         refresh_token: '__test_refresh_token__',
         // Use tokenIdToken param for pure code flow, fallback to body.id_token for hybrid
         id_token: params.tokenIdToken || params.body.id_token,
@@ -1794,6 +1795,164 @@ describe('callback response_mode: form_post', () => {
           authorizationParams: { response_type: 'code' },
         });
       });
+    });
+
+    const { CompactEncrypt, importJWK } = require('jose');
+    const { publicJWK, privatePEM } = require('../end-to-end/fixture/jwk');
+
+    const encryptToken = async (plaintext, alg) => {
+      const publicKey = await importJWK(publicJWK, alg);
+      return new CompactEncrypt(new TextEncoder().encode(plaintext))
+        .setProtectedHeader({ alg, enc: 'A128CBC-HS256' })
+        .encrypt(publicKey);
+    };
+
+    it('should decrypt a JWE access token before storing it in the session', async () => {
+      const plainAccessToken = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.body.sig';
+      const jwe = await encryptToken(plainAccessToken, 'RSA-OAEP-256');
+      const validToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
+
+      const { tokens } = await setup({
+        accessToken: jwe,
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          accessTokenDecryptionKey: privatePEM,
+          authorizationParams: { response_type: 'code id_token' },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      // req.oidc.accessToken must be the decrypted, plaintext JWT.
+      assert.equal(tokens.accessToken.access_token, plainAccessToken);
+    });
+
+    it('should auto-detect the JWE alg (RSA-OAEP-512) when no alg is pinned', async () => {
+      const plainAccessToken =
+        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.body512.sig';
+      const jwe = await encryptToken(plainAccessToken, 'RSA-OAEP-512');
+      const validToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
+
+      const { tokens } = await setup({
+        accessToken: jwe,
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          accessTokenDecryptionKey: privatePEM,
+          authorizationParams: { response_type: 'code id_token' },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      assert.equal(tokens.accessToken.access_token, plainAccessToken);
+    });
+
+    it('should surface a clear error when decryption fails (wrong key/token)', async () => {
+      const notAJwe = '__test_access_token__';
+      const validToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
+
+      const { response } = await setup({
+        accessToken: notAJwe,
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          accessTokenDecryptionKey: privatePEM,
+          authorizationParams: { response_type: 'code id_token' },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      assert.equal(response.statusCode, 500);
+      assert.match(
+        response.body.err.message,
+        /Failed to decrypt the access token/,
+      );
+    });
+
+    it('should decrypt the refreshed access token (refresh grant, not just callback)', async () => {
+      const loginPlain = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.login.sig';
+      const refreshedPlain =
+        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.refreshed.sig';
+      const loginJwe = await encryptToken(loginPlain, 'RSA-OAEP-256');
+      const refreshedJwe = await encryptToken(refreshedPlain, 'RSA-OAEP-256');
+      const idToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
+
+      const authOpts = {
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+        accessTokenDecryptionKey: privatePEM,
+        authorizationParams: {
+          response_type: 'code id_token',
+          scope: 'openid profile email offline_access',
+        },
+      };
+      const router = auth(authOpts);
+      router.get('/refresh', async (req, res) => {
+        const accessToken = await req.oidc.accessToken.refresh();
+        res.json({ accessToken });
+      });
+
+      const { tokens, jar } = await setup({
+        router,
+        accessToken: loginJwe,
+        authOpts,
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: idToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      // Login token was decrypted at the callback.
+      assert.equal(tokens.accessToken.access_token, loginPlain);
+
+      // Refresh grant returns a fresh JWE — it must be decrypted too.
+      const {
+        interceptors: [interceptor],
+      } = nock('https://op.example.com', { allowUnmocked: true })
+        .post('/oauth/token')
+        .reply(200, () => ({
+          access_token: refreshedJwe,
+          refresh_token: '__new_refresh_token__',
+          id_token: idToken,
+          token_type: 'Bearer',
+          expires_in: 86400,
+        }));
+
+      const refreshed = await request
+        .get('/refresh', { baseUrl, jar, json: true })
+        .then((r) => r.body);
+      nock.removeInterceptor(interceptor);
+
+      assert.equal(refreshed.accessToken.access_token, refreshedPlain);
     });
   });
 });

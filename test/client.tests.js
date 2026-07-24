@@ -874,9 +874,7 @@ describe('client initialization', function () {
       const publicKey = await importJWK(publicJWK, 'RSA-OAEP-256');
       const plaintext = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
 
-      const jwe = await new CompactEncrypt(
-        new TextEncoder().encode(plaintext),
-      )
+      const jwe = await new CompactEncrypt(new TextEncoder().encode(plaintext))
         .setProtectedHeader({ alg: 'RSA-OAEP-256', enc: 'A128CBC-HS256' })
         .encrypt(publicKey);
 
@@ -913,6 +911,192 @@ describe('client initialization', function () {
           'RSA-OAEP-256',
         ),
       );
+    });
+
+    // The alg is read from the JWE header (within a strong-alg allowlist) when no
+    // explicit accessTokenDecryptionAlg is pinned, so decryption works regardless
+    // of whether the tenant uses RSA-OAEP-256 or RSA-OAEP-512.
+    const { privatePEM } = require('../end-to-end/fixture/jwk');
+    const plaintext = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
+
+    const encryptWith = async (alg) => {
+      const publicKey = await importJWK(publicJWK, alg);
+      return new CompactEncrypt(new TextEncoder().encode(plaintext))
+        .setProtectedHeader({ alg, enc: 'A128CBC-HS256' })
+        .encrypt(publicKey);
+    };
+
+    ['RSA-OAEP-256', 'RSA-OAEP-512'].forEach((alg) => {
+      it(`should auto-detect ${alg} from the JWE header when no alg is pinned`, async function () {
+        const jwe = await encryptWith(alg);
+        const decrypted = await decryptAccessToken(jwe, privatePEM, undefined);
+        assert.equal(decrypted, plaintext);
+      });
+    });
+
+    it('should decrypt when the pinned alg matches the token', async function () {
+      const jwe = await encryptWith('RSA-OAEP-512');
+      const decrypted = await decryptAccessToken(
+        jwe,
+        privatePEM,
+        'RSA-OAEP-512',
+      );
+      assert.equal(decrypted, plaintext);
+    });
+
+    it('should reject when the pinned alg does not match the token', async function () {
+      const jwe = await encryptWith('RSA-OAEP-512');
+      await assert.isRejected(
+        decryptAccessToken(jwe, privatePEM, 'RSA-OAEP-256'),
+      );
+    });
+  });
+
+  describe('mTLS (useMtls)', function () {
+    const { MtlsErrorCode } = require('../lib/errors');
+    const customFetch = (url, options) => fetch(url, options);
+
+    // Each test uses a distinct issuer to bypass the persistent op.example.com
+    // discovery mock (setup.js) and to avoid discovery cache collisions.
+    const mtlsWellKnown = (issuer) => ({
+      ...wellKnown,
+      issuer: `${issuer}/`,
+      mtls_endpoint_aliases: {
+        token_endpoint: `${issuer.replace('https://', 'https://mtls.')}/oauth/token`,
+        userinfo_endpoint: `${issuer.replace('https://', 'https://mtls.')}/userinfo`,
+        revocation_endpoint: `${issuer.replace('https://', 'https://mtls.')}/oauth/revoke`,
+      },
+    });
+
+    const baseConfig = (issuer) => ({
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      issuerBaseURL: issuer,
+      baseURL: 'https://example.org',
+      authorizationParams: { response_type: 'code' },
+    });
+
+    it('should set use_mtls_endpoint_aliases=true on client metadata when useMtls=true', async function () {
+      const issuer = 'https://mtls-meta.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch,
+      });
+      const { configuration } = await getClient(config);
+      assert.equal(
+        configuration.clientMetadata().use_mtls_endpoint_aliases,
+        true,
+      );
+    });
+
+    it('should NOT set use_mtls_endpoint_aliases when useMtls is not enabled', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+      });
+      const { configuration } = await getClient(config);
+      assert.notEqual(
+        configuration.clientMetadata().use_mtls_endpoint_aliases,
+        true,
+      );
+    });
+
+    it('should expose mtls_endpoint_aliases in server metadata when advertised', async function () {
+      const issuer = 'https://mtls-expose.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch,
+      });
+      const { serverMetadata } = await getClient(config);
+      assert.equal(
+        serverMetadata.mtls_endpoint_aliases.token_endpoint,
+        'https://mtls.mtls-expose.example.com/oauth/token',
+      );
+    });
+
+    it('should invoke the provided customFetch during discovery', async function () {
+      const issuer = 'https://mtls-fetch.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const spy = sinon.spy((url, options) => fetch(url, options));
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch: spy,
+      });
+      await getClient(config);
+      assert.isTrue(spy.called);
+    });
+
+    it('should throw MtlsError(MTLS_ENDPOINT_ALIASES_MISSING) when discovery has no aliases', async function () {
+      const issuer = 'https://mtls-noalias.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, { ...wellKnown, issuer: `${issuer}/` });
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch,
+      });
+      let caught;
+      try {
+        await getClient(config);
+      } catch (e) {
+        caught = e;
+      }
+      assert.ok(caught, 'expected getClient to reject');
+      assert.equal(caught.code, MtlsErrorCode.MTLS_ENDPOINT_ALIASES_MISSING);
+    });
+
+    it('should route token grants to the mTLS alias endpoint', async function () {
+      // Prove use_mtls_endpoint_aliases causes openid-client to resolve the
+      // alias token_endpoint rather than the standard one for a refresh grant.
+      const server = {
+        issuer: 'https://op.example.com',
+        token_endpoint: 'https://op.example.com/oauth/token',
+        authorization_endpoint: 'https://op.example.com/authorize',
+        mtls_endpoint_aliases: {
+          token_endpoint: 'https://mtls.op.example.com/oauth/token',
+        },
+      };
+      const captured = [];
+      const spyFetch = async (url) => {
+        captured.push(String(url));
+        return new Response(
+          JSON.stringify({ access_token: 'x', token_type: 'bearer' }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      };
+      const configuration = new client.Configuration(
+        server,
+        '__test_client_id__',
+        { use_mtls_endpoint_aliases: true },
+        client.TlsClientAuth(),
+      );
+      configuration[client.customFetch] = spyFetch;
+
+      try {
+        await client.refreshTokenGrant(configuration, 'rt');
+      } catch {
+        // response processing may reject; we only assert the URL that was hit
+      }
+      assert.equal(captured[0], 'https://mtls.op.example.com/oauth/token');
     });
   });
 });

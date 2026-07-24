@@ -620,7 +620,10 @@ describe('auth', () => {
           authorizationParams: { response_type: 'code' },
         }),
       );
-      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
       assert.equal(res.statusCode, 302);
 
       const parsed = url.parse(res.headers.location, true);
@@ -638,16 +641,17 @@ describe('auth', () => {
           authorizationParams: { response_type: 'code' },
         }),
       );
-      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
       const parsed = url.parse(res.headers.location, true);
       const requestJwt = parsed.query.request;
 
       const parts = requestJwt.split('.');
       assert.equal(parts.length, 3, 'request param should be a JWT');
 
-      const payload = JSON.parse(
-        Buffer.from(parts[1], 'base64url').toString(),
-      );
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
       assert.isObject(payload);
     });
 
@@ -664,7 +668,10 @@ describe('auth', () => {
           },
         }),
       );
-      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
       const parsed = url.parse(res.headers.location, true);
       const requestJwt = parsed.query.request;
 
@@ -673,7 +680,9 @@ describe('auth', () => {
       );
 
       assert.equal(payload.iss, '__test_client_id__');
-      assert.equal(payload.aud, 'https://op.example.com');
+      // aud must be the issuer identifier as advertised in discovery, which
+      // includes the trailing slash — not the configured issuerBaseURL.
+      assert.equal(payload.aud, 'https://op.example.com/');
       assert.equal(payload.client_id, '__test_client_id__');
       assert.equal(payload.response_type, 'code');
       assert.equal(payload.scope, 'openid profile email');
@@ -681,10 +690,34 @@ describe('auth', () => {
       assert.isString(payload.jti);
     });
 
+    it('should set aud to the discovered issuer, not issuerBaseURL (trailing slash)', async () => {
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+      const parsed = url.parse(res.headers.location, true);
+      const payload = JSON.parse(
+        Buffer.from(parsed.query.request.split('.')[1], 'base64url').toString(),
+      );
+      // The discovery fixture advertises issuer "https://op.example.com/".
+      assert.equal(payload.aud, 'https://op.example.com/');
+      assert.notEqual(payload.aud, 'https://op.example.com');
+    });
+
     it('should use PAR endpoint when pushedAuthorizationRequests is enabled', async () => {
-      nock('https://op.example.com')
-        .post('/oauth/par')
-        .reply(201, { request_uri: 'urn:ietf:params:oauth:request-uri:test', expires_in: 60 });
+      nock('https://op.example.com').post('/oauth/par').reply(201, {
+        request_uri: 'urn:ietf:params:oauth:request-uri:test',
+        expires_in: 60,
+      });
 
       server = await createServer(
         auth({
@@ -696,7 +729,10 @@ describe('auth', () => {
           authorizationParams: { response_type: 'code' },
         }),
       );
-      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
       assert.equal(res.statusCode, 302);
 
       const parsed = url.parse(res.headers.location, true);
@@ -706,9 +742,10 @@ describe('auth', () => {
     });
 
     it('should not include request param in final URL when PAR is used', async () => {
-      nock('https://op.example.com')
-        .post('/oauth/par')
-        .reply(201, { request_uri: 'urn:ietf:params:oauth:request-uri:test', expires_in: 60 });
+      nock('https://op.example.com').post('/oauth/par').reply(201, {
+        request_uri: 'urn:ietf:params:oauth:request-uri:test',
+        expires_in: 60,
+      });
 
       server = await createServer(
         auth({
@@ -720,12 +757,18 @@ describe('auth', () => {
           authorizationParams: { response_type: 'code' },
         }),
       );
-      const res = await request.get('/login', { baseUrl, followRedirect: false });
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
       const parsed = url.parse(res.headers.location, true);
 
       // The request object is consumed by PAR, so it should not appear in the final redirect
       assert.isUndefined(parsed.query.request);
-      assert.equal(parsed.query.request_uri, 'urn:ietf:params:oauth:request-uri:test');
+      assert.equal(
+        parsed.query.request_uri,
+        'urn:ietf:params:oauth:request-uri:test',
+      );
     });
   });
 });

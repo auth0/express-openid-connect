@@ -907,68 +907,160 @@ describe('get config', () => {
     );
   });
 
-  describe('mTLS clientAuthMethod', () => {
-    it('should accept tls_client_auth without clientSecret', () => {
+  describe('mTLS (useMtls)', () => {
+    const { MtlsError, MtlsErrorCode } = require('../lib/errors');
+    const customFetch = () => Promise.resolve(new Response());
+
+    it('should default useMtls to false', () => {
       const config = getConfig({
         ...defaultConfig,
-        clientAuthMethod: 'tls_client_auth',
+        clientSecret: '__test_client_secret__',
+      });
+      assert.equal(config.useMtls, false);
+    });
+
+    it('should resolve clientAuthMethod to tls_client_auth when useMtls=true', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        customFetch,
         authorizationParams: { response_type: 'code' },
       });
+      assert.equal(config.useMtls, true);
       assert.equal(config.clientAuthMethod, 'tls_client_auth');
     });
 
-    it('should accept self_signed_tls_client_auth without clientSecret', () => {
+    it('should not require clientSecret when useMtls=true', () => {
+      assert.doesNotThrow(() =>
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+    });
+
+    it('should throw MtlsError(MTLS_REQUIRES_CUSTOM_FETCH) when customFetch is missing', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
+    });
+
+    it('should throw MtlsError(MTLS_INCOMPATIBLE_CLIENT_AUTH) when combined with clientSecret', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
+    });
+
+    it('should throw MtlsError(MTLS_INCOMPATIBLE_CLIENT_AUTH) when combined with clientAssertionSigningKey', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          clientAssertionSigningKey: '__test_key__',
+          clientAssertionSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
+    });
+
+    it('should enable useMtls from the AUTH0_MTLS env var', () => {
+      sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
       const config = getConfig({
         ...defaultConfig,
-        clientAuthMethod: 'self_signed_tls_client_auth',
+        customFetch,
         authorizationParams: { response_type: 'code' },
       });
-      assert.equal(config.clientAuthMethod, 'self_signed_tls_client_auth');
+      assert.equal(config.useMtls, true);
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
     });
 
-    it('should emit console.warn for tls_client_auth with *.auth0.com issuer', () => {
-      getConfig({
-        ...defaultConfig,
-        issuerBaseURL: 'https://tenant.auth0.com',
-        clientAuthMethod: 'tls_client_auth',
-        authorizationParams: { response_type: 'code' },
-      });
-      // Check if warn was called with custom domain message
-      const warnCalls = console.warn.getCalls();
-      const customDomainWarn = warnCalls.some((call) =>
-        call.args[0] && /custom domain|canonical.*\.auth0\.com/i.test(call.args[0]),
+    it('should throw for AUTH0_MTLS=true without customFetch', () => {
+      sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
+    });
+
+    it('should reject the removed tls_client_auth string as a clientAuthMethod value', () => {
+      assert.throws(() =>
+        getConfig({
+          ...defaultConfig,
+          clientAuthMethod: 'self_signed_tls_client_auth',
+          customFetch,
+          authorizationParams: { response_type: 'code' },
+        }),
       );
-      assert.ok(customDomainWarn, 'Should warn about custom domain requirement');
     });
 
-    it('should emit console.warn for self_signed_tls_client_auth with *.auth0.com issuer', () => {
-      getConfig({
-        ...defaultConfig,
-        issuerBaseURL: 'https://tenant.auth0.com',
-        clientAuthMethod: 'self_signed_tls_client_auth',
-        authorizationParams: { response_type: 'code' },
-      });
-      // Check if warn was called with custom domain message
-      const warnCalls = console.warn.getCalls();
-      const customDomainWarn = warnCalls.some((call) =>
-        call.args[0] && /custom domain|canonical.*\.auth0\.com/i.test(call.args[0]),
-      );
-      assert.ok(customDomainWarn, 'Should warn about custom domain requirement');
-    });
-
-    it('should NOT emit console.warn for tls_client_auth with non-auth0 issuer', () => {
+    it('should emit console.warn when useMtls is used with a *.auth0.com issuer', () => {
       const warnCallsBefore = console.warn.callCount;
       getConfig({
         ...defaultConfig,
-        issuerBaseURL: 'https://example.com',
-        clientAuthMethod: 'tls_client_auth',
+        issuerBaseURL: 'https://tenant.auth0.com',
+        useMtls: true,
+        customFetch,
         authorizationParams: { response_type: 'code' },
       });
-      const warnCallsAfter = console.warn.callCount;
-      // Check if any of the new calls were about custom domain
       const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
-      const customDomainWarned = warnCalls.some((call) =>
-        /custom domain/i.test(call.args[0]),
+      const customDomainWarn = warnCalls.some(
+        (call) =>
+          call.args[0] &&
+          /custom domain|canonical.*\.auth0\.com/i.test(call.args[0]),
+      );
+      assert.ok(
+        customDomainWarn,
+        'Should warn about custom domain requirement',
+      );
+    });
+
+    it('should NOT emit the custom-domain warning for a non-auth0 issuer', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        issuerBaseURL: 'https://login.example.com',
+        useMtls: true,
+        customFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const customDomainWarned = warnCalls.some(
+        (call) => call.args[0] && /custom domain/i.test(call.args[0]),
       );
       assert.notOk(customDomainWarned);
     });
@@ -1114,7 +1206,7 @@ describe('get config', () => {
       );
     });
 
-    it('should default accessTokenDecryptionAlg to RSA-OAEP-256', () => {
+    it('should leave accessTokenDecryptionAlg undefined by default (alg is read from the JWE header)', () => {
       const fs = require('fs');
       const path = require('path');
       const key = fs.readFileSync(
@@ -1126,7 +1218,7 @@ describe('get config', () => {
         accessTokenDecryptionKey: key,
         authorizationParams: { response_type: 'code' },
       });
-      assert.equal(config.accessTokenDecryptionAlg, 'RSA-OAEP-256');
+      assert.isUndefined(config.accessTokenDecryptionAlg);
     });
 
     it('should accept custom accessTokenDecryptionAlg', () => {
