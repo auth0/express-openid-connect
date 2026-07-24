@@ -1,5 +1,11 @@
 # Change Log
 
+## [v3.2.1](https://github.com/auth0/express-openid-connect/tree/v3.2.1) (2026-07-24)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.2.0...v3.2.1)
+
+**Fixed**
+- fix: restore on-headers for session cookie to support streaming responses [\#838](https://github.com/auth0/express-openid-connect/pull/838) ([cschetan77](https://github.com/cschetan77))
+
 ## [v3.2.0](https://github.com/auth0/express-openid-connect/tree/v3.2.0) (2026-07-03)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.1.0...v3.2.0)
 
