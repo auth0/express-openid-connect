@@ -291,6 +291,7 @@ describe('appSession', () => {
     jar.setCookie('appSession.1=bar', baseUrl);
     const res = await request.get('/session', { baseUrl, json: true, jar });
     assert.equal(res.statusCode, 200);
+    assert.isEmpty(res.body);
   });
 
   it('should set the default cookie options over http', async () => {
@@ -484,6 +485,9 @@ describe('appSession', () => {
     const res = await request.get('/session', { baseUrl });
     // on-headers fires at writeHead time, so the session cookie must be set
     assert.property(res.headers, 'set-cookie');
+    assert.isTrue(
+      res.headers['set-cookie'].some((c) => c.startsWith('appSession=')),
+    );
   });
 
   it('should throw for duplicate mw', async () => {

@@ -268,6 +268,8 @@ describe('appSession custom store', () => {
     assert.isTrue(
       res.headers['set-cookie'].some((c) => c.startsWith('appSession=')),
     );
+    // store.set() runs async in res.end, verify session was persisted to the store
+    assert.equal(await redisClient.asyncDbsize(), 1);
   });
 
   it('should send Set-Cookie even when store.set() fails (cookie written before persist at writeHead time)', async () => {
