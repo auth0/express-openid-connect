@@ -1751,7 +1751,7 @@ describe('callback response_mode: form_post', () => {
         c_hash: '77QmUPtjPfzWtF2AnpK9RQ',
       });
 
-      const { jar, tokens } = await setup({
+      const { tokens } = await setup({
         authOpts: {
           ...defaultConfig,
           clientSecret: '__test_client_secret__',

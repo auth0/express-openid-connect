@@ -879,16 +879,10 @@ describe('client initialization', function () {
 
   describe('decryptAccessToken', function () {
     const { decryptAccessToken } = require('../lib/client');
-    const { CompactEncrypt, importJWK, exportSPKI } = require('jose');
-    const fs = require('fs');
-    const path = require('path');
-    const { privateJWK, publicJWK } = require('../end-to-end/fixture/jwk');
+    const { CompactEncrypt, importJWK } = require('jose');
+    const { publicJWK } = require('../end-to-end/fixture/jwk');
 
     it('should decrypt a JWE-encrypted access token', async function () {
-      const privateKeyPem = fs.readFileSync(
-        path.join(__dirname, '../examples', 'private-key.pem'),
-      );
-
       // Use the test fixture JWK keys which are explicitly created for testing
       const publicKey = await importJWK(publicJWK, 'RSA-OAEP-256');
       const plaintext = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
