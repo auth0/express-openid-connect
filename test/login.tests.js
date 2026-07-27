@@ -631,6 +631,31 @@ describe('auth', () => {
       assert.isNotEmpty(parsed.query.request);
     });
 
+    it('should reduce the non-PAR authorize redirect to only client_id and request', async () => {
+      server = await createServer(
+        auth({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          requestObjectSigningKey: key,
+          requestObjectSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+      const res = await request.get('/login', {
+        baseUrl,
+        followRedirect: false,
+      });
+      assert.equal(res.statusCode, 302);
+
+      const parsed = url.parse(res.headers.location, true);
+      // The signed request object carries every parameter; the redirect itself
+      // must expose only client_id and request.
+      assert.deepEqual(Object.keys(parsed.query).sort(), [
+        'client_id',
+        'request',
+      ]);
+    });
+
     it('should return a valid JWT in request param', async () => {
       server = await createServer(
         auth({

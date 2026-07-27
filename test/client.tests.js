@@ -688,6 +688,25 @@ describe('client initialization', function () {
   describe('buildRequestObject', function () {
     const { buildRequestObject } = require('../lib/client');
     const { privatePEM } = require('../end-to-end/fixture/jwk');
+    // The discovered issuer (with trailing slash), passed as the required audience.
+    const ISSUER = 'https://op.example.com/';
+
+    it('should throw when no audience (discovered issuer) is passed', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+      await assert.isRejected(
+        buildRequestObject({ response_type: 'code' }, config),
+        /audience/,
+      );
+    });
 
     it('should return a compact JWT with 3 parts', async function () {
       const config = getConfig({
@@ -707,7 +726,7 @@ describe('client initialization', function () {
         redirect_uri: 'https://example.org/callback',
       };
 
-      const jwt = await buildRequestObject(authParams, config);
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
       const parts = jwt.split('.');
       assert.equal(parts.length, 3, 'JWT should have 3 parts');
     });
@@ -729,7 +748,7 @@ describe('client initialization', function () {
         response_type: 'code',
       };
 
-      const jwt = await buildRequestObject(authParams, config);
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
       const header = JSON.parse(
         Buffer.from(jwt.split('.')[0], 'base64url').toString(),
       );
@@ -755,7 +774,7 @@ describe('client initialization', function () {
         response_type: 'code',
       };
 
-      const jwt = await buildRequestObject(authParams, config);
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
       const header = JSON.parse(
         Buffer.from(jwt.split('.')[0], 'base64url').toString(),
       );
@@ -780,7 +799,7 @@ describe('client initialization', function () {
         response_type: 'code',
       };
 
-      const jwt = await buildRequestObject(authParams, config);
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
       const header = JSON.parse(
         Buffer.from(jwt.split('.')[0], 'base64url').toString(),
       );
@@ -806,13 +825,13 @@ describe('client initialization', function () {
         redirect_uri: 'https://example.org/callback',
       };
 
-      const jwt = await buildRequestObject(authParams, config);
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
       const payload = JSON.parse(
         Buffer.from(jwt.split('.')[1], 'base64url').toString(),
       );
 
       assert.equal(payload.iss, '__test_client_id__');
-      assert.equal(payload.aud, 'https://op.example.com');
+      assert.equal(payload.aud, ISSUER);
       assert.equal(payload.client_id, '__test_client_id__');
       assert.isNumber(payload.exp);
       assert.isString(payload.jti);
@@ -845,7 +864,7 @@ describe('client initialization', function () {
           response_type: 'code',
         };
 
-        const jwt = await buildRequestObject(authParams, config);
+        const jwt = await buildRequestObject(authParams, config, ISSUER);
         const payload = JSON.parse(
           Buffer.from(jwt.split('.')[1], 'base64url').toString(),
         );
