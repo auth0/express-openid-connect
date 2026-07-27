@@ -1862,16 +1862,25 @@ describe('callback response_mode: form_post', () => {
       assert.equal(tokens.accessToken.access_token, plainAccessToken);
     });
 
-    it('should surface a clear error when decryption fails (wrong key/token)', async () => {
-      const notAJwe = '__test_access_token__';
+    it('should surface a clear error when decryption fails (wrong key)', async () => {
+      // A genuine JWE (5 parts) encrypted to the fixture public key, but the SDK is
+      // configured with a different, non-matching private key -> decryption fails.
+      const jwe = await encryptToken(
+        'eyJhbGciOiJSUzI1NiJ9.body.sig',
+        'RSA-OAEP-256',
+      );
+      const { generateKeyPairSync } = require('crypto');
+      const wrongKey = generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+      }).privateKey.export({ type: 'pkcs8', format: 'pem' });
       const validToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
 
       const { response } = await setup({
-        accessToken: notAJwe,
+        accessToken: jwe,
         authOpts: {
           ...defaultConfig,
           clientSecret: '__test_client_secret__',
-          accessTokenDecryptionKey: privatePEM,
+          accessTokenDecryptionKey: wrongKey,
           authorizationParams: { response_type: 'code id_token' },
         },
         cookies: generateCookies({
@@ -1890,6 +1899,32 @@ describe('callback response_mode: form_post', () => {
         response.body.err.message,
         /Failed to decrypt the access token/,
       );
+    });
+
+    it('should pass a plaintext (non-JWE) access token through unchanged', async () => {
+      const validToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
+
+      const { tokens } = await setup({
+        accessToken: '__test_access_token__', // opaque, not a JWE
+        authOpts: {
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+          accessTokenDecryptionKey: privatePEM,
+          authorizationParams: { response_type: 'code id_token' },
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: validToken,
+          code: 'jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y',
+        },
+      });
+
+      // No hard 500; the opaque token is stored unchanged.
+      assert.equal(tokens.accessToken.access_token, '__test_access_token__');
     });
 
     it('should decrypt the refreshed access token (refresh grant, not just callback)', async () => {

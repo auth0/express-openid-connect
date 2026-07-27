@@ -907,29 +907,26 @@ describe('client initialization', function () {
       assert.equal(decrypted, plaintext);
     });
 
-    it('should throw when given a non-JWE string', async function () {
+    it('should pass a 3-part JWT (non-JWE) through unchanged', async function () {
       const plainJwt = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.signature';
 
-      await assert.isRejected(
-        decryptAccessToken(
-          plainJwt,
-          require('../end-to-end/fixture/jwk').privatePEM,
-          'RSA-OAEP-256',
-        ),
+      const result = await decryptAccessToken(
+        plainJwt,
+        require('../end-to-end/fixture/jwk').privatePEM,
+        'RSA-OAEP-256',
       );
+      assert.equal(result, plainJwt);
     });
 
-    it('should throw when decryption fails with invalid JWE', async function () {
-      const plainJwt = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9';
+    it('should pass a non-JWE opaque string through unchanged', async function () {
+      const opaque = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9';
 
-      // Try to decrypt something that's not a valid JWE
-      await assert.isRejected(
-        decryptAccessToken(
-          plainJwt,
-          require('../end-to-end/fixture/jwk').privatePEM,
-          'RSA-OAEP-256',
-        ),
+      const result = await decryptAccessToken(
+        opaque,
+        require('../end-to-end/fixture/jwk').privatePEM,
+        'RSA-OAEP-256',
       );
+      assert.equal(result, opaque);
     });
 
     // The alg is read from the JWE header (within a strong-alg allowlist) when no
@@ -968,6 +965,28 @@ describe('client initialization', function () {
       await assert.isRejected(
         decryptAccessToken(jwe, privatePEM, 'RSA-OAEP-256'),
       );
+    });
+
+    it('should reject a JWE whose alg is not on the allowlist', async function () {
+      // A128KW is a valid JWE alg but deliberately excluded from the allowlist.
+      // The key resolver (importPrivateKey) must never run for a rejected alg.
+      const symKey = new Uint8Array(16); // 128-bit key for A128KW
+      const jwe = await new CompactEncrypt(new TextEncoder().encode(plaintext))
+        .setProtectedHeader({ alg: 'A128KW', enc: 'A128CBC-HS256' })
+        .encrypt(symKey);
+      await assert.isRejected(decryptAccessToken(jwe, privatePEM, undefined));
+    });
+
+    it('should pass a non-JWE (plaintext JWT) token through unchanged', async function () {
+      const jwt = 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.sig'; // 3 parts, not a JWE
+      const result = await decryptAccessToken(jwt, privatePEM, undefined);
+      assert.equal(result, jwt);
+    });
+
+    it('should pass an opaque access token through unchanged', async function () {
+      const opaque = 'opaque-access-token-value';
+      const result = await decryptAccessToken(opaque, privatePEM, undefined);
+      assert.equal(result, opaque);
     });
   });
 });
