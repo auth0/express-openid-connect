@@ -1012,4 +1012,212 @@ describe('get config', () => {
       assert.notOk(parWarn);
     });
   });
+
+  describe('mTLS (useMtls)', () => {
+    const { MtlsError, MtlsErrorCode } = require('../lib/errors');
+    const customFetch = () => Promise.resolve(new Response());
+
+    it('should default useMtls to false', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        clientSecret: '__test_client_secret__',
+      });
+      assert.equal(config.useMtls, false);
+    });
+
+    it('should resolve clientAuthMethod to tls_client_auth when useMtls=true', () => {
+      const config = getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        customFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.useMtls, true);
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
+
+    it('should not require clientSecret when useMtls=true', () => {
+      assert.doesNotThrow(() =>
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+    });
+
+    it('should throw MtlsError(MTLS_REQUIRES_CUSTOM_FETCH) when customFetch is missing', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
+    });
+
+    it('should throw MtlsError(MTLS_INCOMPATIBLE_CLIENT_AUTH) when combined with clientSecret', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          clientSecret: '__test_client_secret__',
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
+    });
+
+    it('should throw MtlsError(MTLS_INCOMPATIBLE_CLIENT_AUTH) when combined with clientAssertionSigningKey', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          clientAssertionSigningKey: '__test_key__',
+          clientAssertionSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
+    });
+
+    it('should enable useMtls from the AUTH0_MTLS env var', () => {
+      sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
+      const config = getConfig({
+        ...defaultConfig,
+        customFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      assert.equal(config.useMtls, true);
+      assert.equal(config.clientAuthMethod, 'tls_client_auth');
+    });
+
+    it('should throw for AUTH0_MTLS=true without customFetch', () => {
+      sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
+    });
+
+    it('should reject an explicit clientAuthMethod of tls_client_auth (not a public value)', () => {
+      // tls_client_auth is resolved internally via useMtls; passing it directly
+      // must be rejected so the mTLS guards cannot be bypassed. (id_token response
+      // type avoids the code-flow rule so the .valid() rejection is what fires.)
+      assert.throws(() =>
+        getConfig({
+          ...defaultConfig,
+          clientAuthMethod: 'tls_client_auth',
+          customFetch,
+          authorizationParams: { response_type: 'id_token' },
+        }),
+      );
+    });
+
+    it('should reject the self_signed_tls_client_auth string (never a public value)', () => {
+      assert.throws(() =>
+        getConfig({
+          ...defaultConfig,
+          clientAuthMethod: 'self_signed_tls_client_auth',
+          customFetch,
+          authorizationParams: { response_type: 'code' },
+        }),
+      );
+    });
+
+    it('should throw MTLS_INCOMPATIBLE_CLIENT_AUTH when useMtls is combined with an explicit clientAuthMethod', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          clientAuthMethod: 'client_secret_basic',
+          clientSecret: '__test_client_secret__',
+          authorizationParams: { response_type: 'code' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
+    });
+
+    it('should throw MTLS_INCOMPATIBLE_CLIENT_AUTH when useMtls is combined with clientAuthMethod none', () => {
+      let caught;
+      try {
+        getConfig({
+          ...defaultConfig,
+          useMtls: true,
+          customFetch,
+          clientAuthMethod: 'none',
+          authorizationParams: { response_type: 'id_token' },
+        });
+      } catch (e) {
+        caught = e;
+      }
+      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
+    });
+
+    it('should emit console.warn when useMtls is used with a *.auth0.com issuer', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        issuerBaseURL: 'https://tenant.auth0.com',
+        useMtls: true,
+        customFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const customDomainWarn = warnCalls.some(
+        (call) =>
+          call.args[0] &&
+          /custom domain|canonical.*\.auth0\.com/i.test(call.args[0]),
+      );
+      assert.ok(
+        customDomainWarn,
+        'Should warn about custom domain requirement',
+      );
+    });
+
+    it('should NOT emit the custom-domain warning for a non-auth0 issuer', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        issuerBaseURL: 'https://login.example.com',
+        useMtls: true,
+        customFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const customDomainWarned = warnCalls.some(
+        (call) => call.args[0] && /custom domain/i.test(call.args[0]),
+      );
+      assert.notOk(customDomainWarned);
+    });
+  });
 });
