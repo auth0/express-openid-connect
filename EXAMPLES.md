@@ -453,18 +453,16 @@ const tokenSet = await req.oidc.customTokenExchange({
 
 ## 13. Impersonation via Session Transfer Token
 
-Custom Token Exchange Impersonation via Session Transfer lets a support or admin application log a user into a target web application as a customer — so a support engineer can reproduce the customer's exact experience without knowing their password. The agent is recorded in the `act` claim on the impersonated session, making every impersonation auditable.
+Custom Token Exchange Impersonation via Session Transfer lets a support or admin application log a user into a target web application as a customer — so a support engineer can reproduce the customer's exact experience without knowing their password. The initiator is recorded in the `act` claim on the impersonated session, making every impersonation auditable.
 
 The flow involves two roles:
 
 - **Initiator** — your support/admin app. It requests a short-lived, single-use Session Transfer Token (STT) and redirects the user's browser to the target app carrying the STT.
-- **Target** — the customer's web app. It forwards the STT to `/authorize`, where Auth0 redeems it and establishes a session as the customer.
+- **Target** — the customer's web app. It forwards the STT to `/authorize`, where Auth0 redeems it and establishes an ephemeral session as the customer, recording the initiator in the `act` (actor) claim.
 
-> **Prerequisites (configured via Management API / Dashboard):**
->
-> - Feature flag `cte_session_transfer_token` must be enabled on the tenant.
-> - The issuing (initiator) client needs `can_create_session_transfer_token: true` and a Custom Token Exchange Action that calls `setActor`.
-> - The redeeming (target) client needs `allow_delegated_access: true` and `"query"` in its allowed authentication methods.
+The STT is **opaque, single-use, and short-lived (~60s)**. The SDK requests it, surfaces it, and helps you build the redirect — it never decodes, validates, caches, or persists it.
+
+> **Prerequisites:** See [Custom Token Exchange docs](https://auth0.com/docs/authenticate/custom-token-exchange) for prerequisites and setup.
 
 ### Initiator: requesting an STT and redirecting
 
@@ -496,13 +494,13 @@ app.post('/impersonate', requiresAuth(), async (req, res, next) => {
   } catch (err) {
     // err.error === 'actor_unavailable'        — user not logged in or session expired
     // err.error === 'setactor_required'        — Action did not call setActor
-    // err.error === 'session_transfer_disabled' — tenant feature flag is off
     next(err);
   }
 });
 ```
 
-The STT is opaque, single-use, and lives ~60 seconds. The SDK never stores it — hand it straight to `buildSessionTransferRedirect` and discard it.
+> [!IMPORTANT]
+> An actor is mandatory for an STT — that is what makes this auditable impersonation ("X acting as Y") rather than a silent takeover. If no explicit `actor_token` is passed and no usable session ID token can be resolved (user not logged in, or expired ID token with no refresh token), the SDK throws with `err.error === 'actor_unavailable'` before any network call. The session ID token must also be unexpired; the SDK refreshes it automatically when a refresh token is available.
 
 > **Branch on `result.issued_token_type`**, not `result.token_type`. The `token_type` field is `"N_A"` for an STT response — it is informational only. `issued_token_type` is always `"urn:auth0:params:oauth:token-type:session_transfer_token"` for a successful STT exchange, and `buildSessionTransferRedirect` requires exactly that value.
 
@@ -550,6 +548,9 @@ app.get('/auth/login', async (req, res) => {
 ```
 
 The established session is short-lived (hard-capped at 2 hours) and cannot mint a refresh token.
+
+> [!NOTE]
+> Because the STT travels as a query parameter, it can land in places that log or retain full URLs — web-server access logs, proxy/CDN logs, and the browser's history. This is inherent to the redemption mechanism and is mitigated by the token being single-use and short-lived (~60s): a leaked STT is worthless once redeemed or expired. Even so, avoid logging redemption URLs verbatim, and never persist or forward the STT beyond the immediate redirect.
 
 ### Reading the `act` claim
 
