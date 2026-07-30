@@ -529,9 +529,19 @@ const result = await req.oidc.requestSessionTransferToken({
 
 ### Target: redeeming the STT
 
-On the target app, forward the `session_transfer_token` query parameter (and `organization` when present) to `/authorize` through the existing `res.oidc.login()` call — no new SDK methods required:
+On the target app, forward the `session_transfer_token` query parameter (and `organization` when present) to `/authorize` through the existing `res.oidc.login()` call — no new SDK methods required.
+
+The target app must set `authRequired: false` on the `auth()` middleware so the custom login route handles the request directly. Without it, the middleware intercepts the unauthenticated request to `/login` and stashes the STT in `returnTo` state instead of forwarding it to `/authorize`.
 
 ```js
+app.use(
+  auth({
+    // ... your other config
+    authRequired: false, // required — lets the custom /login route run freely
+    routes: { login: false },
+  }),
+);
+
 app.get('/auth/login', async (req, res) => {
   const authorizationParams = {};
 
@@ -543,7 +553,9 @@ app.get('/auth/login', async (req, res) => {
     authorizationParams.organization = req.query.organization;
   }
 
-  await res.oidc.login({ authorizationParams });
+  // returnTo: '/' prevents a redirect loop after the callback —
+  // without it the SDK redirects back to /login?session_transfer_token=...
+  await res.oidc.login({ authorizationParams, returnTo: '/' });
 });
 ```
 
