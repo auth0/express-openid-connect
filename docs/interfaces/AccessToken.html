@@ -12,7 +12,7 @@
 <h1>Interface AccessToken</h1></div>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">AccessToken</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#access_token">access_token</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#expires_in">expires_in</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#isexpired">isExpired</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#token_type">token_type</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#refresh-1">refresh</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">params</span><span class="tsd-signature-symbol">?:</span> <a href="RefreshParams.html" class="tsd-signature-type tsd-kind-interface">RefreshParams</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="" class="tsd-signature-type tsd-kind-interface">AccessToken</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/825ca2fd4b7a2690009650282a85ef092238e597/index.d.ts#L1050">index.d.ts:1050</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1168">index.d.ts:1168</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -38,28 +38,28 @@
 <div class="tsd-comment tsd-typography"><p>The access token itself, can be an opaque string, JWT, or non-JWT token.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/825ca2fd4b7a2690009650282a85ef092238e597/index.d.ts#L1054">index.d.ts:1054</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1172">index.d.ts:1172</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="expires_in"><span>expires_<wbr/>in</span><a href="#expires_in" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">expires_in</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>Number of seconds until the access token expires.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/825ca2fd4b7a2690009650282a85ef092238e597/index.d.ts#L1064">index.d.ts:1064</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1182">index.d.ts:1182</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="isexpired"><span>is<wbr/>Expired</span><a href="#isexpired" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">isExpired</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>Returns <code>true</code> if the access_token has expired.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/825ca2fd4b7a2690009650282a85ef092238e597/index.d.ts#L1069">index.d.ts:1069</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1187">index.d.ts:1187</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="token_type"><span>token_<wbr/>type</span><a href="#token_type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">token_type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The type of access token, Usually &quot;Bearer&quot;.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/825ca2fd4b7a2690009650282a85ef092238e597/index.d.ts#L1059">index.d.ts:1059</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1177">index.d.ts:1177</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -80,7 +80,7 @@
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">params</span>: <a href="RefreshParams.html" class="tsd-signature-type tsd-kind-interface">RefreshParams</a></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="" class="tsd-signature-type tsd-kind-interface">AccessToken</a><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/825ca2fd4b7a2690009650282a85ef092238e597/index.d.ts#L1081">index.d.ts:1081</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1199">index.d.ts:1199</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
