@@ -1,5 +1,11 @@
 # Change Log
 
+## [v3.3.0](https://github.com/auth0/express-openid-connect/tree/v3.3.0) (2026-07-31)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.2.1...v3.3.0)
+
+**Added**
+- feat: Add CTE impersonation via Session Transfer Token [\#850](https://github.com/auth0/express-openid-connect/pull/850) ([cschetan77](https://github.com/cschetan77))
+
 ## [v3.2.1](https://github.com/auth0/express-openid-connect/tree/v3.2.1) (2026-07-24)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.2.0...v3.2.1)
 
