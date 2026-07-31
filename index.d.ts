@@ -208,6 +208,68 @@ interface TokenExchangeResponse {
 }
 
 /**
+ * Result of a successful {@link RequestContext.requestSessionTransferToken} call.
+ * The STT is opaque, single-use, and expires in ~60 seconds.
+ * Pass it directly to {@link RequestContext.buildSessionTransferRedirect} — never decode or store it.
+ */
+interface SessionTransferTokenResult {
+  /** The opaque session transfer token. Hand to `buildSessionTransferRedirect`. */
+  session_transfer_token: string;
+  /**
+   * The issued token type URN. Always `"urn:auth0:params:oauth:token-type:session_transfer_token"`.
+   */
+  issued_token_type: string;
+  /** Token lifetime in seconds (~60). */
+  expires_in: number;
+  /** Informational only — typically `"N_A"`. */
+  token_type?: string;
+  /** Granted scopes, if returned by the authorization server. */
+  scope?: string;
+}
+
+/**
+ * Options for {@link RequestContext.requestSessionTransferToken}.
+ */
+interface SessionTransferTokenOptions {
+  /**
+   * The token identifying the subject of the exchange. Validated by your CTE Action.
+   */
+  subject_token: string;
+  /**
+   * URI identifying the type of `subject_token`.
+   */
+  subject_token_type: string;
+  /**
+   * The acting party's token. Omit to use the current session's id_token (default).
+   * When provided, `actor_token_type` defaults to `urn:ietf:params:oauth:token-type:id_token`.
+   */
+  actor_token?: string;
+  /**
+   * URI identifying the type of `actor_token`.
+   * Defaults to `urn:ietf:params:oauth:token-type:id_token` when `actor_token` is provided.
+   */
+  actor_token_type?: string;
+  /** Organization ID or name; forwarded to `/authorize` by `buildSessionTransferRedirect`. */
+  organization?: string;
+  /** Scopes for the established session's tokens. */
+  scope?: string;
+  /**
+   * Additional parameters forwarded to the token endpoint and available in your CTE Action
+   * via `event.request.body` (e.g. `{ reason: 'Investigating TCK-1234' }`).
+   * Cannot override reserved OAuth parameters.
+   */
+  extra?: Record<string, string | string[] | number | boolean>;
+}
+
+/**
+ * Options for {@link RequestContext.buildSessionTransferRedirect}.
+ */
+interface SessionTransferRedirectOptions {
+  /** Organization to append to the redirect URL (when the STT is org-scoped). */
+  organization?: string;
+}
+
+/**
  * The request authentication context found on the Express request when
  * OpenID Connect auth middleware is added to your application.
  *
@@ -295,6 +357,62 @@ interface RequestContext {
   customTokenExchange?: (
     options?: CustomTokenExchangeOptions,
   ) => Promise<TokenExchangeResponse>;
+
+  /**
+   * Requests a Session Transfer Token (STT) for impersonation via session transfer.
+   *
+   * Performs a CTE call against the `urn:{domain}:session_transfer` audience.
+   * The agent's session id_token is used as the actor automatically (refreshed if expired);
+   * pass `actor_token` to override.
+   *
+   * The returned STT is opaque and single-use (~60s). Pass it to
+   * `buildSessionTransferRedirect` — never decode or store it.
+   *
+   * ```js
+   * app.post('/impersonate', requiresAuth(), async (req, res) => {
+   *   const result = await req.oidc.requestSessionTransferToken({
+   *     subject_token: req.body.customerToken,
+   *     subject_token_type: 'urn:mycompany:customer-subject',
+   *     extra: { reason: 'Investigating ticket TCK-1234' },
+   *   });
+   *   res.redirect(req.oidc.buildSessionTransferRedirect('https://app.example.com/login', result));
+   * });
+   * ```
+   *
+   * **Errors thrown:**
+   * - `error: 'actor_unavailable'` (HTTP 400) — no actor resolved (agent not authenticated or session expired with no refresh token)
+   * - `error: 'setactor_required'` (HTTP 400) — CTE Action did not call `setActor`
+   * - `error: 'session_transfer_disabled'` (HTTP 400) — tenant feature flag is off
+   * - `error: 'invalid_token_response'` (HTTP 500) — AS returned an unexpected `issued_token_type` (not the STT URN)
+   */
+  requestSessionTransferToken?: (
+    options: SessionTransferTokenOptions,
+  ) => Promise<SessionTransferTokenResult>;
+
+  /**
+   * Builds the redirect URL that hands the STT to the target app's login endpoint.
+   *
+   * Returns `targetLoginUrl?session_transfer_token=<encoded>[&organization=…]`.
+   * The developer passes the returned URL to `res.redirect()`.
+   *
+   * ```js
+   * const url = req.oidc.buildSessionTransferRedirect('https://app.example.com/login', result, {
+   *   organization: 'org_globex',
+   * });
+   * res.redirect(url);
+   * ```
+   *
+   * The `targetLoginUrl` must be a trusted, app-controlled value — never derive it
+   * from untrusted input such as a query parameter, as the STT would be forwarded to
+   * an attacker-controlled host. The URL must use `https:` (`http:` is accepted only
+   * for `localhost`, `127.0.0.1`, and `[::1]` to support local development); any other
+   * scheme or non-loopback `http:` host throws a `TypeError`.
+   */
+  buildSessionTransferRedirect?: (
+    targetLoginUrl: string,
+    result: SessionTransferTokenResult,
+    opts?: SessionTransferRedirectOptions,
+  ) => string;
 }
 
 /**

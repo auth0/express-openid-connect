@@ -12,8 +12,9 @@
 10. [Use a custom session store](#10-use-a-custom-session-store)
 11. [Back-Channel Logout](#11-back-channel-logout)
 12. [Custom Token Exchange](#12-custom-token-exchange)
-13. [Use a proxy for OIDC requests](#13-use-a-proxy-for-oidc-requests)
-14. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#14-session-expiry-from-upstream-idp-ipsie-session_expiry)
+13. [Impersonation via Session Transfer Token](#13-impersonation-via-session-transfer-token)
+14. [Use a proxy for OIDC requests](#14-use-a-proxy-for-oidc-requests)
+15. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#15-session-expiry-from-upstream-idp-ipsie-session_expiry)
 
 ## 1. Basic setup
 
@@ -450,7 +451,134 @@ const tokenSet = await req.oidc.customTokenExchange({
 });
 ```
 
-## 13. Use a proxy for OIDC requests
+## 13. Impersonation via Session Transfer Token
+
+Custom Token Exchange Impersonation via Session Transfer lets a support or admin application log a user into a target web application as a customer — so a support engineer can reproduce the customer's exact experience without knowing their password. The initiator is recorded in the `act` claim on the impersonated session, making every impersonation auditable.
+
+The flow involves two roles:
+
+- **Initiator** — your support/admin app. It requests a short-lived, single-use Session Transfer Token (STT) and redirects the user's browser to the target app carrying the STT.
+- **Target** — the customer's web app. It forwards the STT to `/authorize`, where Auth0 redeems it and establishes an ephemeral session as the customer, recording the initiator in the `act` (actor) claim.
+
+The STT is **opaque, single-use, and short-lived (~60s)**. The SDK requests it, surfaces it, and helps you build the redirect — it never decodes, validates, caches, or persists it.
+
+> **Prerequisites:** See [Custom Token Exchange docs](https://auth0.com/docs/authenticate/custom-token-exchange) for prerequisites and setup.
+
+### Initiator: requesting an STT and redirecting
+
+The user must be logged in to the initiator app — the SDK sources the actor from the session's ID token by default (refreshing it automatically if expired). Run your own authorization check before calling the SDK.
+
+```js
+const { auth, requiresAuth } = require('express-openid-connect');
+
+app.post('/impersonate', requiresAuth(), async (req, res, next) => {
+  try {
+    // Your own proof of which customer to impersonate — validated by your Action.
+    const { customerToken, customerTokenType } = req.body;
+
+    const result = await req.oidc.requestSessionTransferToken({
+      subject_token: customerToken,
+      subject_token_type: customerTokenType,
+      // Optional: pass custom context to your Action via event.request.body
+      extra: { reason: 'Investigating ticket TCK-1234' },
+    });
+
+    // targetLoginUrl must be a trusted, app-controlled value — never derived from
+    // untrusted input such as a returnTo param, or the STT could leak to an attacker host.
+    const redirectUrl = req.oidc.buildSessionTransferRedirect(
+      'https://app.example.com/auth/login',
+      result,
+    );
+
+    res.redirect(redirectUrl);
+  } catch (err) {
+    // err.error === 'actor_unavailable'        — user not logged in or session expired
+    // err.error === 'setactor_required'        — Action did not call setActor
+    next(err);
+  }
+});
+```
+
+> [!IMPORTANT]
+> An actor is mandatory for an STT — that is what makes this auditable impersonation ("X acting as Y") rather than a silent takeover. If no explicit `actor_token` is passed and no usable session ID token can be resolved (user not logged in, or expired ID token with no refresh token), the SDK throws with `err.error === 'actor_unavailable'` before any network call. The session ID token must also be unexpired; the SDK refreshes it automatically when a refresh token is available.
+
+> **Branch on `result.issued_token_type`**, not `result.token_type`. The `token_type` field is `"N_A"` for an STT response — it is informational only. `issued_token_type` is always `"urn:auth0:params:oauth:token-type:session_transfer_token"` for a successful STT exchange, and `buildSessionTransferRedirect` requires exactly that value.
+
+If the customer belongs to an organization, forward it on the redirect:
+
+```js
+const redirectUrl = req.oidc.buildSessionTransferRedirect(
+  'https://app.example.com/auth/login',
+  result,
+  { organization: 'org_globex' },
+);
+```
+
+To supply the acting party explicitly instead of using the session ID token:
+
+```js
+const result = await req.oidc.requestSessionTransferToken({
+  subject_token: customerToken,
+  subject_token_type: customerTokenType,
+  actor_token: agentIdToken,
+  actor_token_type: 'urn:ietf:params:oauth:token-type:id_token',
+});
+```
+
+> **Explicit `actor_token` requirements:** Auth0 validates the actor token server-side before running the exchange. It must be unexpired and signed with an asymmetric algorithm (RS256 or PS256) — an HS256 token or an expired token will be rejected. An Auth0 session ID token already satisfies both requirements; if you source `actor_token` from elsewhere, ensure it meets them.
+
+### Target: redeeming the STT
+
+On the target app, forward the `session_transfer_token` query parameter (and `organization` when present) to `/authorize` through the existing `res.oidc.login()` call — no new SDK methods required.
+
+The target app must set `authRequired: false` on the `auth()` middleware so the custom login route handles the request directly. Without it, the middleware intercepts the unauthenticated request to `/login` and stashes the STT in `returnTo` state instead of forwarding it to `/authorize`.
+
+```js
+app.use(
+  auth({
+    // ... your other config
+    authRequired: false, // required — lets the custom /login route run freely
+    routes: { login: false },
+  }),
+);
+
+app.get('/auth/login', async (req, res) => {
+  const authorizationParams = {};
+
+  if (req.query.session_transfer_token) {
+    authorizationParams.session_transfer_token =
+      req.query.session_transfer_token;
+  }
+  if (req.query.organization) {
+    authorizationParams.organization = req.query.organization;
+  }
+
+  // returnTo: '/' prevents a redirect loop after the callback —
+  // without it the SDK redirects back to /login?session_transfer_token=...
+  await res.oidc.login({ authorizationParams, returnTo: '/' });
+});
+```
+
+The established session is short-lived (hard-capped at 2 hours) and cannot mint a refresh token.
+
+> [!NOTE]
+> Because the STT travels as a query parameter, it can land in places that log or retain full URLs — web-server access logs, proxy/CDN logs, and the browser's history. This is inherent to the redemption mechanism and is mitigated by the token being single-use and short-lived (~60s): a leaked STT is worthless once redeemed or expired. Even so, avoid logging redemption URLs verbatim, and never persist or forward the STT beyond the immediate redirect.
+
+### Reading the `act` claim
+
+Once the impersonation session is established, the acting party is available as `req.oidc.user.act`:
+
+```js
+app.get('/dashboard', requiresAuth(), (req, res) => {
+  const actor = req.oidc.user.act; // { sub: 'support-agent-007' } when impersonated
+  if (actor) {
+    // Render an impersonation banner so the agent knows they are acting as the customer.
+  }
+  res.render('dashboard');
+});
+```
+
+## 14. Use a proxy for OIDC requests
 
 If you need to route all OIDC HTTP requests (discovery, token, userinfo, etc.) through a proxy, use the `customFetch` option with `undici`'s `ProxyAgent`:
 
@@ -473,7 +601,7 @@ app.use(
 
 The SDK wraps your `customFetch` function to add required headers (User-Agent, Auth0-Client telemetry) before making requests.
 
-## 14. Session expiry from upstream IdP (IPSIE `session_expiry`)
+## 15. Session expiry from upstream IdP (IPSIE `session_expiry`)
 
 When an upstream IdP supports the IPSIE SL1 spec, it can include a `session_expiry` claim in the ID token — an absolute Unix timestamp (seconds) marking the latest moment the IdP considers the session valid.
 
