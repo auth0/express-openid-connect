@@ -1441,6 +1441,9 @@ export const MtlsErrorCode: {
  */
 export class MtlsError extends Error {
   readonly name: 'MtlsError';
-  readonly code: string;
-  constructor(code: string, message: string);
+  readonly code: (typeof MtlsErrorCode)[keyof typeof MtlsErrorCode];
+  constructor(
+    code: (typeof MtlsErrorCode)[keyof typeof MtlsErrorCode],
+    message: string,
+  );
 }

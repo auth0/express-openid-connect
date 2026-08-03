@@ -31,4 +31,13 @@ expectType<'mtls_endpoint_aliases_missing'>(
 expectType<'mtls_incompatible_client_auth'>(
   MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH,
 );
-expectAssignable<Error>(new MtlsError('some_code', 'message'));
+// The constructor and `code` are typed to the MtlsErrorCode union so consumers
+// can narrow on it; an arbitrary string is rejected.
+expectAssignable<Error>(
+  new MtlsError(MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH, 'message'),
+);
+expectType<
+  | 'mtls_requires_custom_fetch'
+  | 'mtls_endpoint_aliases_missing'
+  | 'mtls_incompatible_client_auth'
+>(new MtlsError(MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH, 'message').code);

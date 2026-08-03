@@ -2,14 +2,17 @@ const express = require('express');
 const { auth } = require('../');
 const { Agent, fetch: undiciFetch } = require('undici');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 
 // mTLS (Mutual TLS, RFC 8705) client authentication demo.
 //
 // With `useMtls: true` the SDK authenticates to the token endpoint with a TLS
-// client certificate instead of a client secret, and routes token/refresh/
-// revocation/userinfo/PAR requests to the server's `mtls_endpoint_aliases`.
+// client certificate instead of a client secret. Requests are sent to the
+// server's `mtls_endpoint_aliases` for each endpoint the server advertises an
+// alias for; an endpoint without an alias is sent over the standard (non-mTLS)
+// channel, so the tenant must advertise aliases for every endpoint you use.
 // Issued access tokens carry a `cnf.x5t#S256` claim binding them to the
 // certificate (certificate-bound tokens).
 //
@@ -26,10 +29,26 @@ const app = express();
 //
 // `AUTH0_MTLS=true` can be used instead of `useMtls: true`.
 
+// Resolve the certificate and key relative to this file so the example works
+// regardless of the caller's working directory. Fail with a message naming the
+// expected files rather than an opaque ENOENT.
+const readCertFile = (name) => {
+  const file = path.join(__dirname, name);
+  try {
+    return fs.readFileSync(file);
+  } catch (e) {
+    throw new Error(
+      `mTLS example: could not read "${file}". Place your client certificate ` +
+        `("client.crt") and private key ("client.key") next to this example. ` +
+        `(${e.code || e.message})`,
+    );
+  }
+};
+
 const tlsAgent = new Agent({
   connect: {
-    cert: fs.readFileSync('./client.crt'),
-    key: fs.readFileSync('./client.key'),
+    cert: readCertFile('client.crt'),
+    key: readCertFile('client.key'),
   },
 });
 

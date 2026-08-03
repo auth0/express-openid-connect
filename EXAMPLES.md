@@ -747,10 +747,10 @@ app.use(
 );
 ```
 
-When `useMtls` is set, the SDK routes token, refresh, revocation, userinfo, and PAR requests to the server's `mtls_endpoint_aliases`. mTLS requires:
+When `useMtls` is set, the SDK routes token, refresh, revocation, userinfo, and PAR requests to the server's `mtls_endpoint_aliases` **for each endpoint the server advertises an alias for**. An endpoint without a matching alias is sent to the standard host, which is not an mTLS channel, so the tenant must advertise aliases for every endpoint your configuration uses. The SDK throws at construction if the token endpoint (always used) or the PAR endpoint (when `pushedAuthorizationRequests` is enabled) lacks an alias, and logs a debug warning for a missing userinfo or revocation alias. mTLS requires:
 
 - A custom domain with self-managed certificates. It does not work on canonical `*.auth0.com` domains (the SDK logs a warning if you try).
-- mTLS endpoint aliases enabled on the tenant. If the discovery document does not advertise them, the SDK throws an `MtlsError` with code `mtls_endpoint_aliases_missing`.
+- mTLS endpoint aliases enabled on the tenant. If the discovery document does not advertise the token endpoint alias, the SDK throws an `MtlsError` with code `mtls_endpoint_aliases_missing`.
 - No `clientSecret` or `clientAssertionSigningKey`. Combining either (or an explicit `clientAuthMethod`) with `useMtls` throws an `MtlsError` (`mtls_incompatible_client_auth`), and a missing `customFetch` throws `mtls_requires_custom_fetch`.
 
 `MtlsError` and `MtlsErrorCode` are exported for structured handling:

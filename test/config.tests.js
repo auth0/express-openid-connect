@@ -1058,6 +1058,9 @@ describe('get config', () => {
       } catch (e) {
         caught = e;
       }
+      // One instanceof check documents the class identity; the rest of the
+      // suite asserts on the bundler-safe .code/.name, which is the pattern the
+      // SDK directs consumers toward.
       assert.instanceOf(caught, MtlsError);
       assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
     });
@@ -1075,7 +1078,7 @@ describe('get config', () => {
       } catch (e) {
         caught = e;
       }
-      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.name, 'MtlsError');
       assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
     });
 
@@ -1093,7 +1096,7 @@ describe('get config', () => {
       } catch (e) {
         caught = e;
       }
-      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.name, 'MtlsError');
       assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
     });
 
@@ -1108,6 +1111,35 @@ describe('get config', () => {
       assert.equal(config.clientAuthMethod, 'tls_client_auth');
     });
 
+    it('should enable useMtls from AUTH0_MTLS regardless of case or surrounding whitespace', () => {
+      const env = sinon.stub(process, 'env').value({ ...process.env });
+      for (const raw of ['TRUE', ' true', 'True ']) {
+        env.value({ ...process.env, AUTH0_MTLS: raw });
+        const config = getConfig({
+          ...defaultConfig,
+          customFetch,
+          authorizationParams: { response_type: 'code' },
+        });
+        assert.equal(config.useMtls, true, `expected "${raw}" to enable mTLS`);
+      }
+    });
+
+    it('should not enable useMtls for other AUTH0_MTLS values', () => {
+      const env = sinon.stub(process, 'env').value({ ...process.env });
+      for (const raw of ['1', 'yes', 'false', '']) {
+        env.value({ ...process.env, AUTH0_MTLS: raw });
+        const config = getConfig({
+          ...defaultConfig,
+          clientSecret: '__test_client_secret__',
+        });
+        assert.equal(
+          config.useMtls,
+          false,
+          `expected "${raw}" to leave mTLS off`,
+        );
+      }
+    });
+
     it('should throw for AUTH0_MTLS=true without customFetch', () => {
       sinon.stub(process, 'env').value({ ...process.env, AUTH0_MTLS: 'true' });
       let caught;
@@ -1119,7 +1151,7 @@ describe('get config', () => {
       } catch (e) {
         caught = e;
       }
-      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.name, 'MtlsError');
       assert.equal(caught.code, MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH);
     });
 
@@ -1162,7 +1194,7 @@ describe('get config', () => {
       } catch (e) {
         caught = e;
       }
-      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.name, 'MtlsError');
       assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
     });
 
@@ -1179,7 +1211,7 @@ describe('get config', () => {
       } catch (e) {
         caught = e;
       }
-      assert.instanceOf(caught, MtlsError);
+      assert.equal(caught.name, 'MtlsError');
       assert.equal(caught.code, MtlsErrorCode.MTLS_INCOMPATIBLE_CLIENT_AUTH);
     });
 
