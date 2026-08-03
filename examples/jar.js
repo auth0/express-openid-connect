@@ -25,7 +25,7 @@ app.use(
       response_type: 'code',
     },
 
-    // The mock provider's 'hri-client' is registered for private_key_jwt + JAR.
+    // The mock provider's 'jar-client' is registered for private_key_jwt + JAR.
     // clientAssertionSigningKey authenticates the token exchange; the same key
     // pair signs the JAR request object here. In production they can differ.
     clientAuthMethod: 'private_key_jwt',

@@ -18,7 +18,7 @@ describe('JAR + PAR', async () => {
   beforeEach(async () => {
     stubEnv({
       ISSUER_BASE_URL: 'http://localhost:3001',
-      CLIENT_ID: 'hri-client',
+      CLIENT_ID: 'jar-client',
       BASE_URL: 'http://localhost:3000',
       SECRET: 'LONG_RANDOM_VALUE',
       CLIENT_SECRET: 'test-express-openid-connect-client-secret',

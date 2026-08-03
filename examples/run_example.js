@@ -12,11 +12,12 @@ if (!process.env.CLIENT_ID) {
   console.log(
     'Starting a mock authorization server. You can login with any credentials.',
   );
-  // The hri and jar examples use a registered client that supports
+  // The jar example uses a registered client that supports
   // private_key_jwt + JAR + PAR. All other examples use the default client.
-  const clientId = ['hri.js', 'jar.js'].includes(example)
-    ? 'hri-client'
-    : 'test-express-openid-connect-client-id';
+  const clientId =
+    example === 'jar.js'
+      ? 'jar-client'
+      : 'test-express-openid-connect-client-id';
   process.env = {
     ...process.env,
     ISSUER_BASE_URL: `http://localhost:${PROVIDER_PORT}`,
