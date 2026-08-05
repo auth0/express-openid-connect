@@ -870,12 +870,7 @@ interface ConfigParams {
   /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
    */
-  clientAuthMethod?:
-    | 'client_secret_basic'
-    | 'client_secret_post'
-    | 'client_secret_jwt'
-    | 'private_key_jwt'
-    | 'none';
+  clientAuthMethod?: string;
 
   /**
    * Private key for use with 'private_key_jwt' clients.
