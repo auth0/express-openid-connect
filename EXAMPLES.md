@@ -694,4 +694,22 @@ app.use(
 
 The request object's `aud` is set to the issuer identifier advertised in the discovery document (which may differ from `issuerBaseURL`, e.g. a trailing slash), as JAR requires. `requestObjectSigningKey` accepts the same key formats as `clientAssertionSigningKey` (PEM string, Buffer, KeyObject, JWK, CryptoKey).
 
+`requestObjectSigningAlg` must be a JWA algorithm name from the following set: `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512`, `ES256`, `ES384`, `ES512`, `Ed25519`. Register the corresponding public key with your authorization server so it can verify the signed request object.
+
+Generate a signing key pair that matches your chosen algorithm, for example an RSA key for `RS256`/`PS256`:
+
+```bash
+# Private key (used by the app as requestObjectSigningKey)
+openssl genrsa -out request-object-key.pem 2048
+# Public key (registered with the authorization server)
+openssl rsa -in request-object-key.pem -pubout -out request-object-key.pub.pem
+```
+
+For an EC algorithm such as `ES256`, generate a P-256 key instead:
+
+```bash
+openssl ecparam -name prime256v1 -genkey -noout -out request-object-key.pem
+openssl ec -in request-object-key.pem -pubout -out request-object-key.pub.pem
+```
+
 Full example at [jar.js](./examples/jar.js), to run it: `npm run start:example -- jar`
