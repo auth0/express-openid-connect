@@ -4,7 +4,9 @@ require('dotenv').config();
 
 const { PORT = 3000, PROVIDER_PORT = 3001, API_PORT = 3002 } = process.env;
 
-const example = process.argv.pop();
+// Accept the example either with or without the `.js` extension
+// (e.g. `jar` or `jar.js`); require() resolves both.
+const example = process.argv.pop().replace(/\.js$/, '');
 
 // Configure and start a mock authorization server if no .env config is found
 if (!process.env.CLIENT_ID) {
@@ -12,10 +14,14 @@ if (!process.env.CLIENT_ID) {
   console.log(
     'Starting a mock authorization server. You can login with any credentials.',
   );
+  // The jar example uses a registered client that supports
+  // private_key_jwt + JAR + PAR. All other examples use the default client.
+  const clientId =
+    example === 'jar' ? 'jar-client' : 'test-express-openid-connect-client-id';
   process.env = {
     ...process.env,
     ISSUER_BASE_URL: `http://localhost:${PROVIDER_PORT}`,
-    CLIENT_ID: 'test-express-openid-connect-client-id',
+    CLIENT_ID: clientId,
     BASE_URL: `http://localhost:${PORT}`,
     SECRET: 'LONG_RANDOM_VALUE',
     CLIENT_SECRET: 'test-express-openid-connect-client-secret',

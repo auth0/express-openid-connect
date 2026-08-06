@@ -684,4 +684,196 @@ describe('client initialization', function () {
       expect(spy.callCount).to.eq(1);
     });
   });
+
+  describe('buildRequestObject', function () {
+    const { buildRequestObject } = require('../lib/client');
+    const { privatePEM } = require('../end-to-end/fixture/jwk');
+    // The discovered issuer (with trailing slash), passed as the required audience.
+    const ISSUER = 'https://op.example.com/';
+
+    it('should throw when no audience (discovered issuer) is passed', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+      await assert.isRejected(
+        buildRequestObject({ response_type: 'code' }, config),
+        /audience/,
+      );
+    });
+
+    it('should return a compact JWT with 3 parts', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+
+      const authParams = {
+        scope: 'openid profile email',
+        response_type: 'code',
+        redirect_uri: 'https://example.org/callback',
+      };
+
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
+      const parts = jwt.split('.');
+      assert.equal(parts.length, 3, 'JWT should have 3 parts');
+    });
+
+    it('should decode header with correct algorithm', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+
+      const authParams = {
+        scope: 'openid profile email',
+        response_type: 'code',
+      };
+
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
+      const header = JSON.parse(
+        Buffer.from(jwt.split('.')[0], 'base64url').toString(),
+      );
+
+      assert.equal(header.alg, 'RS256');
+    });
+
+    it('should include kid in header when requestObjectSigningKeyId is provided', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        requestObjectSigningKeyId: 'my-key-id',
+        authorizationParams: { response_type: 'code' },
+      });
+
+      const authParams = {
+        scope: 'openid profile email',
+        response_type: 'code',
+      };
+
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
+      const header = JSON.parse(
+        Buffer.from(jwt.split('.')[0], 'base64url').toString(),
+      );
+
+      assert.equal(header.kid, 'my-key-id');
+    });
+
+    it('should exclude kid from header when requestObjectSigningKeyId is not set', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+
+      const authParams = {
+        scope: 'openid profile email',
+        response_type: 'code',
+      };
+
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
+      const header = JSON.parse(
+        Buffer.from(jwt.split('.')[0], 'base64url').toString(),
+      );
+
+      assert.notProperty(header, 'kid');
+    });
+
+    it('should include all required claims in payload', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+        requestObjectSigningKey: privatePEM,
+        requestObjectSigningAlg: 'RS256',
+        authorizationParams: { response_type: 'code' },
+      });
+
+      const authParams = {
+        scope: 'openid profile email',
+        response_type: 'code',
+        redirect_uri: 'https://example.org/callback',
+      };
+
+      const jwt = await buildRequestObject(authParams, config, ISSUER);
+      const payload = JSON.parse(
+        Buffer.from(jwt.split('.')[1], 'base64url').toString(),
+      );
+
+      assert.equal(payload.iss, '__test_client_id__');
+      assert.equal(payload.aud, ISSUER);
+      assert.equal(payload.client_id, '__test_client_id__');
+      assert.isNumber(payload.exp);
+      assert.isString(payload.jti);
+      assert.isNotEmpty(payload.jti);
+      assert.equal(payload.scope, 'openid profile email');
+      assert.equal(payload.response_type, 'code');
+      assert.equal(payload.redirect_uri, 'https://example.org/callback');
+    });
+
+    it('should set exp to approximately 60 seconds in future', async function () {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ['Date'],
+      });
+
+      try {
+        const config = getConfig({
+          secret: '__test_session_secret__',
+          clientID: '__test_client_id__',
+          clientSecret: '__test_client_secret__',
+          issuerBaseURL: 'https://op.example.com',
+          baseURL: 'https://example.org',
+          requestObjectSigningKey: privatePEM,
+          requestObjectSigningAlg: 'RS256',
+          authorizationParams: { response_type: 'code' },
+        });
+
+        const authParams = {
+          scope: 'openid profile email',
+          response_type: 'code',
+        };
+
+        const jwt = await buildRequestObject(authParams, config, ISSUER);
+        const payload = JSON.parse(
+          Buffer.from(jwt.split('.')[1], 'base64url').toString(),
+        );
+
+        const now = Math.floor(Date.now() / 1000);
+        assert.approximately(payload.exp, now + 60, 2);
+      } finally {
+        clock.restore();
+      }
+    });
+  });
 });

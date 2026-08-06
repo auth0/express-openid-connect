@@ -584,8 +584,7 @@ interface BackchannelLogoutOptions {
    * (See {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-genid.js} or {@link https://github.com/auth0/express-openid-connect/tree/master/examples/examples/backchannel-logout-custom-query-store.js})
    */
   onLogin?:
-    | false
-    | ((req: Request, config: ConfigParams) => Promise<void> | void);
+    false | ((req: Request, config: ConfigParams) => Promise<void> | void);
 }
 
 /**
@@ -932,6 +931,34 @@ interface ConfigParams {
     | 'ES384'
     | 'ES512'
     | 'Ed25519';
+
+  /**
+   * Private key used to sign JWT-Secured Authorization Requests (JAR).
+   * When set, all authorization parameters are signed as a `request` JWT before being sent to the authorization endpoint.
+   * Accepts the same formats as `clientAssertionSigningKey`: PEM string, Buffer, KeyObject, JWK, or CryptoKey.
+   */
+  requestObjectSigningKey?: KeyObject | JoseCryptoKey | JWK | string | Buffer;
+
+  /**
+   * Algorithm used to sign the JAR request object JWT. Always required when `requestObjectSigningKey` is set.
+   * Web Crypto algorithm names (e.g. `RSASSA-PKCS1-v1_5`) are not valid here — use JWA names (e.g. `RS256`).
+   */
+  requestObjectSigningAlg?:
+    | 'RS256'
+    | 'RS384'
+    | 'RS512'
+    | 'PS256'
+    | 'PS384'
+    | 'PS512'
+    | 'ES256'
+    | 'ES384'
+    | 'ES512'
+    | 'Ed25519';
+
+  /**
+   * Optional key ID to include as the `kid` header in the JAR request object JWT.
+   */
+  requestObjectSigningKeyId?: string;
 
   /**
    * Additional request body properties to be sent to the `token_endpoint` during authorization code exchange or token refresh.

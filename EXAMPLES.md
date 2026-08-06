@@ -15,6 +15,7 @@
 13. [Impersonation via Session Transfer Token](#13-impersonation-via-session-transfer-token)
 14. [Use a proxy for OIDC requests](#14-use-a-proxy-for-oidc-requests)
 15. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#15-session-expiry-from-upstream-idp-ipsie-session_expiry)
+16. [JWT-Secured Authorization Requests (JAR)](#16-jwt-secured-authorization-requests-jar)
 
 ## 1. Basic setup
 
@@ -667,3 +668,48 @@ app.get('/status', (req, res) => {
 ### Upgrading existing apps
 
 Once your IdP starts emitting `session_expiry`, `req.appSession` can be `null` for a previously logged-in user once the ceiling is reached. If your code assumed the session always exists after login, add a null check. Sessions created before the upgrade (or through connections without the claim) have no `sessionExpiresAt` and behave exactly as before.
+
+## 16. JWT-Secured Authorization Requests (JAR)
+
+[JAR](https://www.rfc-editor.org/rfc/rfc9101.html) (part of Auth0's Highly Regulated Identity feature set) signs all authorization parameters into a JWT and sends them as the `request` parameter, so the `/authorize` redirect carries only `client_id` and `request`. Set `requestObjectSigningKey` to enable it. `requestObjectSigningAlg` is always required, since Web Crypto algorithm names are not valid JWA `alg` values.
+
+```js
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code',
+    },
+    // Sign the authorization request object.
+    requestObjectSigningKey: fs.readFileSync('./request-object-key.pem'),
+    requestObjectSigningAlg: 'RS256',
+    // Optional: set a `kid` in the request object's JWT header.
+    // requestObjectSigningKeyId: 'my-key-id',
+
+    // Recommended for FAPI: combine with PAR so the signed request object is
+    // POSTed to /oauth/par and only an opaque request_uri is exposed in the URL.
+    pushedAuthorizationRequests: true,
+  }),
+);
+```
+
+The request object's `aud` is set to the issuer identifier advertised in the discovery document (which may differ from `issuerBaseURL`, e.g. a trailing slash), as JAR requires. `requestObjectSigningKey` accepts the same key formats as `clientAssertionSigningKey` (PEM string, Buffer, KeyObject, JWK, CryptoKey).
+
+`requestObjectSigningAlg` must be a JWA algorithm name from the following set: `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512`, `ES256`, `ES384`, `ES512`, `Ed25519`. Register the corresponding public key with your authorization server so it can verify the signed request object.
+
+Generate a signing key pair that matches your chosen algorithm, for example an RSA key for `RS256`/`PS256`:
+
+```bash
+# Private key (used by the app as requestObjectSigningKey)
+openssl genrsa -out request-object-key.pem 2048
+# Public key (registered with the authorization server)
+openssl rsa -in request-object-key.pem -pubout -out request-object-key.pub.pem
+```
+
+For an EC algorithm such as `ES256`, generate a P-256 key instead:
+
+```bash
+openssl ecparam -name prime256v1 -genkey -noout -out request-object-key.pem
+openssl ec -in request-object-key.pem -pubout -out request-object-key.pub.pem
+```
+
+Full example at [jar.js](./examples/jar.js), to run it: `npm run start:example -- jar`

@@ -33,6 +33,13 @@ const config = {
       client_id: 'client-secret-jwt-client',
       token_endpoint_auth_method: 'client_secret_jwt',
     }),
+    // JAR demo client: supports private_key_jwt auth, JAR (request objects), and PAR
+    Object.assign({}, client, {
+      client_id: 'jar-client',
+      token_endpoint_auth_method: 'private_key_jwt',
+      jwks: { keys: [publicJWK] },
+      request_object_signing_alg: 'RS256',
+    }),
   ],
   jwks: {
     keys: [privateJWK],
@@ -53,6 +60,12 @@ const config = {
   features: {
     backchannelLogout: {
       enabled: true,
+    },
+    pushedAuthorizationRequests: {
+      enabled: true,
+    },
+    requestObjects: {
+      request: true,
     },
   },
 };
