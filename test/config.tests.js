@@ -299,6 +299,95 @@ describe('get config', () => {
     });
   });
 
+  it('should default anonymousSession to disabled with default cookie config', () => {
+    const config = getConfig(defaultConfig);
+    assert.deepEqual(config.anonymousSession, {
+      enabled: false,
+      cookie: {
+        name: 'auth0_anon',
+        httpOnly: true,
+        sameSite: 'Lax',
+        secure: true,
+        path: '/',
+      },
+    });
+  });
+
+  it('should default anonymousSession cookie secure to false over http', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      baseURL: 'http://example.org',
+    });
+    assert.equal(config.anonymousSession.cookie.secure, false);
+  });
+
+  it('should default anonymousSession cookie sameSite from session cookie configuration', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      session: { cookie: { sameSite: 'Strict' } },
+    });
+    assert.equal(config.anonymousSession.cookie.sameSite, 'Strict');
+  });
+
+  it('should enable anonymousSession and allow custom cookie configuration', () => {
+    const config = getConfig({
+      ...defaultConfig,
+      anonymousSession: {
+        enabled: true,
+        cookie: {
+          name: 'custom_anon',
+          sameSite: 'None',
+          httpOnly: false,
+          secure: true,
+          path: '/app',
+          domain: 'example.org',
+        },
+      },
+    });
+    assert.deepEqual(config.anonymousSession, {
+      enabled: true,
+      cookie: {
+        name: 'custom_anon',
+        sameSite: 'None',
+        httpOnly: false,
+        secure: true,
+        path: '/app',
+        domain: 'example.org',
+      },
+    });
+  });
+
+  it('should accept an anonymousSession store', () => {
+    const store = { get() {}, set() {}, destroy() {} };
+    const config = getConfig({
+      ...defaultConfig,
+      anonymousSession: { enabled: true, store },
+    });
+    assert.equal(config.anonymousSession.store, store);
+  });
+
+  it('should validate anonymousSession cookie name', () => {
+    assert.throws(
+      () =>
+        getConfig({
+          ...defaultConfig,
+          anonymousSession: { cookie: { name: 'invalid name' } },
+        }),
+      TypeError,
+    );
+  });
+
+  it('should reject unknown anonymousSession keys', () => {
+    assert.throws(
+      () =>
+        getConfig({
+          ...defaultConfig,
+          anonymousSession: { foo: 'bar' },
+        }),
+      TypeError,
+    );
+  });
+
   it('should allow setting custom cookie path to prevent collision on same domain', function () {
     const config = getConfig({
       ...defaultConfig,
