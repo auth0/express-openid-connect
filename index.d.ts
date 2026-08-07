@@ -1502,3 +1502,36 @@ export class SessionExpiredError extends Error {
   readonly statusCode: 401;
   constructor(message?: string);
 }
+
+/**
+ * Error thrown when an anonymous session operation
+ * ({@link AnonymousSession.start}, {@link AnonymousSession.getAccessToken})
+ * fails. The `code` field carries the Auth0 error code, e.g. `metadata_too_large`,
+ * `unauthorized_client`, `feature_not_enabled`, `invalid_client`, `invalid_target`,
+ * `invalid_scope`, or `server_error`.
+ *
+ * The `session_expired` and `invalid_session_token` codes are handled internally
+ * (a new session is created transparently) and never surface as this error.
+ *
+ * ```js
+ * const { AnonymousSessionError } = require('express-openid-connect');
+ *
+ * app.get('/cart', async (req, res, next) => {
+ *   try {
+ *     const { access_token } = await req.anonymousSession.getAccessToken();
+ *   } catch (err) {
+ *     if (err instanceof AnonymousSessionError) {
+ *       // inspect err.code
+ *     }
+ *     return next(err);
+ *   }
+ * });
+ * ```
+ */
+export class AnonymousSessionError extends Error {
+  readonly name: 'AnonymousSessionError';
+  readonly code: string;
+  readonly status?: number;
+  readonly statusCode?: number;
+  constructor(message: string, code: string, statusCode?: number);
+}

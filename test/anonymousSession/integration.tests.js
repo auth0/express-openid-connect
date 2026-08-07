@@ -1,4 +1,5 @@
 const { assert } = require('chai');
+const url = require('url');
 const nock = require('nock');
 const express = require('express');
 const request = require('request-promise-native').defaults({
@@ -100,5 +101,32 @@ describe('anonymousSession integration', () => {
 
     assert.isTrue(res.body.isAnonymous);
     assert.equal(res.body.token, '__session_token__');
+  });
+
+  it('injects session_token into the authorize URL on login', async () => {
+    await setup();
+    nock('https://op.example.com')
+      .post('/anonymous/token')
+      .reply(200, tokenResponse);
+
+    const jar = request.jar();
+    await request.get('/anon/start', { baseUrl, jar, json: true });
+
+    const res = await request.get('/login', {
+      baseUrl,
+      jar,
+      followRedirect: false,
+    });
+    const parsed = url.parse(res.headers.location, true);
+    assert.equal(parsed.pathname, '/authorize');
+    assert.equal(parsed.query.session_token, '__session_token__');
+  });
+
+  it('does not add session_token to the authorize URL without a session', async () => {
+    await setup();
+    const res = await request.get('/login', { baseUrl, followRedirect: false });
+    const parsed = url.parse(res.headers.location, true);
+    assert.equal(parsed.pathname, '/authorize');
+    assert.notProperty(parsed.query, 'session_token');
   });
 });
