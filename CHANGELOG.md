@@ -1,5 +1,12 @@
 # Change Log
 
+## [v3.4.0](https://github.com/auth0/express-openid-connect/tree/v3.4.0) (2026-08-07)
+[Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.3.0...v3.4.0)
+
+**Added**
+- feat(mtls): mTLS (RFC 8705) client authentication [\#865](https://github.com/auth0/express-openid-connect/pull/865) ([jd3vi1](https://github.com/jd3vi1))
+- feat(jar): JWT-Secured Authorization Requests (JAR) support [\#863](https://github.com/auth0/express-openid-connect/pull/863) ([jd3vi1](https://github.com/jd3vi1))
+
 ## [v3.3.0](https://github.com/auth0/express-openid-connect/tree/v3.3.0) (2026-07-31)
 [Full Changelog](https://github.com/auth0/express-openid-connect/compare/v3.2.1...v3.3.0)
 

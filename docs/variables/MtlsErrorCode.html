@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>IdTokenClaims | express-openid-connect</title><meta name="description" content="Documentation for express-openid-connect"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>MtlsErrorCode | express-openid-connect</title><meta name="description" content="Documentation for express-openid-connect"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container"><a href="../index.html" class="title">express-openid-connect</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
@@ -8,23 +8,22 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
-<li><a href="" aria-current="page">IdTokenClaims</a></li></ul>
-<h1>Type Alias IdTokenClaims</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">IdTokenClaims</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">IDToken</span> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">session_expiry</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">}</span></div>
-<div class="tsd-comment tsd-typography"><p>ID Token claims, extended with the IPSIE SL1 session_expiry claim.</p>
+<li><a href="" aria-current="page">MtlsErrorCode</a></li></ul>
+<h1>Variable MtlsErrorCode<code class="tsd-tag">Const</code></h1></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">MtlsErrorCode</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">MTLS_ENDPOINT_ALIASES_MISSING</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;mtls_endpoint_aliases_missing&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">MTLS_INCOMPATIBLE_CLIENT_AUTH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;mtls_incompatible_client_auth&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">MTLS_REQUIRES_CUSTOM_FETCH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;mtls_requires_custom_fetch&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-comment tsd-typography"><p>Error codes for mTLS (Mutual TLS, RFC 8705) configuration failures.</p>
 </div>
 <div class="tsd-type-declaration">
 <h4>Type Declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
-<h5><code class="tsd-tag">Optional</code><span class="tsd-kind-property">session_expiry</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">number</span></h5>
-<div class="tsd-comment tsd-typography"><p>Unix timestamp (seconds since epoch) indicating the hard ceiling on the RP
-session lifetime, as asserted by the upstream IdP via the IPSIE SL1 protocol.
-Present when the IdP signals support for session expiry enforcement
-(e.g. Auth0 enterprise connections with <code>id_token_session_expiry_supported: true</code>).</p>
-</div></li></ul></div><aside class="tsd-sources">
+<h5 id="mtls_endpoint_aliases_missing"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">MTLS_ENDPOINT_ALIASES_MISSING</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;mtls_endpoint_aliases_missing&quot;</span></h5></li>
+<li class="tsd-parameter">
+<h5 id="mtls_incompatible_client_auth"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">MTLS_INCOMPATIBLE_CLIENT_AUTH</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;mtls_incompatible_client_auth&quot;</span></h5></li>
+<li class="tsd-parameter">
+<h5 id="mtls_requires_custom_fetch"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">MTLS_REQUIRES_CUSTOM_FETCH</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;mtls_requires_custom_fetch&quot;</span></h5></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L41">index.d.ts:41</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1427">index.d.ts:1427</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

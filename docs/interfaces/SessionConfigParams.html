@@ -15,7 +15,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">SessionConfigParams</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#absoluteduration">absoluteDuration</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#cookie">cookie</a><span class="tsd-signature-symbol">?:</span> <a href="CookieConfigParams.html" class="tsd-signature-type tsd-kind-interface">CookieConfigParams</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#genid">genid</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">req</span><span class="tsd-signature-symbol">:</span> <a href="OpenidRequest.html" class="tsd-signature-type tsd-kind-interface">OpenidRequest</a><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#requiresignedsessionstorecookie">requireSignedSessionStoreCookie</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#rolling">rolling</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#rollingduration">rollingDuration</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#signsessionstorecookie">signSessionStoreCookie</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#store">store</a><span class="tsd-signature-symbol">?:</span> <a href="SessionStore.html" class="tsd-signature-type tsd-kind-interface">SessionStore</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1036">index.d.ts:1036</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1088">index.d.ts:1088</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -45,14 +45,14 @@ Set this to <code>false</code> if you don't want an absolute duration on your se
 Default is 604800 seconds (7 days).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1115">index.d.ts:1115</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1167">index.d.ts:1167</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="cookie"><code class="tsd-tag">Optional</code><span>cookie</span><a href="#cookie" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">cookie</span><span class="tsd-signature-symbol">?:</span> <a href="CookieConfigParams.html" class="tsd-signature-type tsd-kind-interface">CookieConfigParams</a></div>
 <div class="tsd-comment tsd-typography"><p>Configuration parameters used for the session cookie and transient cookies.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1120">index.d.ts:1120</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1172">index.d.ts:1172</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="genid"><code class="tsd-tag">Optional</code><span>genid</span><a href="#genid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">genid</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">req</span><span class="tsd-signature-symbol">:</span> <a href="OpenidRequest.html" class="tsd-signature-type tsd-kind-interface">OpenidRequest</a><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
@@ -68,7 +68,7 @@ cryptographically strong random value of sufficient size or sign the cookie
 by setting {@Link signSessionStoreCookie} to <code>true</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1067">index.d.ts:1067</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1119">index.d.ts:1119</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="name"><code class="tsd-tag">Optional</code><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
@@ -77,7 +77,7 @@ This value must only include letters, numbers, and underscores.
 Default is <code>appSession</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1042">index.d.ts:1042</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1094">index.d.ts:1094</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="requiresignedsessionstorecookie"><code class="tsd-tag">Optional</code><span>require<wbr/>Signed<wbr/>Session<wbr/>Store<wbr/>Cookie</span><a href="#requiresignedsessionstorecookie" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">requireSignedSessionStoreCookie</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -92,7 +92,7 @@ will set it to <code>true</code>.</p>
 <p>Signed session store cookies will be mandatory in the next major release.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1091">index.d.ts:1091</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1143">index.d.ts:1143</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="rolling"><code class="tsd-tag">Optional</code><span>rolling</span><a href="#rolling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">rolling</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -103,7 +103,7 @@ regardless of activity, set this to <code>false</code>
 Default is <code>true</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1100">index.d.ts:1100</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1152">index.d.ts:1152</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="rollingduration"><code class="tsd-tag">Optional</code><span>rolling<wbr/>Duration</span><a href="#rollingduration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">rollingDuration</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
@@ -112,7 +112,7 @@ The amount of time for which the user must be idle for then to be logged out.
 Default is 86400 seconds (1 day).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1107">index.d.ts:1107</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1159">index.d.ts:1159</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="signsessionstorecookie"><code class="tsd-tag">Optional</code><span>sign<wbr/>Session<wbr/>Store<wbr/>Cookie</span><a href="#signsessionstorecookie" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">signSessionStoreCookie</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
@@ -122,7 +122,7 @@ and reduce the ability to hijack a session by guessing the session ID.</p>
 cryptographically strong random value of sufficient size.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1076">index.d.ts:1076</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1128">index.d.ts:1128</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="store"><code class="tsd-tag">Optional</code><span>store</span><a href="#store" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">store</span><span class="tsd-signature-symbol">?:</span> <a href="SessionStore.html" class="tsd-signature-type tsd-kind-interface">SessionStore</a></div>
@@ -133,7 +133,7 @@ have <code>get</code>, <code>set</code> and <code>destroy</code> methods, making
 with <a href="https://github.com/expressjs/session#session-store-implementation">express-session stores</a>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L1051">index.d.ts:1051</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L1103">index.d.ts:1103</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

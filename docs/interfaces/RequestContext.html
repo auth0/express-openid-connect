@@ -19,7 +19,7 @@ OpenID Connect auth middleware is added to your application.</p>
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">RequestContext</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#accesstoken">accessToken</a><span class="tsd-signature-symbol">?:</span> <a href="AccessToken.html" class="tsd-signature-type tsd-kind-interface">AccessToken</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#buildsessiontransferredirect">buildSessionTransferRedirect</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">targetLoginUrl</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">result</span><span class="tsd-signature-symbol">:</span> <a href="SessionTransferTokenResult.html" class="tsd-signature-type tsd-kind-interface">SessionTransferTokenResult</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?:</span> <a href="SessionTransferRedirectOptions.html" class="tsd-signature-type tsd-kind-interface">SessionTransferRedirectOptions</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#customtokenexchange">customTokenExchange</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <a href="CustomTokenExchangeOptions.html" class="tsd-signature-type tsd-kind-interface">CustomTokenExchangeOptions</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="TokenExchangeResponse.html" class="tsd-signature-type tsd-kind-interface">TokenExchangeResponse</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#idtoken">idToken</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#idtokenclaims">idTokenClaims</a><span class="tsd-signature-symbol">?:</span> <a href="../types/IdTokenClaims.html" class="tsd-signature-type tsd-kind-type-alias">IdTokenClaims</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#isauthenticated">isAuthenticated</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#refreshtoken">refreshToken</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#requestsessiontransfertoken">requestSessionTransferToken</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">:</span> <a href="SessionTransferTokenOptions.html" class="tsd-signature-type tsd-kind-interface">SessionTransferTokenOptions</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="SessionTransferTokenResult.html" class="tsd-signature-type tsd-kind-interface">SessionTransferTokenResult</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#user">user</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#fetchuserinfo-1">fetchUserInfo</a><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">UserInfoResponse</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L285">index.d.ts:285</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L285">index.d.ts:285</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -51,7 +51,7 @@ OpenID Connect auth middleware is added to your application.</p>
 <p>See: <a href="https://auth0.com/docs/protocols/oidc#access-tokens">https://auth0.com/docs/protocols/oidc#access-tokens</a></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L303">index.d.ts:303</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L303">index.d.ts:303</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="buildsessiontransferredirect"><code class="tsd-tag">Optional</code><span>build<wbr/>Session<wbr/>Transfer<wbr/>Redirect</span><a href="#buildsessiontransferredirect" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">buildSessionTransferRedirect</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">targetLoginUrl</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">result</span><span class="tsd-signature-symbol">:</span> <a href="SessionTransferTokenResult.html" class="tsd-signature-type tsd-kind-interface">SessionTransferTokenResult</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?:</span> <a href="SessionTransferRedirectOptions.html" class="tsd-signature-type tsd-kind-interface">SessionTransferRedirectOptions</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">string</span></div>
@@ -68,7 +68,7 @@ for <code>localhost</code>, <code>127.0.0.1</code>, and <code>[::1]</code> to su
 scheme or non-loopback <code>http:</code> host throws a <code>TypeError</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L411">index.d.ts:411</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L411">index.d.ts:411</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="customtokenexchange"><code class="tsd-tag">Optional</code><span>custom<wbr/>Token<wbr/>Exchange</span><a href="#customtokenexchange" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">customTokenExchange</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <a href="CustomTokenExchangeOptions.html" class="tsd-signature-type tsd-kind-interface">CustomTokenExchangeOptions</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="TokenExchangeResponse.html" class="tsd-signature-type tsd-kind-interface">TokenExchangeResponse</a><span class="tsd-signature-symbol">&gt;</span></div>
@@ -85,7 +85,7 @@ resolved (no session or no access token). <code>err.error</code> contains the OA
 <p>Vendor-specific parameters must be passed via <code>extra</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L357">index.d.ts:357</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L357">index.d.ts:357</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="idtoken"><code class="tsd-tag">Optional</code><span>id<wbr/>Token</span><a href="#idtoken" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">idToken</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
@@ -93,21 +93,21 @@ resolved (no session or no access token). <code>err.error</code> contains the OA
 <p>See: <a href="https://auth0.com/docs/protocols/oidc#id-tokens">https://auth0.com/docs/protocols/oidc#id-tokens</a></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L296">index.d.ts:296</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L296">index.d.ts:296</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="idtokenclaims"><code class="tsd-tag">Optional</code><span>id<wbr/>Token<wbr/>Claims</span><a href="#idtokenclaims" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">idTokenClaims</span><span class="tsd-signature-symbol">?:</span> <a href="../types/IdTokenClaims.html" class="tsd-signature-type tsd-kind-type-alias">IdTokenClaims</a></div>
 <div class="tsd-comment tsd-typography"><p>An object containing all the claims of the ID Token.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L315">index.d.ts:315</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L315">index.d.ts:315</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="isauthenticated"><span>is<wbr/>Authenticated</span><a href="#isauthenticated" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">isAuthenticated</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>Method to check the user's authenticated state, returns <code>true</code> if logged in.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L289">index.d.ts:289</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L289">index.d.ts:289</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="refreshtoken"><code class="tsd-tag">Optional</code><span>refresh<wbr/>Token</span><a href="#refreshtoken" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">refreshToken</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
@@ -115,7 +115,7 @@ resolved (no session or no access token). <code>err.error</code> contains the OA
 <p>See: <a href="https://auth0.com/docs/tokens/concepts/refresh-tokens">https://auth0.com/docs/tokens/concepts/refresh-tokens</a></p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L310">index.d.ts:310</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L310">index.d.ts:310</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="requestsessiontransfertoken"><code class="tsd-tag">Optional</code><span>request<wbr/>Session<wbr/>Transfer<wbr/>Token</span><a href="#requestsessiontransfertoken" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">requestSessionTransferToken</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">:</span> <a href="SessionTransferTokenOptions.html" class="tsd-signature-type tsd-kind-interface">SessionTransferTokenOptions</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="SessionTransferTokenResult.html" class="tsd-signature-type tsd-kind-interface">SessionTransferTokenResult</a><span class="tsd-signature-symbol">&gt;</span></div>
@@ -137,7 +137,7 @@ pass <code>actor_token</code> to override.</p>
 </ul>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L388">index.d.ts:388</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L388">index.d.ts:388</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="user"><code class="tsd-tag">Optional</code><span>user</span><a href="#user" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">user</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></div>
@@ -145,7 +145,7 @@ pass <code>actor_token</code> to override.</p>
 specified in <a href="ConfigParams.html#identityclaimfilter" class="tsd-kind-property">identityClaimFilter</a> removed.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L321">index.d.ts:321</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L321">index.d.ts:321</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -162,7 +162,7 @@ specified in <a href="ConfigParams.html#identityclaimfilter" class="tsd-kind-pro
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">UserInfoResponse</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L336">index.d.ts:336</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L336">index.d.ts:336</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
