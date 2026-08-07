@@ -1,4 +1,5 @@
 const express = require('express');
+const onHeaders = require('on-headers');
 
 const debug = require('../lib/debug')('auth');
 const { get: getConfig } = require('../lib/config');
@@ -8,6 +9,11 @@ const TransientCookieHandler = require('../lib/transientHandler');
 const { RequestContext, ResponseContext } = require('../lib/context');
 const appSession = require('../lib/appSession');
 const isLoggedOut = require('../lib/hooks/backchannelLogout/isLoggedOut');
+const makeAnonymousCookieHandler = require('../lib/anonymousSession/cookie');
+const {
+  RequestAnonymousContext,
+  flush: flushAnonymousSession,
+} = require('../lib/anonymousSession/context');
 
 const enforceLeadingSlash = (path) => {
   return path.split('')[0] === '/' ? path : '/' + path;
@@ -34,6 +40,24 @@ const auth = function (params) {
     res.oidc = new ResponseContext(config, req, res, next, transient);
     next();
   });
+
+  // Anonymous session context, attached when the feature is enabled.
+  if (config.anonymousSession.enabled) {
+    const anonymousCookie = makeAnonymousCookieHandler(config);
+    router.use(async (req, res, next) => {
+      try {
+        const state = await anonymousCookie.read(req);
+        const anonymousSession = new RequestAnonymousContext(config, state);
+        req.anonymousSession = anonymousSession;
+        onHeaders(res, () =>
+          flushAnonymousSession(anonymousSession, res, anonymousCookie),
+        );
+        next();
+      } catch (err) {
+        next(err);
+      }
+    });
+  }
 
   // Login route, configurable with routes.login
   if (config.routes.login) {

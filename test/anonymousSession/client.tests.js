@@ -1,9 +1,9 @@
 const { assert } = require('chai').use(require('chai-as-promised'));
 const nock = require('nock');
-const { get: getConfig } = require('../lib/config');
-const { requestToken, logout } = require('../lib/anonymousSession/client');
-const { AnonymousSessionError } = require('../lib/anonymousSession/errors');
-const pkg = require('../package.json');
+const { get: getConfig } = require('../../lib/config');
+const { requestToken, logout } = require('../../lib/anonymousSession/client');
+const { AnonymousSessionError } = require('../../lib/anonymousSession/errors');
+const pkg = require('../../package.json');
 
 const baseConfig = {
   secret: '__test_session_secret__',
