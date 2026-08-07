@@ -16,6 +16,7 @@
 14. [Use a proxy for OIDC requests](#14-use-a-proxy-for-oidc-requests)
 15. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#15-session-expiry-from-upstream-idp-ipsie-session_expiry)
 16. [JWT-Secured Authorization Requests (JAR)](#16-jwt-secured-authorization-requests-jar)
+17. [Anonymous Sessions](#17-anonymous-sessions)
 
 ## 1. Basic setup
 
@@ -713,3 +714,96 @@ openssl ec -in request-object-key.pem -pubout -out request-object-key.pub.pem
 ```
 
 Full example at [jar.js](./examples/jar.js), to run it: `npm run start:example -- jar`
+
+## 17. Anonymous Sessions
+
+[Anonymous Sessions](https://auth0.com/docs) give a visitor an Auth0 identity (`anon@<uuid>`) **before they log in**, so pre-login activity — a guest cart, consent, analytics context — can be carried into their account when they authenticate. The feature is opt-in and off by default; enable it with `anonymousSession.enabled`.
+
+```js
+app.use(
+  auth({
+    authRequired: false,
+    anonymousSession: {
+      enabled: true,
+      // All cookie options are optional and mirror the session cookie defaults.
+      // cookie: {
+      //   name: 'auth0_anon', // default
+      //   sameSite: 'Lax',    // inherits session.cookie.sameSite
+      //   secure: true,       // inferred from an https baseURL
+      //   httpOnly: true,
+      //   path: '/',
+      //   domain: undefined,
+      // },
+    },
+  }),
+);
+```
+
+Once enabled, every request gets a `req.anonymousSession` context:
+
+```js
+req.anonymousSession.isAnonymous; // true when a valid anonymous session cookie is present
+req.anonymousSession.token; // the opaque anonymous session token, or null
+
+// Create a new anonymous session. The audience and scope are fixed for the
+// lifetime of the session; up to 1KB of metadata may be set once, at creation.
+const { access_token } = await req.anonymousSession.start({
+  audience: 'https://api.example.com/cart',
+  scope: 'read:cart write:cart',
+  metadata: { cart_id: 'cart_123' },
+});
+
+// Get a valid access token for the session's audience. Returns the cached token
+// while it is valid and silently renews it (or transparently creates a new
+// session if the anonymous session itself has expired) when it is not.
+const { access_token } = await req.anonymousSession.getAccessToken();
+
+// End the anonymous session and clear its cookie.
+await req.anonymousSession.end();
+```
+
+Use the access token to call your API — `getAccessToken()` handles caching and renewal for you:
+
+```js
+app.get('/cart', async (req, res) => {
+  const { access_token } = await req.anonymousSession.getAccessToken();
+  const cart = await fetch('https://api.example.com/cart', {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+  res.json(await cart.json());
+});
+```
+
+When the visitor logs in, the anonymous session token is automatically added to the `/authorize` request — you call `res.oidc.login()` exactly as usual, and Auth0 delivers the anonymous session data to your Post Login and Pre User Registration [Actions](https://auth0.com/docs/customize/actions) via `event.anonymous_session`. Nothing is migrated automatically; your Action code decides what to persist.
+
+The anonymous session is **not** cleared automatically on login — call `req.anonymousSession.end()` explicitly when you want to end it.
+
+A few things to note:
+
+- `getAccessToken()` throws an `AnonymousSessionError` if there is no active anonymous session; call `start()` first.
+- The `session_expired` and `invalid_session_token` cases are handled internally (a new session is created transparently, so any metadata is lost); every other failure is thrown as an `AnonymousSessionError` with a `.code` you can branch on.
+
+```js
+const { AnonymousSessionError } = require('express-openid-connect');
+
+app.get('/cart', async (req, res, next) => {
+  try {
+    const { access_token } = await req.anonymousSession.getAccessToken();
+    // ...
+  } catch (err) {
+    if (
+      err instanceof AnonymousSessionError &&
+      err.code === 'metadata_too_large'
+    ) {
+      // handle the specific error
+    }
+    return next(err);
+  }
+});
+```
+
+Anonymous state is completely independent of the authenticated session — it never affects `req.oidc.isAuthenticated()` or `req.oidc.user`.
+
+> Anonymous Sessions must be enabled for your tenant (a paid add-on) and for the client, and the target API must allow anonymous access. See the Auth0 documentation for the required Dashboard/Management API configuration.
+
+Full example at [anonymous-session.js](./examples/anonymous-session.js), to run it: `npm run start:example -- anonymous-session`

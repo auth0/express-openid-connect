@@ -91,6 +91,12 @@ interface OpenidRequest extends Request {
    * Library namespace for authentication methods and data.
    */
   oidc: RequestContext;
+
+  /**
+   * Anonymous session context, present when
+   * {@link AnonymousSessionConfigParams.enabled} is `true`.
+   */
+  anonymousSession?: AnonymousSession;
 }
 
 /**
@@ -416,6 +422,74 @@ interface RequestContext {
 }
 
 /**
+ * Options for {@link AnonymousSession.start}.
+ */
+interface AnonymousSessionStartOptions {
+  /**
+   * The audience (Resource Server identifier) to request an access token for.
+   * If omitted, the tenant's default audience is used. This audience is fixed
+   * for the lifetime of the anonymous session.
+   */
+  audience?: string;
+
+  /**
+   * A space-separated list of scopes to request for the access token.
+   */
+  scope?: string;
+
+  /**
+   * Up to 1KB of key-value metadata to store on the anonymous session at
+   * creation time. Set once — metadata cannot be changed after the session
+   * is created. Exceeding the size limit throws an error with code
+   * `metadata_too_large`.
+   */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * The anonymous session context attached to the Express request as
+ * `req.anonymousSession` when {@link AnonymousSessionConfigParams.enabled} is `true`.
+ *
+ * Anonymous state is completely independent of the authenticated session — it
+ * never affects {@link RequestContext.isAuthenticated} or {@link RequestContext.user}.
+ */
+interface AnonymousSession {
+  /**
+   * `true` when a valid `auth0_anon` cookie is present on the request.
+   */
+  isAnonymous: boolean;
+
+  /**
+   * The raw, opaque anonymous session token, or `null` when no anonymous
+   * session is active. This value is never sent to APIs — use
+   * {@link AnonymousSession.getAccessToken} to obtain a token for calling APIs.
+   */
+  token: string | null;
+
+  /**
+   * Returns a valid anonymous access token for the session's audience, minting
+   * or silently renewing one as needed. Returns the cached token when it is
+   * still valid; otherwise re-mints it using the stored session token. If the
+   * session token has expired, a brand-new anonymous session is created
+   * transparently (any previously-set metadata is lost).
+   */
+  getAccessToken: () => Promise<AccessToken>;
+
+  /**
+   * Creates a new anonymous session, setting the `auth0_anon` cookie on the
+   * response, and returns the resulting access token.
+   */
+  start: (options?: AnonymousSessionStartOptions) => Promise<AccessToken>;
+
+  /**
+   * Ends the anonymous session by calling `POST /anonymous/logout` and clearing
+   * the `auth0_anon` cookie. The anonymous session is not cleared automatically
+   * on login — call this explicitly to end it.
+   */
+  end: () => Promise<void>;
+}
+
+/**
  * The response authentication context found on the Express response when
  * OpenID Connect auth middleware is added to your application.
  *
@@ -477,6 +551,7 @@ declare global {
   namespace Express {
     interface Request {
       oidc: RequestContext;
+      anonymousSession?: AnonymousSession;
     }
 
     interface Response {
@@ -868,6 +943,14 @@ interface ConfigParams {
   transactionCookie?: Pick<CookieConfigParams, 'sameSite'> & { name?: string };
 
   /**
+   * Configuration for Anonymous Sessions, which give a visitor an Auth0 identity
+   * before they log in. Disabled by default; set `enabled: true` to opt in.
+   *
+   * When enabled, `req.anonymousSession` is attached to every request.
+   */
+  anonymousSession?: AnonymousSessionConfigParams;
+
+  /**
    * String value for the client's authentication method. Default is `none` when using response_type='id_token', `private_key_jwt` when using a `clientAssertionSigningKey`, otherwise `client_secret_basic`.
    */
   clientAuthMethod?: string;
@@ -1192,6 +1275,30 @@ interface CookieConfigParams {
   sameSite?: string;
 }
 
+interface AnonymousSessionConfigParams {
+  /**
+   * Whether Anonymous Sessions are enabled. When `false` (the default),
+   * `req.anonymousSession` is not attached and no anonymous cookies are set.
+   */
+  enabled?: boolean;
+
+  /**
+   * Configuration for the `auth0_anon` cookie that stores the anonymous session token.
+   * Uses the same cookie attributes as the session cookie (except `transient`),
+   * plus a configurable `name` (default `auth0_anon`, letters/numbers/underscores only).
+   */
+  cookie?: Pick<
+    CookieConfigParams,
+    'domain' | 'path' | 'httpOnly' | 'secure' | 'sameSite'
+  > & { name?: string };
+
+  /**
+   * Optional session store, using the same interface as {@link SessionConfigParams.store}.
+   * Reserved for a future release; not used yet.
+   */
+  store?: SessionStore;
+}
+
 interface AccessToken {
   /**
    * The access token itself, can be an opaque string, JWT, or non-JWT token.
@@ -1394,4 +1501,37 @@ export class SessionExpiredError extends Error {
   readonly status: 401;
   readonly statusCode: 401;
   constructor(message?: string);
+}
+
+/**
+ * Error thrown when an anonymous session operation
+ * ({@link AnonymousSession.start}, {@link AnonymousSession.getAccessToken})
+ * fails. The `code` field carries the Auth0 error code, e.g. `metadata_too_large`,
+ * `unauthorized_client`, `feature_not_enabled`, `invalid_client`, `invalid_target`,
+ * `invalid_scope`, or `server_error`.
+ *
+ * The `session_expired` and `invalid_session_token` codes are handled internally
+ * (a new session is created transparently) and never surface as this error.
+ *
+ * ```js
+ * const { AnonymousSessionError } = require('express-openid-connect');
+ *
+ * app.get('/cart', async (req, res, next) => {
+ *   try {
+ *     const { access_token } = await req.anonymousSession.getAccessToken();
+ *   } catch (err) {
+ *     if (err instanceof AnonymousSessionError) {
+ *       // inspect err.code
+ *     }
+ *     return next(err);
+ *   }
+ * });
+ * ```
+ */
+export class AnonymousSessionError extends Error {
+  readonly name: 'AnonymousSessionError';
+  readonly code: string;
+  readonly status?: number;
+  readonly statusCode?: number;
+  constructor(message: string, code: string, statusCode?: number);
 }

@@ -24,6 +24,7 @@
   "mocha": {
     "exit": true,
     "file": "./test/setup.js",
+    "recursive": true,
     "timeout": 10000
   },
   "dependencies": {
