@@ -998,6 +998,31 @@ interface ConfigParams {
    * Optional User-Agent header value for oidc client requests.  Default is `express-openid-connect/{version}`.
    */
   httpUserAgent?: string;
+
+  /**
+   * Enable mTLS (Mutual TLS, RFC 8705) client authentication.
+   *
+   * When `true`, the SDK authenticates to the authorization server with a TLS
+   * client certificate instead of a `clientSecret` or `clientAssertionSigningKey`,
+   * and routes token/userinfo requests to the `mtls_endpoint_aliases` advertised
+   * in the discovery document. Access tokens may carry a `cnf.x5t#S256` claim
+   * binding them to the certificate (certificate-bound tokens).
+   *
+   * Requires:
+   * - A TLS-aware {@link ConfigParams.customFetch} that attaches the client
+   *   certificate (e.g. Node.js `undici` `Agent` with `connect: { key, cert }`).
+   *   The certificate is never configured through the SDK directly.
+   * - `clientSecret` and `clientAssertionSigningKey` must not be set.
+   * - The authorization server must advertise `mtls_endpoint_aliases.token_endpoint`.
+   * - A custom domain; mTLS does not work on canonical `*.auth0.com` domains.
+   *
+   * Can also be enabled with the `AUTH0_MTLS=true` environment variable.
+   *
+   * @default false
+   *
+   * @see {@link https://datatracker.ietf.org/doc/html/rfc8705 | RFC 8705}
+   */
+  useMtls?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
@@ -1394,4 +1419,31 @@ export class SessionExpiredError extends Error {
   readonly status: 401;
   readonly statusCode: 401;
   constructor(message?: string);
+}
+
+/**
+ * Error codes for mTLS (Mutual TLS, RFC 8705) configuration failures.
+ */
+export const MtlsErrorCode: {
+  readonly MTLS_REQUIRES_CUSTOM_FETCH: 'mtls_requires_custom_fetch';
+  readonly MTLS_ENDPOINT_ALIASES_MISSING: 'mtls_endpoint_aliases_missing';
+  readonly MTLS_INCOMPATIBLE_CLIENT_AUTH: 'mtls_incompatible_client_auth';
+};
+
+/**
+ * Thrown when the mTLS (RFC 8705) configuration is invalid: `useMtls: true`
+ * without a `customFetch`, combined with `clientSecret`/`clientAssertionSigningKey`
+ * or an explicit `clientAuthMethod`, or when the discovery document lacks
+ * `mtls_endpoint_aliases`.
+ *
+ * Catch by `error.code` (a value from {@link MtlsErrorCode}) rather than
+ * `instanceof` to be bundler-safe.
+ */
+export class MtlsError extends Error {
+  readonly name: 'MtlsError';
+  readonly code: (typeof MtlsErrorCode)[keyof typeof MtlsErrorCode];
+  constructor(
+    code: (typeof MtlsErrorCode)[keyof typeof MtlsErrorCode],
+    message: string,
+  );
 }

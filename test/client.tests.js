@@ -426,6 +426,31 @@ describe('client initialization', function () {
         .reply(200, { ...wellKnown, issuer: 'https://par-test.auth0.com/' });
       await expect(getClient(config)).to.be.fulfilled;
     });
+
+    it('should fail if the PAR endpoint in discovery is not a string', async function () {
+      // A malformed discovery document with a non-string endpoint value must be
+      // treated as absent so the precondition fails fast here, rather than
+      // passing on a truthy non-URL that oauth4webapi rejects later.
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://par-nonstring.auth0.com',
+        baseURL: 'https://example.org',
+        pushedAuthorizationRequests: true,
+      });
+      nock('https://par-nonstring.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://par-nonstring.auth0.com/',
+          pushed_authorization_request_endpoint: {},
+        });
+      await expect(getClient(config)).to.be.rejectedWith(
+        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`,
+      );
+    });
   });
 
   describe('client respects clientAssertionSigningAlg configuration', function () {
@@ -874,6 +899,228 @@ describe('client initialization', function () {
       } finally {
         clock.restore();
       }
+    });
+  });
+
+  describe('mTLS (useMtls)', function () {
+    const { MtlsErrorCode } = require('../lib/errors');
+    const customFetch = (url, options) => fetch(url, options);
+
+    // Each test uses a distinct issuer to bypass the persistent op.example.com
+    // discovery mock (setup.js) and to avoid discovery cache collisions.
+    const mtlsWellKnown = (issuer) => ({
+      ...wellKnown,
+      issuer: `${issuer}/`,
+      mtls_endpoint_aliases: {
+        token_endpoint: `${issuer.replace('https://', 'https://mtls.')}/oauth/token`,
+        userinfo_endpoint: `${issuer.replace('https://', 'https://mtls.')}/userinfo`,
+        revocation_endpoint: `${issuer.replace('https://', 'https://mtls.')}/oauth/revoke`,
+      },
+    });
+
+    const baseConfig = (issuer) => ({
+      secret: '__test_session_secret__',
+      clientID: '__test_client_id__',
+      issuerBaseURL: issuer,
+      baseURL: 'https://example.org',
+      authorizationParams: { response_type: 'code' },
+    });
+
+    it('should set use_mtls_endpoint_aliases=true on client metadata when useMtls=true', async function () {
+      const issuer = 'https://mtls-meta.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch,
+      });
+      const { configuration } = await getClient(config);
+      assert.equal(
+        configuration.clientMetadata().use_mtls_endpoint_aliases,
+        true,
+      );
+    });
+
+    it('should NOT set use_mtls_endpoint_aliases when useMtls is not enabled', async function () {
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://op.example.com',
+        baseURL: 'https://example.org',
+      });
+      const { configuration } = await getClient(config);
+      assert.notEqual(
+        configuration.clientMetadata().use_mtls_endpoint_aliases,
+        true,
+      );
+    });
+
+    it('should expose mtls_endpoint_aliases in server metadata when advertised', async function () {
+      const issuer = 'https://mtls-expose.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch,
+      });
+      const { serverMetadata } = await getClient(config);
+      assert.equal(
+        serverMetadata.mtls_endpoint_aliases.token_endpoint,
+        'https://mtls.mtls-expose.example.com/oauth/token',
+      );
+    });
+
+    it('should invoke the provided customFetch during discovery', async function () {
+      const issuer = 'https://mtls-fetch.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const spy = sinon.spy((url, options) => fetch(url, options));
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch: spy,
+      });
+      await getClient(config);
+      assert.isTrue(spy.called);
+    });
+
+    it('should throw MtlsError(MTLS_ENDPOINT_ALIASES_MISSING) when discovery has no aliases', async function () {
+      const issuer = 'https://mtls-noalias.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, { ...wellKnown, issuer: `${issuer}/` });
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch,
+      });
+      let caught;
+      try {
+        await getClient(config);
+      } catch (e) {
+        caught = e;
+      }
+      assert.ok(caught, 'expected getClient to reject');
+      assert.equal(caught.code, MtlsErrorCode.MTLS_ENDPOINT_ALIASES_MISSING);
+    });
+
+    it('should route token grants to the mTLS alias endpoint through the SDK', async function () {
+      // Build the Configuration through the SDK's own getClient (which is what
+      // sets use_mtls_endpoint_aliases and resolves TlsClientAuth), then drive a
+      // refresh grant through it. This fails if lib/client.js stops setting the
+      // flag or getClientAuth stops returning TlsClientAuth for useMtls.
+      const issuer = 'https://mtls-route.example.com';
+      const tokenAlias = `${issuer.replace('https://', 'https://mtls.')}/oauth/token`;
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, mtlsWellKnown(issuer));
+
+      const captured = [];
+      const spyFetch = (url, options) => {
+        captured.push(String(url));
+        return fetch(url, options);
+      };
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        customFetch: spyFetch,
+      });
+      const { configuration } = await getClient(config);
+
+      nock(tokenAlias.replace(/\/oauth\/token$/, ''))
+        .post('/oauth/token')
+        .reply(200, { access_token: 'x', token_type: 'bearer' });
+
+      try {
+        await client.refreshTokenGrant(configuration, 'rt');
+      } catch {
+        // response processing may reject; we only assert the URL that was hit
+      }
+      assert.include(
+        captured,
+        tokenAlias,
+        'refresh grant should be routed to the mtls_endpoint_aliases token endpoint',
+      );
+    });
+
+    it('should throw MTLS_ENDPOINT_ALIASES_MISSING when PAR is enabled but its alias is absent', async function () {
+      // token_endpoint alias present, PAR alias missing: construction must fail
+      // rather than let the PAR request silently fall back to the non-mTLS host.
+      const issuer = 'https://mtls-par-noalias.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...mtlsWellKnown(issuer),
+          pushed_authorization_request_endpoint: `${issuer}/oauth/par`,
+        });
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        pushedAuthorizationRequests: true,
+        customFetch,
+      });
+      let caught;
+      try {
+        await getClient(config);
+      } catch (e) {
+        caught = e;
+      }
+      assert.ok(caught, 'expected getClient to reject');
+      assert.equal(caught.code, MtlsErrorCode.MTLS_ENDPOINT_ALIASES_MISSING);
+    });
+
+    it('should accept PAR under mTLS when the PAR alias is advertised', async function () {
+      const issuer = 'https://mtls-par-alias.example.com';
+      const mtlsHost = issuer.replace('https://', 'https://mtls.');
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...mtlsWellKnown(issuer),
+          pushed_authorization_request_endpoint: `${issuer}/oauth/par`,
+          mtls_endpoint_aliases: {
+            ...mtlsWellKnown(issuer).mtls_endpoint_aliases,
+            pushed_authorization_request_endpoint: `${mtlsHost}/oauth/par`,
+          },
+        });
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        useMtls: true,
+        pushedAuthorizationRequests: true,
+        customFetch,
+      });
+      await expect(getClient(config)).to.be.fulfilled;
+    });
+
+    it('should accept PAR without mTLS when only the standard PAR endpoint is advertised', async function () {
+      // Regression for the inverse bug: a valid non-mTLS PAR config must not be
+      // rejected by an alias-aware check.
+      const issuer = 'https://par-standard.example.com';
+      nock(issuer)
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: `${issuer}/`,
+          pushed_authorization_request_endpoint: `${issuer}/oauth/par`,
+        });
+
+      const config = getConfig({
+        ...baseConfig(issuer),
+        clientSecret: '__test_client_secret__',
+        pushedAuthorizationRequests: true,
+      });
+      await expect(getClient(config)).to.be.fulfilled;
     });
   });
 });

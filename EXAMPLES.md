@@ -16,6 +16,7 @@
 14. [Use a proxy for OIDC requests](#14-use-a-proxy-for-oidc-requests)
 15. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#15-session-expiry-from-upstream-idp-ipsie-session_expiry)
 16. [JWT-Secured Authorization Requests (JAR)](#16-jwt-secured-authorization-requests-jar)
+17. [mTLS client authentication](#17-mtls-client-authentication)
 
 ## 1. Basic setup
 
@@ -713,3 +714,57 @@ openssl ec -in request-object-key.pem -pubout -out request-object-key.pub.pem
 ```
 
 Full example at [jar.js](./examples/jar.js), to run it: `npm run start:example -- jar`
+
+## 17. mTLS client authentication
+
+[mTLS](https://www.rfc-editor.org/rfc/rfc8705) (RFC 8705) authenticates your application to the token endpoint with a TLS client certificate instead of a client secret. Enable it with `useMtls: true` (or the `AUTH0_MTLS=true` environment variable). Issued access tokens carry a `cnf.x5t#S256` claim binding them to the certificate.
+
+The certificate is presented at the TLS layer by your `customFetch`, never by the SDK. Node's global `fetch` ignores the `agent` option, so the certificate must be attached via an [undici](https://github.com/nodejs/undici) `Agent` on the request `dispatcher`.
+
+```js
+const { Agent, fetch: undiciFetch } = require('undici');
+
+const tlsAgent = new Agent({
+  connect: {
+    cert: fs.readFileSync('./client.crt'),
+    key: fs.readFileSync('./client.key'),
+  },
+});
+
+app.use(
+  auth({
+    // Point issuerBaseURL at your custom domain, not the *.auth0.com host.
+    issuerBaseURL: 'https://auth.your-domain.com',
+    authorizationParams: {
+      response_type: 'code',
+      audience: 'https://your-api/',
+      scope: 'openid profile email offline_access',
+    },
+    useMtls: true,
+    customFetch: (url, options) =>
+      undiciFetch(url, { ...options, dispatcher: tlsAgent }),
+  }),
+);
+```
+
+When `useMtls` is set, the SDK routes token, refresh, revocation, userinfo, and PAR requests to the server's `mtls_endpoint_aliases` **for each endpoint the server advertises an alias for**. An endpoint without a matching alias is sent to the standard host, which is not an mTLS channel, so the tenant must advertise aliases for every endpoint your configuration uses. The SDK throws at construction if the token endpoint (always used) or the PAR endpoint (when `pushedAuthorizationRequests` is enabled) lacks an alias, and logs a debug warning for a missing userinfo or revocation alias. mTLS requires:
+
+- A custom domain with self-managed certificates. It does not work on canonical `*.auth0.com` domains (the SDK logs a warning if you try).
+- mTLS endpoint aliases enabled on the tenant. If the discovery document does not advertise the token endpoint alias, the SDK throws an `MtlsError` with code `mtls_endpoint_aliases_missing`.
+- No `clientSecret` or `clientAssertionSigningKey`. Combining either (or an explicit `clientAuthMethod`) with `useMtls` throws an `MtlsError` (`mtls_incompatible_client_auth`), and a missing `customFetch` throws `mtls_requires_custom_fetch`.
+
+`MtlsError` and `MtlsErrorCode` are exported for structured handling:
+
+```js
+const { auth, MtlsError, MtlsErrorCode } = require('express-openid-connect');
+
+try {
+  app.use(auth({ useMtls: true /* customFetch missing */ }));
+} catch (err) {
+  if (err.code === MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH) {
+    // provide a TLS-aware customFetch
+  }
+}
+```
+
+Full example at [mtls.js](./examples/mtls.js).
