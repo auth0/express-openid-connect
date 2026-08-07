@@ -17,7 +17,7 @@ Pass it directly to <a href="RequestContext.html#buildsessiontransferredirect" c
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">SessionTransferTokenResult</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#expires_in">expires_in</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#issued_token_type">issued_token_type</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#scope">scope</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#session_transfer_token">session_transfer_token</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#token_type">token_type</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L215">index.d.ts:215</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L215">index.d.ts:215</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -40,35 +40,35 @@ Pass it directly to <a href="RequestContext.html#buildsessiontransferredirect" c
 <div class="tsd-comment tsd-typography"><p>Token lifetime in seconds (~60).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L223">index.d.ts:223</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L223">index.d.ts:223</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="issued_token_type"><span>issued_<wbr/>token_<wbr/>type</span><a href="#issued_token_type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">issued_token_type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The issued token type URN. Always <code>&quot;urn:auth0:params:oauth:token-type:session_transfer_token&quot;</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L221">index.d.ts:221</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L221">index.d.ts:221</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="scope"><code class="tsd-tag">Optional</code><span>scope</span><a href="#scope" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">scope</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Granted scopes, if returned by the authorization server.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L227">index.d.ts:227</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L227">index.d.ts:227</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="session_transfer_token"><span>session_<wbr/>transfer_<wbr/>token</span><a href="#session_transfer_token" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">session_transfer_token</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The opaque session transfer token. Hand to <code>buildSessionTransferRedirect</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L217">index.d.ts:217</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L217">index.d.ts:217</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="token_type"><code class="tsd-tag">Optional</code><span>token_<wbr/>type</span><a href="#token_type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">token_type</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>Informational only — typically <code>&quot;N_A&quot;</code>.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/84e455f2c458f15fd7415a6ada3451480004a159/index.d.ts#L225">index.d.ts:225</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/auth0/express-openid-connect/blob/6e9bf3314bad060d979dc745a962b121cebb1ebc/index.d.ts#L225">index.d.ts:225</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
