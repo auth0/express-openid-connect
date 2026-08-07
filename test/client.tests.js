@@ -426,6 +426,31 @@ describe('client initialization', function () {
         .reply(200, { ...wellKnown, issuer: 'https://par-test.auth0.com/' });
       await expect(getClient(config)).to.be.fulfilled;
     });
+
+    it('should fail if the PAR endpoint in discovery is not a string', async function () {
+      // A malformed discovery document with a non-string endpoint value must be
+      // treated as absent so the precondition fails fast here, rather than
+      // passing on a truthy non-URL that oauth4webapi rejects later.
+      const config = getConfig({
+        secret: '__test_session_secret__',
+        clientID: '__test_client_id__',
+        clientSecret: '__test_client_secret__',
+        issuerBaseURL: 'https://par-nonstring.auth0.com',
+        baseURL: 'https://example.org',
+        pushedAuthorizationRequests: true,
+      });
+      nock('https://par-nonstring.auth0.com')
+        .persist()
+        .get('/.well-known/openid-configuration')
+        .reply(200, {
+          ...wellKnown,
+          issuer: 'https://par-nonstring.auth0.com/',
+          pushed_authorization_request_endpoint: {},
+        });
+      await expect(getClient(config)).to.be.rejectedWith(
+        `pushed_authorization_request_endpoint must be configured on the issuer to use pushedAuthorizationRequests`,
+      );
+    });
   });
 
   describe('client respects clientAssertionSigningAlg configuration', function () {

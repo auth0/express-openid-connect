@@ -1159,24 +1159,32 @@ describe('get config', () => {
       // tls_client_auth is resolved internally via useMtls; passing it directly
       // must be rejected so the mTLS guards cannot be bypassed. (id_token response
       // type avoids the code-flow rule so the .valid() rejection is what fires.)
-      assert.throws(() =>
-        getConfig({
-          ...defaultConfig,
-          clientAuthMethod: 'tls_client_auth',
-          customFetch,
-          authorizationParams: { response_type: 'id_token' },
-        }),
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            clientAuthMethod: 'tls_client_auth',
+            customFetch,
+            authorizationParams: { response_type: 'id_token' },
+          }),
+        TypeError,
+        /"clientAuthMethod" must be one of/,
       );
     });
 
     it('should reject the self_signed_tls_client_auth string (never a public value)', () => {
-      assert.throws(() =>
-        getConfig({
-          ...defaultConfig,
-          clientAuthMethod: 'self_signed_tls_client_auth',
-          customFetch,
-          authorizationParams: { response_type: 'code' },
-        }),
+      // id_token response type avoids the code-flow rule so the .valid()
+      // rejection is what fires, rather than an unrelated public-client error.
+      assert.throws(
+        () =>
+          getConfig({
+            ...defaultConfig,
+            clientAuthMethod: 'self_signed_tls_client_auth',
+            customFetch,
+            authorizationParams: { response_type: 'id_token' },
+          }),
+        TypeError,
+        /"clientAuthMethod" must be one of/,
       );
     });
 
@@ -1250,6 +1258,40 @@ describe('get config', () => {
         (call) => call.args[0] && /custom domain/i.test(call.args[0]),
       );
       assert.notOk(customDomainWarned);
+    });
+
+    it('should warn when useMtls is set but response_type does not include code', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        customFetch,
+        // id_token is the default; make the implicit-only flow explicit.
+        authorizationParams: { response_type: 'id_token' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const noEffectWarn = warnCalls.some(
+        (call) => call.args[0] && /useMtls has no effect/i.test(call.args[0]),
+      );
+      assert.ok(
+        noEffectWarn,
+        'Should warn that mTLS is inert without a code flow',
+      );
+    });
+
+    it('should NOT emit the no-effect warning when response_type includes code', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        useMtls: true,
+        customFetch,
+        authorizationParams: { response_type: 'code' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const noEffectWarned = warnCalls.some(
+        (call) => call.args[0] && /useMtls has no effect/i.test(call.args[0]),
+      );
+      assert.notOk(noEffectWarned);
     });
   });
 });
