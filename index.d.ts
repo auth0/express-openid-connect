@@ -449,7 +449,9 @@ interface RequestContext {
    * - `Error` — token is expired and no refresh token is available
    * - `SessionExpiredError` — IdP session ceiling has been reached
    */
-  getAccessToken(options?: GetAccessTokenOptions): Promise<AccessToken>;
+  getAccessToken?: (
+    options?: GetAccessTokenOptions,
+  ) => Promise<GetAccessTokenResult>;
 }
 
 /**
@@ -1271,6 +1273,30 @@ interface GetAccessTokenOptions {
    * If omitted, falls back to `authorizationParams.scope`.
    */
   scope?: string;
+}
+
+/**
+ * The access token returned by {@link RequestContext.getAccessToken}.
+ *
+ * Unlike {@link AccessToken}, this has no `isExpired()` or `refresh()` methods:
+ * `getAccessToken()` is itself cache- and refresh-aware, so callers get a valid
+ * token by calling it again rather than refreshing the returned value manually.
+ */
+interface GetAccessTokenResult {
+  /**
+   * The access token itself, can be an opaque string, JWT, or non-JWT token.
+   */
+  access_token: string;
+
+  /**
+   * The type of access token, Usually "Bearer".
+   */
+  token_type: string;
+
+  /**
+   * Number of seconds until the access token expires.
+   */
+  expires_in: number;
 }
 
 interface AccessToken {
