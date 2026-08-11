@@ -17,6 +17,7 @@
 15. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#15-session-expiry-from-upstream-idp-ipsie-session_expiry)
 16. [JWT-Secured Authorization Requests (JAR)](#16-jwt-secured-authorization-requests-jar)
 17. [mTLS client authentication](#17-mtls-client-authentication)
+18. [Passwordless authentication](#18-passwordless-authentication)
 
 ## 1. Basic setup
 
@@ -768,3 +769,32 @@ try {
 ```
 
 Full example at [mtls.js](./examples/mtls.js).
+
+## 18. Passwordless authentication
+
+[Passwordless](https://auth0.com/docs/authenticate/passwordless) lets users sign in without a password, using a one-time code (email or SMS) or a magic link (email). It is driven through Universal Login: Auth0 hosts the page that sends and collects the code or link. Select the connection with the `connection` authorization parameter, and optionally prefill the identifier with `login_hint`. No dedicated config is needed — `authorizationParams` accepts these directly.
+
+```js
+app.use(auth({ authRequired: false }));
+
+app.get('/passwordless/email', (req, res) =>
+  res.oidc.login({
+    authorizationParams: { connection: 'email', login_hint: req.query.email },
+  }),
+);
+
+app.get('/passwordless/sms', (req, res) =>
+  res.oidc.login({
+    authorizationParams: {
+      connection: 'sms',
+      login_hint: req.query.phone_number,
+    },
+  }),
+);
+```
+
+Whether the `email` connection sends a code or a magic link is configured on the Auth0 connection, not chosen here; SMS sends a code. The connection must be enabled on your Auth0 application.
+
+**Magic-link limitation:** a magic link only completes in the **same browser** that started the login, because `/callback` validates the browser-bound transaction cookie (`state`/`nonce`/PKCE) set at `/login`. Cross-device magic links (start on laptop, click on phone) are not supported by this redirect-based SDK; the Auth0 setting `allow_magiclink_verify_without_session` lifts Auth0's own same-session check but not this SDK's cookie requirement. One-time code flows are unaffected.
+
+Full example at [passwordless.js](./examples/passwordless.js), to run it: `npm run start:example -- passwordless`
