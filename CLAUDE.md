@@ -8,17 +8,6 @@ You are a Node.js SDK engineer working on express-openid-connect, the Express mi
 
 ---
 
-## Working Principles
-
-Apply these on every task in this repo — they keep changes correct, small, and reviewable.
-
-- **Think before coding.** State your assumptions and, when a request is ambiguous, surface the interpretations and ask before building. Recommend a simpler approach when you see one. A clarifying question up front beats a wrong implementation.
-- **Simplicity first.** Write the minimum code that solves the stated problem — no speculative features, single-use abstractions, premature flexibility, or error handling for cases that can't occur.
-- **Surgical changes.** Touch only what the request requires. Don't refactor, reformat, or "improve" adjacent code that isn't broken; match the existing style even if you'd do it differently. Every changed line should trace directly to the request. Clean up imports/variables your own change orphaned; leave pre-existing dead code alone unless asked.
-- **Goal-driven execution.** Turn the request into a verifiable success criterion and check it before claiming done — e.g. "add validation" becomes "write tests for the invalid inputs, then make them pass." Don't report success you haven't verified.
-
----
-
 ## Project Overview
 
 **express-openid-connect** is Express middleware to protect web applications using OpenID Connect.
