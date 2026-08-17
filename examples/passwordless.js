@@ -3,33 +3,35 @@ const { auth } = require('../');
 
 const app = express();
 
-// Passwordless authentication via Universal Login.
-//
-// Passwordless is an Auth0 connection type (`email` or `sms`). Auth0 hosts the
-// entire experience on the Universal Login page: it sends the one-time code (or
-// magic link) and collects it from the user. This SDK only has to point the
-// browser at the right connection — it never touches the email/phone, the code,
-// or the /passwordless/start endpoint.
-//
-// The SDK signals the connection through the `connection` authorization
-// parameter, and can prefill the identifier with `login_hint`. Both are ordinary
-// authorizationParams, so no dedicated config is needed.
-//
-// Whether the email connection delivers a one-time CODE or a MAGIC LINK is a
-// setting on the Auth0 Email connection, not something the application chooses
-// here. SMS connections deliver a code.
-//
-// Magic-link note: a magic link only completes in the SAME browser that started
-// login, because the callback validates the browser-bound transaction cookie
-// (state/nonce/PKCE). Cross-device magic links (start on laptop, click on phone)
-// are not supported by this redirect-based SDK. One-time codes are unaffected.
-//
-// Run with: node examples/run_example.js passwordless.js
-// NOTE: the bundled mock provider has no passwordless connections, so the
-// /passwordless/email and /passwordless/sms routes below will only reach a real
-// Auth0 tenant that has the email/sms connections enabled. Configure a tenant
-// via .env (ISSUER_BASE_URL, CLIENT_ID, CLIENT_SECRET, BASE_URL, SECRET) to try
-// them end to end.
+/*
+ * Passwordless authentication via Universal Login.
+ *
+ * Passwordless is an Auth0 connection type (`email` or `sms`). Auth0 hosts the
+ * entire experience on the Universal Login page: it sends the one-time code (or
+ * magic link) and collects it from the user. This SDK only has to point the
+ * browser at the right connection — it never touches the email/phone, the code,
+ * or the /passwordless/start endpoint.
+ *
+ * The SDK signals the connection through the `connection` authorization
+ * parameter, and can prefill the identifier with `login_hint`. Both are ordinary
+ * authorizationParams, so no dedicated config is needed.
+ *
+ * Whether the email connection delivers a one-time CODE or a MAGIC LINK is a
+ * setting on the Auth0 Email connection, not something the application chooses
+ * here. SMS connections deliver a code.
+ *
+ * Magic-link note: a magic link only completes in the SAME browser that started
+ * login, because the callback validates the browser-bound transaction cookie
+ * (state/nonce/PKCE). Cross-device magic links (start on laptop, click on phone)
+ * are not supported by this redirect-based SDK. One-time codes are unaffected.
+ *
+ * Run with: npm run start:example -- passwordless
+ * NOTE: the bundled mock provider has no passwordless connections, so the
+ * /passwordless/email and /passwordless/sms routes below will only reach a real
+ * Auth0 tenant that has the email/sms connections enabled. Configure a tenant
+ * via .env (ISSUER_BASE_URL, CLIENT_ID, CLIENT_SECRET, BASE_URL, SECRET) to try
+ * them end to end.
+ */
 
 app.use(
   auth({
@@ -67,6 +69,7 @@ app.get('/', (req, res) => {
 // /passwordless/email?email=user@example.com
 app.get('/passwordless/email', (req, res) =>
   res.oidc.login({
+    returnTo: '/',
     authorizationParams: {
       connection: 'email',
       ...(req.query.email ? { login_hint: req.query.email } : undefined),
@@ -79,6 +82,7 @@ app.get('/passwordless/email', (req, res) =>
 // /passwordless/sms?phone_number=+14155550100
 app.get('/passwordless/sms', (req, res) =>
   res.oidc.login({
+    returnTo: '/',
     authorizationParams: {
       connection: 'sms',
       ...(req.query.phone_number

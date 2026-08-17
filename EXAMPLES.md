@@ -779,12 +779,14 @@ app.use(auth({ authRequired: false }));
 
 app.get('/passwordless/email', (req, res) =>
   res.oidc.login({
+    returnTo: '/',
     authorizationParams: { connection: 'email', login_hint: req.query.email },
   }),
 );
 
 app.get('/passwordless/sms', (req, res) =>
   res.oidc.login({
+    returnTo: '/',
     authorizationParams: {
       connection: 'sms',
       login_hint: req.query.phone_number,
