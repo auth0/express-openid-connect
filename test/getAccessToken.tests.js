@@ -335,6 +335,79 @@ describe('req.oidc.getAccessToken()', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // 5b. Pre-MRRT session, first call requests a NON-config audience. The
+  // hydrated login token must be labelled with the login audience, not the
+  // requested one, so a real MRRT exchange happens instead of a false cache hit.
+  // ---------------------------------------------------------------------------
+  it('does not mislabel the hydrated login token when the first call requests a different audience', async () => {
+    const idToken = makeIdToken({ c_hash: '77QmUPtjPfzWtF2AnpK9RQ' });
+    const futureExp = epoch() + 3600;
+
+    server = await setup({
+      routeHandler: async (req, res) => {
+        const result = await req.oidc.getAccessToken({
+          audience: 'https://api-b.example.com/',
+          scope: 'read:reports',
+        });
+        res.json({ access_token: result.access_token });
+      },
+    });
+
+    const jar = request.jar();
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        id_token: idToken,
+        access_token: '__login_access_token__',
+        refresh_token: '__test_refresh_token__',
+        token_type: 'Bearer',
+        expires_at: futureExp,
+        // no tokenSets — pre-MRRT session; login audience is the config
+        // audience https://api.example.com/
+      },
+    });
+
+    const spy = sinon.spy(() => ({
+      access_token: '__api_b_access_token__',
+      refresh_token: '__new_refresh_token__',
+      token_type: 'Bearer',
+      expires_in: 3600,
+      scope: 'read:reports',
+    }));
+    const {
+      interceptors: [interceptor],
+    } = nock('https://op.example.com', {
+      allowUnmocked: true,
+    })
+      .post('/oauth/token')
+      .reply(200, spy);
+
+    const result = await request
+      .get('/get-token', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+    nock.removeInterceptor(interceptor);
+
+    // An exchange MUST happen — the login token belongs to api.example.com,
+    // not api-b. Returning the login token would be the mislabelling bug.
+    sinon.assert.calledOnce(spy);
+    assert.equal(result.access_token, '__api_b_access_token__');
+
+    // The hydrated login token must be cached under the config audience.
+    const session = await request
+      .get('/session', { baseUrl, jar, json: true })
+      .then((r) => r.body);
+    const loginEntry = session.tokenSets.find(
+      (ts) => ts.audience === 'https://api.example.com/',
+    );
+    assert.ok(
+      loginEntry,
+      'hydrated token should be cached under the login audience',
+    );
+    assert.equal(loginEntry.access_token, '__login_access_token__');
+  });
+
+  // ---------------------------------------------------------------------------
   // 6. Scope superset cache hit
   // ---------------------------------------------------------------------------
   it('returns cached token when requested scopes are a subset of cached scopes', async () => {

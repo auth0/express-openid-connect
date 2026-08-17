@@ -69,6 +69,13 @@ interface Session {
    */
   sessionExpiresAt?: number;
   /**
+   * The audience the session's access token was minted for, recorded at login
+   * (respects a per-login `authorizationParams.audience` override). Used by
+   * {@link RequestContext.getAccessToken} to label the token correctly in its
+   * per-audience cache.
+   */
+  audience?: string;
+  /**
    * Per-audience token cache used by {@link RequestContext.getAccessToken}.
    * Populated automatically on the first `getAccessToken()` call. Pre-existing
    * sessions without this field are migrated transparently — no re-login required.
