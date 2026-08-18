@@ -206,5 +206,18 @@ describe('crypto', () => {
       // signatures should be deterministic for same inputs
       assert.equal(syncSigned, asyncSigned);
     });
+
+    it('round-trips a value containing dots', async () => {
+      // The signature is base64url (dot-free), so the separator is the last
+      // dot. A value with its own dots — e.g. a JSON transient cookie carrying
+      // an audience like https://api.example.com/ — must verify intact.
+      const [key, keystore] = getKeyStore('__test_secret__');
+      const value = JSON.stringify({
+        audience: 'https://api.example.com/products',
+      });
+      const signed = signCookieSync('auth_verification', value, key);
+      const result = await verifyCookie('auth_verification', signed, keystore);
+      assert.equal(result, value);
+    });
   });
 });
