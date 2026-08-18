@@ -18,6 +18,7 @@
 16. [JWT-Secured Authorization Requests (JAR)](#16-jwt-secured-authorization-requests-jar)
 17. [mTLS client authentication](#17-mtls-client-authentication)
 18. [Passwordless authentication](#18-passwordless-authentication)
+19. [Multi-Resource Refresh Tokens (MRRT)](#19-multi-resource-refresh-tokens-mrrt)
 
 ## 1. Basic setup
 
@@ -770,6 +771,7 @@ try {
 
 Full example at [mtls.js](./examples/mtls.js).
 
+
 ## 18. Passwordless authentication
 
 [Passwordless](https://auth0.com/docs/authenticate/passwordless) lets users sign in without a password, using a one-time code (email or SMS) or a magic link (email). It is driven through Universal Login: Auth0 hosts the page that sends and collects the code or link. Select the connection with the `connection` authorization parameter, and optionally prefill the identifier with `login_hint`. No dedicated config is needed — `authorizationParams` accepts these directly.
@@ -800,3 +802,112 @@ Whether the `email` connection sends a code or a magic link is configured on the
 **Magic-link limitation:** a magic link only completes in the **same browser** that started the login, because `/callback` validates the browser-bound transaction cookie (`state`/`nonce`/PKCE) set at `/login`. Cross-device magic links (start on laptop, click on phone) are not supported by this redirect-based SDK; the Auth0 setting `allow_magiclink_verify_without_session` lifts Auth0's own same-session check but not this SDK's cookie requirement. One-time code flows are unaffected.
 
 Full example at [passwordless.js](./examples/passwordless.js), to run it: `npm run start:example -- passwordless`
+
+## 19. Multi-Resource Refresh Tokens (MRRT)
+
+> **Auth0-specific feature.** MRRT requires refresh token policies to be configured on your Auth0 application. See [Configure and Implement Multi-Resource Refresh Token](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token/configure-and-implement-multi-resource-refresh-token) for setup instructions, and [Multi-Resource Refresh Token](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token#multi-resource-refresh-token) to learn how the feature works.
+
+By default, the access token in the session (`req.oidc.accessToken`) is scoped to the single audience you specified at login. With MRRT, you can use the same refresh token to obtain access tokens for additional APIs — without sending the user through a new login flow.
+
+`req.oidc.getAccessToken()` handles this automatically: it returns a cached token when one exists and is valid, or exchanges the session's refresh token for a new one when the cache is empty or expired.
+
+### Setup
+
+Request `offline_access` at login so the session contains a refresh token:
+
+```js
+app.use(
+  auth({
+    authorizationParams: {
+      response_type: 'code',
+      audience: 'https://products-api.example.com/',
+      scope: 'openid profile offline_access read:products',
+    },
+  }),
+);
+```
+
+### Retrieving an access token
+
+Call `getAccessToken()` with no arguments to get a token for the audience configured at login. The SDK returns the cached token when it has not expired, or silently refreshes it when it has:
+
+```js
+app.get('/products', requiresAuth(), async (req, res, next) => {
+  try {
+    const { access_token, token_type } = await req.oidc.getAccessToken();
+
+    const { data } = await axios.get(
+      'https://products-api.example.com/v1/products',
+      { headers: { Authorization: `${token_type} ${access_token}` } },
+    );
+
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
+### Retrieving a token for a different API (MRRT)
+
+Pass `audience` to exchange the session's refresh token for a token scoped to a different resource server. The first call hits the token endpoint; subsequent calls return the cached token until it expires:
+
+```js
+app.get('/orders', requiresAuth(), async (req, res, next) => {
+  try {
+    const { access_token, token_type } = await req.oidc.getAccessToken({
+      audience: 'https://orders-api.example.com/',
+      scope: 'read:orders',
+    });
+
+    const { data } = await axios.get(
+      'https://orders-api.example.com/v1/orders',
+      { headers: { Authorization: `${token_type} ${access_token}` } },
+    );
+
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
+> **Note:** Auth0 silently ignores any audience or scopes not covered by the configured policies — it will not throw an error, but the returned token will only contain the permitted scopes. Refer to your application's policy configuration to confirm what is allowed.
+
+### Downscoping
+
+You can request a narrower set of scopes than the cached token holds. The SDK treats a cached token as a hit when it covers all the requested scopes, so no new exchange is made:
+
+```js
+// Cached token has 'read:orders write:orders' — returns it without a new exchange
+const { access_token } = await req.oidc.getAccessToken({
+  audience: 'https://orders-api.example.com/',
+  scope: 'read:orders',
+});
+```
+
+### Error handling
+
+| Error | Cause |
+|-------|-------|
+| `Error: The user does not have an active session.` | No session found — user is not logged in |
+| `Error: The access token has expired and a refresh token was not found…` | Token expired but `offline_access` was not requested at login |
+| `SessionExpiredError` | The IdP session ceiling (`sessionExpiresAt`) has been reached — redirect the user to login |
+
+```js
+const { SessionExpiredError } = require('express-openid-connect');
+
+app.get('/orders', requiresAuth(), async (req, res, next) => {
+  try {
+    const { access_token } = await req.oidc.getAccessToken({
+      audience: 'https://orders-api.example.com/',
+    });
+    // use access_token ...
+  } catch (err) {
+    if (err instanceof SessionExpiredError) {
+      return res.oidc.login(); // re-authenticate the user
+    }
+    next(err);
+  }
+});
+```

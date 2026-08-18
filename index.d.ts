@@ -68,6 +68,24 @@ interface Session {
    * hard expiry on every session read and before any token refresh.
    */
   sessionExpiresAt?: number;
+  /**
+   * The audience the session's access token was minted for, recorded at login
+   * (respects a per-login `authorizationParams.audience` override). Used by
+   * {@link RequestContext.getAccessToken} to label the token correctly in its
+   * per-audience cache.
+   */
+  audience?: string;
+  /**
+   * Per-audience token cache used by {@link RequestContext.getAccessToken}.
+   * Populated automatically on the first `getAccessToken()` call. Pre-existing
+   * sessions without this field are migrated transparently — no re-login required.
+   */
+  tokenSets?: Array<{
+    audience: string;
+    access_token: string;
+    scope?: string;
+    expires_at?: number;
+  }>;
   [key: string]: any;
 }
 
@@ -413,6 +431,34 @@ interface RequestContext {
     result: SessionTransferTokenResult,
     opts?: SessionTransferRedirectOptions,
   ) => string;
+
+  /**
+   * Retrieves an access token from the session cache, or performs a refresh token
+   * grant (including Multi-Resource Refresh Token exchange) when the cached token
+   * is absent or expired.
+   *
+   * ```js
+   * // Default audience — equivalent to req.oidc.accessToken but async and cache-aware
+   * const { access_token } = await req.oidc.getAccessToken();
+   *
+   * // MRRT: exchange the session's refresh token for a different resource server
+   * const { access_token } = await req.oidc.getAccessToken({
+   *   audience: 'https://api-b.example.com',
+   *   scope: 'read:reports',
+   * });
+   * ```
+   *
+   * Tokens are cached per audience+scope in `session.tokenSets` and reused on
+   * subsequent calls until they expire.
+   *
+   * **Errors thrown:**
+   * - `Error` — user has no active session
+   * - `Error` — token is expired and no refresh token is available
+   * - `SessionExpiredError` — IdP session ceiling has been reached
+   */
+  getAccessToken?: (
+    options?: GetAccessTokenOptions,
+  ) => Promise<GetAccessTokenResult>;
 }
 
 /**
@@ -1215,6 +1261,49 @@ interface CookieConfigParams {
    * When setting to 'None' (uncommon), you should implement CSRF protection on your own routes
    */
   sameSite?: string;
+}
+
+/**
+ * Options for {@link RequestContext.getAccessToken}.
+ */
+interface GetAccessTokenOptions {
+  /**
+   * The audience (resource server identifier) to request an access token for.
+   * When different from the audience used at login, the SDK performs a
+   * Multi-Resource Refresh Token (MRRT) exchange using the session's refresh token.
+   * If omitted, falls back to `authorizationParams.audience` or the default audience.
+   */
+  audience?: string;
+
+  /**
+   * Space-separated scopes to request.
+   * If omitted, falls back to `authorizationParams.scope`.
+   */
+  scope?: string;
+}
+
+/**
+ * The access token returned by {@link RequestContext.getAccessToken}.
+ *
+ * Unlike {@link AccessToken}, this has no `isExpired()` or `refresh()` methods:
+ * `getAccessToken()` is itself cache- and refresh-aware, so callers get a valid
+ * token by calling it again rather than refreshing the returned value manually.
+ */
+interface GetAccessTokenResult {
+  /**
+   * The access token itself, can be an opaque string, JWT, or non-JWT token.
+   */
+  access_token: string;
+
+  /**
+   * The type of access token, Usually "Bearer".
+   */
+  token_type: string;
+
+  /**
+   * Number of seconds until the access token expires.
+   */
+  expires_in: number;
 }
 
 interface AccessToken {
