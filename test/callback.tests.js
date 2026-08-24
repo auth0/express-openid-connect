@@ -1196,6 +1196,76 @@ describe('callback response_mode: form_post', () => {
 
       assert.equal(statusCode, 999);
     });
+
+    it('should not persist a session when afterCallback returns undefined (stateless passthrough)', async () => {
+      const { currentSession } = await setup({
+        authOpts: {
+          afterCallback: async () => undefined,
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: makeIdToken({ sub: 'bar' }),
+        },
+      });
+
+      assert.notOk(currentSession.id_token);
+    });
+
+    it('should not crash, and should leave the existing session untouched, when afterCallback returns undefined for a different user', async () => {
+      const fooToken = makeIdToken({ sub: 'foo' });
+      const { response, currentSession } = await setup({
+        authOpts: {
+          afterCallback: async () => undefined,
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: makeIdToken({ sub: 'bar' }),
+        },
+        existingSession: {
+          shoppingCartId: 'baz',
+          id_token: fooToken,
+        },
+      });
+
+      // Before the null-guard fix, replaceSession() throws a TypeError trying
+      // to set a property on undefined, surfacing as a 500 here.
+      assert.equal(response.statusCode, 302);
+      // The SDK's own session write is suppressed entirely — the existing
+      // session (still 'foo') is left as-is, not replaced with 'bar''s tokens.
+      assert.equal(currentSession.id_token, fooToken);
+    });
+
+    it('should not crash, and should leave the existing session untouched, when afterCallback returns null for a different user', async () => {
+      const fooToken = makeIdToken({ sub: 'foo' });
+      const { response, currentSession } = await setup({
+        authOpts: {
+          afterCallback: async () => null,
+        },
+        cookies: generateCookies({
+          state: expectedDefaultState,
+          nonce: '__test_nonce__',
+        }),
+        body: {
+          state: expectedDefaultState,
+          id_token: makeIdToken({ sub: 'bar' }),
+        },
+        existingSession: {
+          shoppingCartId: 'baz',
+          id_token: fooToken,
+        },
+      });
+
+      assert.equal(response.statusCode, 302);
+      assert.equal(currentSession.id_token, fooToken);
+    });
   });
 
   it('should replace the cookie session when a new user is logging in over an existing different user', async () => {

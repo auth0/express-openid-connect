@@ -17,6 +17,7 @@
 15. [Session expiry from upstream IdP (IPSIE `session_expiry`)](#15-session-expiry-from-upstream-idp-ipsie-session_expiry)
 16. [JWT-Secured Authorization Requests (JAR)](#16-jwt-secured-authorization-requests-jar)
 17. [mTLS client authentication](#17-mtls-client-authentication)
+18. [Enterprise Connect (Embedded Login)](#18-enterprise-connect-embedded-login)
 
 ## 1. Basic setup
 
@@ -768,3 +769,96 @@ try {
 ```
 
 Full example at [mtls.js](./examples/mtls.js).
+
+## 18. Enterprise Connect (Embedded Login)
+
+Enterprise Connect lets a B2B SaaS application use Auth0 purely as an SSO relay: Auth0 federates to the customer's enterprise IdP and hands back an ID token, without creating or holding an Auth0 session. Your application's own auth server (or session store) remains the session authority. This section covers the **app-embedded** pattern - a fully custom login UI, with no separate auth server that already supports OIDC or SAML federation.
+
+Enable it with `enterpriseConnect: true`. In this mode the SDK skips writing its own session cookie once `afterCallback` returns, and warns at initialization if you pass options that don't apply here (`offline_access` in scope, or a static `organization`).
+
+```js
+app.use(
+  auth({
+    enterpriseConnect: true,
+    authorizationParams: {
+      response_type: 'code',
+      scope: 'openid profile email', // no offline_access - no refresh tokens in EC mode
+      // Do NOT set a static organization - it is resolved per login via HRD
+    },
+    afterCallback: async (req, res, session) => {
+      const claims = req.oidc.idTokenClaims;
+
+      // Validate org_id against your own database of known orgs.
+      const isKnownOrg = await myDb.isKnownOrg(claims.org_id);
+      if (!isKnownOrg) throw new Error('org mismatch');
+
+      // Write your own session. Auth0 does not manage it.
+      await mySessionStore.upsert({
+        sub: claims.sub,
+        email: claims.email,
+        orgId: claims.org_id,
+        department: claims.department, // UAP-mapped claim from the enterprise IdP
+      });
+
+      // Return undefined (or null) to suppress the SDK's own session cookie.
+      return undefined;
+    },
+  }),
+);
+```
+
+### Domain discovery and login
+
+`startEnterpriseLogin` is the single entry point for login: it runs domain discovery internally and, for a federated email domain, redirects to Auth0 with `login_hint` set - Auth0's Home Realm Discovery resolves the connection and organization from the domain. For a non-federated domain it resolves `false` without redirecting, so you can route to your own login flow. No `connection`/`organization` lookup is required.
+
+```js
+app.post(
+  '/login',
+  express.urlencoded({ extended: false }),
+  async (req, res) => {
+    const started = await res.oidc.startEnterpriseLogin({
+      email: req.body.email,
+      returnTo: '/dashboard',
+    });
+    if (!started) {
+      return res.redirect('/existing-login');
+    }
+    // federated -> startEnterpriseLogin already issued the redirect.
+  },
+);
+```
+
+`isFederatedDomain(auth0Domain, emailDomain)` is also exported directly, as the underlying primitive, for callers who want domain discovery without initiating login:
+
+```js
+const { isFederatedDomain } = require('express-openid-connect');
+
+const isFederated = await isFederatedDomain(auth0Domain, emailDomain);
+```
+
+This is a routing hint, not a security control - always validate the `org_id` claim on the returned ID token in `afterCallback`, regardless of what it returned.
+
+### Protecting routes
+
+The SDK holds no session in Enterprise Connect mode, so `req.oidc.isAuthenticated()` does not reflect a logged-in user. Read from your own session store instead:
+
+```js
+app.get('/dashboard', async (req, res) => {
+  const session = await getMySession(req);
+  if (!session) return res.redirect('/login');
+  res.send(`Welcome, ${session.email}`);
+});
+```
+
+### Logout
+
+Destroy your own session, then delegate to the SDK's logout with `federated: true` so the enterprise identity provider session is terminated as well. Without it, the IdP session stays alive and the next login silently reuses the previous user. The SDK builds the correct `end_session_endpoint` URL directly in this mode - there is no Auth0 session to source an `id_token_hint` from, so none is sent.
+
+```js
+app.get('/logout', async (req, res) => {
+  await mySessionStore.destroy(req);
+  res.oidc.logout({ returnTo: '/', federated: true });
+});
+```
+
+Full example at [enterprise-connect.js](./examples/enterprise-connect.js), to run it: `npm run start:example -- enterprise-connect`

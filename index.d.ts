@@ -468,6 +468,29 @@ interface ResponseContext {
    * ```
    */
   callback: (opts?: CallbackOptions) => Promise<void>;
+
+  /**
+   * Single entry point for Enterprise Connect app-embedded login. Runs domain
+   * discovery internally: for a federated email domain it redirects to Auth0
+   * with `login_hint` set (Home Realm Discovery resolves the connection and
+   * organization from the domain) and resolves `true`. For a non-federated
+   * domain it resolves `false` without redirecting, so the caller can route
+   * to its own login flow.
+   *
+   * ```js
+   * app.post('/login', express.json(), async (req, res) => {
+   *   const started = await req.oidc.startEnterpriseLogin({
+   *     email: req.body.email,
+   *     returnTo: '/dashboard',
+   *   });
+   *   if (!started) res.redirect('/existing-login');
+   * });
+   * ```
+   */
+  startEnterpriseLogin: (opts: {
+    email: string;
+    returnTo?: string;
+  }) => Promise<boolean>;
 }
 
 /**
@@ -520,6 +543,14 @@ interface LogoutOptions {
    * Additional custom parameters to pass to the logout endpoint.
    */
   logoutParams?: { [key: string]: any };
+
+  /**
+   * Also terminate the session at the identity provider. Required in
+   * {@link ConfigParams.enterpriseConnect enterpriseConnect} mode to end the
+   * enterprise IdP session; without it the IdP session stays active and the
+   * next login silently reuses the previous user.
+   */
+  federated?: boolean;
 }
 
 interface CallbackOptions {
@@ -775,7 +806,7 @@ interface ConfigParams {
     res: OpenidResponse,
     session: Session,
     decodedState: { [key: string]: any },
-  ) => Promise<Session> | Session;
+  ) => Promise<Session | null | void> | Session | null | void;
 
   /**
    * Array value of claims to remove from the ID token before storing the cookie session.
@@ -1023,6 +1054,25 @@ interface ConfigParams {
    * @see {@link https://datatracker.ietf.org/doc/html/rfc8705 | RFC 8705}
    */
   useMtls?: boolean;
+
+  /**
+   * Puts the SDK into Enterprise Connect mode: Auth0 acts as a pure SSO relay
+   * to the customer's enterprise IdP and holds no session, issues no refresh
+   * token. The SDK skips writing its own session cookie when
+   * {@link ConfigParams.afterCallback afterCallback} returns `null`/`undefined`,
+   * and the `/logout` route goes straight to the standard `end_session_endpoint`
+   * instead of `id_token_hint`-based logout (no Auth0 session exists to source
+   * one from).
+   *
+   * The SDK warns at initialization if `offline_access` is in
+   * {@link AuthorizationParameters.scope} (no refresh tokens are issued), or if
+   * a static `organization` is set in {@link ConfigParams.authorizationParams}
+   * (the organization is resolved per login via Home Realm Discovery from the
+   * `login_hint` email domain instead).
+   *
+   * @default false
+   */
+  enterpriseConnect?: boolean;
 }
 
 interface SessionStorePayload<Data = Session> {
@@ -1389,6 +1439,30 @@ export function claimCheck(
  * ```
  */
 export function attemptSilentLogin(): RequestHandler;
+
+/**
+ * Checks whether an email domain is managed for enterprise SSO on the given
+ * Auth0 tenant, via the WebFinger domain-discovery endpoint. Used for
+ * Enterprise Connect app-embedded login.
+ *
+ * This is a routing hint, not a security control. Callers must still validate
+ * the `org_id` claim on the returned ID token after the Auth0 callback,
+ * regardless of what this function returned.
+ *
+ * ```js
+ * const { isFederatedDomain } = require('express-openid-connect');
+ *
+ * const emailDomain = email.split('@')[1];
+ * const federated = await isFederatedDomain('YOUR_AUTH0_DOMAIN', emailDomain);
+ * ```
+ *
+ * @param auth0Domain e.g. `'your-tenant.auth0.com'`
+ * @param emailDomain e.g. `'acmecorp.com'` (case-insensitive)
+ */
+export function isFederatedDomain(
+  auth0Domain: string,
+  emailDomain: string,
+): Promise<boolean>;
 
 /**
  * Error thrown by `accessToken.refresh()` when the IdP-asserted session ceiling

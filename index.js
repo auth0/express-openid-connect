@@ -6,6 +6,7 @@ const {
   MtlsError,
   MtlsErrorCode,
 } = require('./lib/errors');
+const isFederatedDomain = require('./lib/isFederatedDomain');
 
 module.exports = {
   auth,
@@ -14,4 +15,5 @@ module.exports = {
   SessionExpiredError,
   MtlsError,
   MtlsErrorCode,
+  isFederatedDomain,
 };

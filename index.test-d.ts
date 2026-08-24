@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { expectType, expectAssignable } from 'tsd';
-import { auth, MtlsError, MtlsErrorCode } from '.';
+import { auth, MtlsError, MtlsErrorCode, isFederatedDomain } from '.';
 
 expectType<RequestHandler>(auth());
 expectType<RequestHandler>(auth({ session: { name: 'foo' } }));
@@ -41,3 +41,22 @@ expectType<
   | 'mtls_endpoint_aliases_missing'
   | 'mtls_incompatible_client_auth'
 >(new MtlsError(MtlsErrorCode.MTLS_REQUIRES_CUSTOM_FETCH, 'message').code);
+
+// Enterprise Connect
+expectType<RequestHandler>(auth({ enterpriseConnect: true }));
+
+expectType<(auth0Domain: string, emailDomain: string) => Promise<boolean>>(
+  isFederatedDomain,
+);
+
+// afterCallback may return null/undefined to suppress the session write
+// (Enterprise Connect stateless passthrough), in addition to a Session.
+expectType<RequestHandler>(
+  auth({
+    enterpriseConnect: true,
+    afterCallback: async (req, res, session) => {
+      if (!session?.user) return undefined;
+      return null;
+    },
+  }),
+);

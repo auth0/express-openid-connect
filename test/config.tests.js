@@ -1294,4 +1294,72 @@ describe('get config', () => {
       assert.notOk(noEffectWarned);
     });
   });
+
+  describe('enterpriseConnect', () => {
+    it('should default enterpriseConnect to undefined', () => {
+      const config = getConfig(defaultConfig);
+      assert.isUndefined(config.enterpriseConnect);
+    });
+
+    it('should accept enterpriseConnect: true', () => {
+      const config = getConfig({ ...defaultConfig, enterpriseConnect: true });
+      assert.isTrue(config.enterpriseConnect);
+    });
+
+    it('should reject a non-boolean enterpriseConnect', () => {
+      assert.throws(() => {
+        getConfig({ ...defaultConfig, enterpriseConnect: 'b2b_integration' });
+      }, TypeError);
+    });
+
+    it('should warn when offline_access is in scope with enterpriseConnect: true', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        enterpriseConnect: true,
+        authorizationParams: {
+          scope: 'openid profile email offline_access',
+        },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const warned = warnCalls.some(
+        (call) => call.args[0] && /offline_access/i.test(call.args[0]),
+      );
+      assert.ok(warned);
+    });
+
+    it('should warn when a static organization is set with enterpriseConnect: true', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        enterpriseConnect: true,
+        authorizationParams: { organization: 'org_XXXX' },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      const warned = warnCalls.some(
+        (call) => call.args[0] && /organization/i.test(call.args[0]),
+      );
+      assert.ok(warned);
+    });
+
+    it('should NOT warn when enterpriseConnect: true is set with no offline_access and no static organization', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({ ...defaultConfig, enterpriseConnect: true });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      assert.equal(warnCalls.length, 0);
+    });
+
+    it('should NOT warn about offline_access or organization when enterpriseConnect is not set', () => {
+      const warnCallsBefore = console.warn.callCount;
+      getConfig({
+        ...defaultConfig,
+        authorizationParams: {
+          scope: 'openid profile email offline_access',
+          organization: 'org_XXXX',
+        },
+      });
+      const warnCalls = console.warn.getCalls().slice(warnCallsBefore);
+      assert.equal(warnCalls.length, 0);
+    });
+  });
 });

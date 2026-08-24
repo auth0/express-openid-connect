@@ -402,3 +402,162 @@ describe('logout route', async () => {
     );
   });
 });
+
+describe('logout route with enterpriseConnect', async () => {
+  let server;
+
+  afterEach(async () => {
+    if (server) {
+      server.close();
+    }
+  });
+
+  it('should use the standard end_session_endpoint, bypassing auth0Logout detection', async () => {
+    // This issuer would normally trigger the classic /v2/logout path.
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        issuerBaseURL: 'https://test.eu.auth0.com',
+        enterpriseConnect: true,
+      }),
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    // test.eu.auth0.com advertises no end_session_endpoint (see test/setup.js),
+    // so the EC branch falls back to /oidc/logout rather than /v2/logout.
+    assert.equal(
+      url.origin + url.pathname,
+      'https://test.eu.auth0.com/oidc/logout',
+    );
+  });
+
+  it('should use the discovered end_session_endpoint when advertised', async () => {
+    server = await createServer(
+      auth({ ...defaultConfig, enterpriseConnect: true }),
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.equal(
+      url.origin + url.pathname,
+      'https://op.example.com/session/end',
+    );
+    assert.equal(url.searchParams.get('client_id'), '__test_client_id__');
+    assert.equal(
+      url.searchParams.get('post_logout_redirect_uri'),
+      'http://example.org',
+    );
+  });
+
+  it('should never include id_token_hint or logout_hint', async () => {
+    server = await createServer(
+      auth({ ...defaultConfig, enterpriseConnect: true }),
+    );
+
+    const idToken = makeIdToken();
+    const { jar } = await login('http://localhost:3000', idToken);
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.isFalse(url.searchParams.has('id_token_hint'));
+    assert.isFalse(url.searchParams.has('logout_hint'));
+  });
+
+  it('should set federated=true as a literal string when requested', async () => {
+    const router = auth({
+      ...defaultConfig,
+      enterpriseConnect: true,
+      routes: { logout: false },
+    });
+    server = await createServer(router);
+    router.get('/logout', (req, res) => res.oidc.logout({ federated: true }));
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.equal(url.searchParams.get('federated'), 'true');
+  });
+
+  it('should omit federated when not requested', async () => {
+    server = await createServer(
+      auth({ ...defaultConfig, enterpriseConnect: true }),
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.isFalse(url.searchParams.has('federated'));
+  });
+
+  it('should clear the session on logout', async () => {
+    server = await createServer(
+      auth({ ...defaultConfig, enterpriseConnect: true }),
+    );
+
+    const { jar, session: loggedInSession } = await login();
+    assert.ok(loggedInSession.id_token);
+    const { session: loggedOutSession } = await logout(jar);
+    assert.notOk(loggedOutSession.id_token);
+  });
+
+  it('should clear a dangling transaction cookie left by an abandoned login', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        enterpriseConnect: true,
+        // response_type: 'code' (vs. the default id_token/form_post) keeps the
+        // transaction cookie off SameSite=None+Secure, so it's visible to the
+        // test's plain-http cookie jar.
+        clientSecret: '__test_client_secret__',
+        authorizationParams: { response_type: 'code' },
+      }),
+    );
+
+    const jar = request.jar();
+    await request.get({
+      uri: '/login',
+      baseUrl: 'http://localhost:3000',
+      jar,
+      followRedirect: false,
+    });
+    assert.ok(
+      jar
+        .getCookies('http://localhost:3000')
+        .find(({ key }) => key === 'auth_verification'),
+    );
+
+    await request.get({
+      uri: '/logout',
+      baseUrl: 'http://localhost:3000',
+      jar,
+      followRedirect: false,
+    });
+    assert.notOk(
+      jar
+        .getCookies('http://localhost:3000')
+        .find(({ key }) => key === 'auth_verification'),
+    );
+  });
+});
