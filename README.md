@@ -9,6 +9,8 @@
 
 📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
+> 💡 **Using Auth0?** If you want Auth0-specific features, we recommend trying out the [`@auth0/auth0-express`](https://github.com/auth0/auth0-express) SDK, currently in beta.
+
 ## Documentation
 
 - [Quickstart](https://auth0.com/docs/quickstart/webapp/express) - our guide for quickly adding Auth0 to your Express app.
