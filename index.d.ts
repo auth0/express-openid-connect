@@ -1522,3 +1522,20 @@ export class MtlsError extends Error {
     message: string,
   );
 }
+
+/**
+ * Thrown when `accessToken`, `requestSessionTransferToken()`, or
+ * `buildSessionTransferRedirect()` is used with
+ * {@link ConfigParams.enterpriseConnect enterpriseConnect} set. Enterprise
+ * Connect holds no Auth0-managed session and issues no refresh tokens, so
+ * these fail here instead of degrading silently or with a confusing
+ * lower-level error.
+ *
+ * `code` matches the value used by the reference implementations
+ * (nextjs-auth0, auth0-server-js): `'enterprise_connect_not_supported'`.
+ */
+export class EnterpriseConnectError extends Error {
+  readonly name: 'EnterpriseConnectError';
+  readonly code: 'enterprise_connect_not_supported';
+  constructor(member: string, guidance?: string);
+}

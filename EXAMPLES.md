@@ -850,6 +850,22 @@ app.get('/dashboard', async (req, res) => {
 });
 ```
 
+### Restricted members
+
+`accessToken`, `requestSessionTransferToken()`, and `buildSessionTransferRedirect()` all read or exchange an Auth0-managed access/refresh token, which Enterprise Connect never issues or persists. With `enterpriseConnect: true`, calling any of them throws an `EnterpriseConnectError` (`code: 'enterprise_connect_not_supported'`) instead of failing silently or with a confusing lower-level error - matching the `enterprise_connect_not_supported` code used by the reference implementations in `nextjs-auth0` and `auth0-server-js`.
+
+```js
+const { EnterpriseConnectError } = require('express-openid-connect');
+
+try {
+  req.oidc.accessToken; // throws with enterpriseConnect: true
+} catch (err) {
+  if (err.code === 'enterprise_connect_not_supported') {
+    // expected in Enterprise Connect mode
+  }
+}
+```
+
 ### Logout
 
 Destroy your own session, then delegate to the SDK's logout with `federated: true` so the enterprise identity provider session is terminated as well. Without it, the IdP session stays alive and the next login silently reuses the previous user. There is no dedicated Enterprise Connect logout path: since the SDK never wrote its own session in this mode, `id_token_hint` is naturally absent, and `federated: true` flows through the same logout mechanism used everywhere else.

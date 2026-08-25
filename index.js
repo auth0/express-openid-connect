@@ -5,6 +5,7 @@ const {
   SessionExpiredError,
   MtlsError,
   MtlsErrorCode,
+  EnterpriseConnectError,
 } = require('./lib/errors');
 const isFederatedDomain = require('./lib/isFederatedDomain');
 
@@ -15,5 +16,6 @@ module.exports = {
   SessionExpiredError,
   MtlsError,
   MtlsErrorCode,
+  EnterpriseConnectError,
   isFederatedDomain,
 };
