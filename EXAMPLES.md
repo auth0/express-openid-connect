@@ -852,7 +852,7 @@ app.get('/dashboard', async (req, res) => {
 
 ### Logout
 
-Destroy your own session, then delegate to the SDK's logout with `federated: true` so the enterprise identity provider session is terminated as well. Without it, the IdP session stays alive and the next login silently reuses the previous user. The SDK builds the correct `end_session_endpoint` URL directly in this mode - there is no Auth0 session to source an `id_token_hint` from, so none is sent.
+Destroy your own session, then delegate to the SDK's logout with `federated: true` so the enterprise identity provider session is terminated as well. Without it, the IdP session stays alive and the next login silently reuses the previous user. There is no dedicated Enterprise Connect logout path: since the SDK never wrote its own session in this mode, `id_token_hint` is naturally absent, and `federated: true` flows through the same logout mechanism used everywhere else.
 
 ```js
 app.get('/logout', async (req, res) => {

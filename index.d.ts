@@ -545,10 +545,11 @@ interface LogoutOptions {
   logoutParams?: { [key: string]: any };
 
   /**
-   * Also terminate the session at the identity provider. Required in
-   * {@link ConfigParams.enterpriseConnect enterpriseConnect} mode to end the
-   * enterprise IdP session; without it the IdP session stays active and the
-   * next login silently reuses the previous user.
+   * Also terminate the session at the identity provider. Without it, the
+   * IdP session stays active and the next login silently reuses the
+   * previous user. Particularly relevant with
+   * {@link ConfigParams.enterpriseConnect enterpriseConnect}, where the
+   * enterprise IdP session is the only session to terminate.
    */
   federated?: boolean;
 }
