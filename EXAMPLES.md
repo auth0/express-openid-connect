@@ -870,7 +870,16 @@ try {
 
 Destroy your own session, then delegate to the SDK's logout with `federated: true` so the enterprise identity provider session is terminated as well. Without it, the IdP session stays alive and the next login silently reuses the previous user. There is no dedicated Enterprise Connect logout path: since the SDK never wrote its own session in this mode, `id_token_hint` is naturally absent, and `federated: true` flows through the same logout mechanism used everywhere else.
 
+`auth()` mounts its own `/logout` route by default, and that route just calls `res.oidc.logout()` with no options - it never destroys your session and never passes `federated: true`. Disable it with `routes: { logout: false }` and define your own, otherwise your handler below is never reached (the built-in route matches first and never calls `next()`):
+
 ```js
+app.use(
+  auth({
+    // ...
+    routes: { logout: false },
+  }),
+);
+
 app.get('/logout', async (req, res) => {
   await mySessionStore.destroy(req);
   res.oidc.logout({ returnTo: '/', federated: true });
