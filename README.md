@@ -9,7 +9,9 @@
 
 📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
-> 💡 **Using Auth0?** If you want Auth0-specific features, we recommend trying out the [`@auth0/auth0-express`](https://github.com/auth0/auth0-express) SDK, currently in beta.
+> 💡 **Using Auth0?** Please use [`@auth0/auth0-express`](https://github.com/auth0/auth0-express) for **new projects**. It is the official Auth0 SDK for Express, and it is stable (since `v1.0.0`).
+>
+> `express-openid-connect` is a generic OpenID Connect library that works with any provider. It will keep getting generic features, but new `Auth0-specific` features will only be added to `@auth0/auth0-express`. If you already use this library with Auth0, you do not have to move right now. When you are ready, see the [migration guide](https://github.com/auth0/auth0-express/blob/main/packages/auth0-express/MIGRATION.md). It supports a `zero-downtime` migration, so your users stay logged in.
 
 ## Documentation
 
