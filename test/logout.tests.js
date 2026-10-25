@@ -373,6 +373,59 @@ describe('logout route', async () => {
     assert.equal(url.searchParams.get('qux'), '');
   });
 
+  it('should include client_id on unauthenticated logout', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        idpLogout: true,
+      }),
+    );
+
+    // Hit /logout without logging in first (unauthenticated)
+    const response = await request.get({
+      uri: '/logout',
+      baseUrl: 'http://localhost:3000',
+      followRedirect: false,
+    });
+    assert.equal(response.statusCode, 302);
+    const location = new URL(response.headers.location);
+    assert.equal(
+      location.origin + location.pathname,
+      'https://op.example.com/session/end',
+    );
+    assert.equal(
+      location.searchParams.get('client_id'),
+      '__test_client_id__',
+      'should include client_id even when unauthenticated',
+    );
+    assert.notOk(
+      location.searchParams.get('id_token_hint'),
+      'should not include id_token_hint when unauthenticated',
+    );
+  });
+
+  it('should include client_id on authenticated logout', async () => {
+    server = await createServer(
+      auth({
+        ...defaultConfig,
+        idpLogout: true,
+      }),
+    );
+
+    const { jar } = await login();
+    const {
+      response: {
+        headers: { location },
+      },
+    } = await logout(jar);
+    const url = new URL(location);
+    assert.equal(
+      url.searchParams.get('client_id'),
+      '__test_client_id__',
+      'should include client_id on authenticated logout',
+    );
+  });
+
   it('should pass discovery errors to the express mw', async () => {
     nock('https://example.com')
       .get('/.well-known/openid-configuration')
