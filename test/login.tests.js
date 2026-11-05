@@ -63,10 +63,10 @@ describe('auth', () => {
   it('should contain the default authentication routes', async () => {
     const router = auth(defaultConfig);
     server = await createServer(router);
-    assert.ok(router.stack.some(filterRoute('GET', '/login')));
-    assert.ok(router.stack.some(filterRoute('GET', '/logout')));
-    assert.ok(router.stack.some(filterRoute('POST', '/callback')));
-    assert.ok(router.stack.some(filterRoute('GET', '/callback')));
+    assert.ok(router._router.stack.some(filterRoute('GET', '/login')));
+    assert.ok(router._router.stack.some(filterRoute('GET', '/logout')));
+    assert.ok(router._router.stack.some(filterRoute('POST', '/callback')));
+    assert.ok(router._router.stack.some(filterRoute('GET', '/callback')));
   });
 
   it('should contain custom authentication routes', async () => {
@@ -79,10 +79,14 @@ describe('auth', () => {
       },
     });
     server = await createServer(router);
-    assert.ok(router.stack.some(filterRoute('GET', '/custom-login')));
-    assert.ok(router.stack.some(filterRoute('GET', '/custom-logout')));
-    assert.ok(router.stack.some(filterRoute('POST', '/custom-callback')));
-    assert.ok(router.stack.some(filterRoute('GET', '/custom-callback')));
+    assert.ok(router._router.stack.some(filterRoute('GET', '/custom-login')));
+    assert.ok(router._router.stack.some(filterRoute('GET', '/custom-logout')));
+    assert.ok(
+      router._router.stack.some(filterRoute('POST', '/custom-callback'))
+    );
+    assert.ok(
+      router._router.stack.some(filterRoute('GET', '/custom-callback'))
+    );
   });
 
   it('should redirect to the authorize url for /login', async () => {
