@@ -440,6 +440,25 @@ describe('callback response_mode: form_post', () => {
     });
   });
 
+  it('should not let a __proto__ claim alter the user prototype', async () => {
+    const { currentUser, tokens } = await setup({
+      cookies: generateCookies({
+        state: expectedDefaultState,
+        nonce: '__test_nonce__',
+      }),
+      body: {
+        state: expectedDefaultState,
+        id_token: makeIdToken({ ['__proto__']: { admin: true } }),
+      },
+    });
+
+    assert.equal(currentUser.sub, '__test_sub__');
+    assert.isUndefined(currentUser.admin);
+    assert.equal(Object.getPrototypeOf(currentUser), Object.prototype);
+    assert.isUndefined(tokens.idTokenClaims.admin);
+    assert.equal(Object.getPrototypeOf(tokens.idTokenClaims), Object.prototype);
+  });
+
   it('should succeed even if custom transaction cookie name used', async () => {
     let customTxnCookieName = 'CustomTxnCookie';
     const idToken = makeIdToken();

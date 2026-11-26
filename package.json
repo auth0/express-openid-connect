@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "base64url": "^3.0.1",
-    "clone": "^2.1.2",
     "cookie": "^0.7.2",
     "debug": "^4.4.1",
     "http-errors": "^1.8.1",
