@@ -249,6 +249,44 @@ describe('appSession', () => {
     assert.notProperty(cookies, 'appSession.0');
   });
 
+  it('should clean up extra chunks when the chunked cookie shrinks', async () => {
+    server = await createServer(appSession(getConfig(defaultConfig)));
+    const jar = request.jar();
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random: crypto.randomBytes(8000).toString('base64'),
+      },
+    });
+    assert.deepEqual(
+      jar.getCookies(baseUrl).map(({ key }) => key),
+      ['appSession.0', 'appSession.1', 'appSession.2', 'appSession.3'],
+    );
+
+    const random = crypto.randomBytes(4000).toString('base64');
+    await request.post('/session', {
+      baseUrl,
+      jar,
+      json: {
+        sub: '__test_sub__',
+        random,
+      },
+    });
+    assert.deepEqual(
+      jar.getCookies(baseUrl).map(({ key }) => key),
+      ['appSession.0', 'appSession.1'],
+    );
+
+    const res = await request.get('/session', { baseUrl, json: true, jar });
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, {
+      sub: '__test_sub__',
+      random,
+    });
+  });
+
   it('should handle unordered chunked cookies', async () => {
     server = await createServer(appSession(getConfig(defaultConfig)));
     const jar = request.jar();
